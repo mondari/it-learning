@@ -221,7 +221,7 @@ static final int tableSizeFor(int cap) {
 
 
 
-### *知识点：HashMap中的hash方法
+### 知识点：HashMap中的hash方法
 
 HashMap中key的哈希值并不是通过hashCode方法获得的，而是通过HashMap中的hash方法获得的。如以下代码所示
 
@@ -249,9 +249,7 @@ static final int hash(Object key) {
 
 ```
 
-由上可知，HashMap中key的哈希值其实是通过 `key.hashCode() ^ (h >>> 16)` 来计算的，`h >>> 16` 是将哈希值无符号右移16位，高位补零。为什么要这样子计算呢？和直接通过 `key.hashCode()` 来算有什么区别呢？
-
-**研究中。。。**
+由上可知，HashMap中key的哈希值其实是通过 `key.hashCode() ^ (h >>> 16)` 来计算的，`h >>> 16` 是将哈希值无符号右移16位，高位补零。这样子做就是为了让低16位同时包含高位和低位的信息，在计算下标时，由于高位和低位的同时参与，可以减少哈希碰撞。
 
 ## 扩容机制
 
@@ -312,7 +310,7 @@ final Node<K,V>[] resize() {
 
 
 
-### 知识点：树化和反树化条件？
+### *知识点：树化和反树化条件？
 
 因为链表的查询性能会随着链表长度而下降，所以当HashMap中链表长度大于等于7（树化阈值-1）时会发生树化，将链表改造成红黑树。树化阈值由常量 `TREEIFY_THRESHOLD` 定义，值为8。
 
