@@ -111,13 +111,98 @@ public synchronized void method() {
 
 ## synchronized 和 ReentrantLock 的区别
 
-- synchronized 会自动释放锁，而 ReentrantLock 需要手动释放。
 - synchronized 是 JVM 实现的，而 ReentrantLock 是 JDK 实现的。
-- synchronized 中的锁是非公平的，ReentrantLock 默认情况下也是非公平的，但是也可以是公平的。
-- ReentrantLock 可以同时绑定多个 Condition 对象。
-- ReentrantLock 是重入锁，可以重复获取锁
-- ReentrantLock 可中断，而 synchronized 不行。
+
 - synchronized 有的功能， ReentrantLock 都有，而且更多。
+
+- synchronized 会自动释放锁，而 ReentrantLock 需要手动释放。
+
+- synchronized 的锁是非公平的，而 ReentrantLock 的锁支持公平和不公平，但是默认情况下是非公平的，可通过 new ReentrantLock(true) 切换为公平锁。
+
+- ReentrantLock 支持定时锁、可中断锁
+
+- ReentrantLock 支持同时绑定多个 Condition 对象。
+
+  JDK1.8 后，两者的性能已经没什么区别，所以，如果不需要使用 ReentrantLock 的高级功能，推荐使用 synchronized。
 
 参考 [Java 并发](https://cyc2018.github.io/CS-Notes/#/notes/Java%20%E5%B9%B6%E5%8F%91)
 
+## ReentrantLock 获取锁的方式
+
+```java
+// 阻塞式获取锁，成功则返回true，否则一直阻塞
+reentrantLock.lock();
+// 非阻塞式获取锁，成功则返回true，失败则返回false
+reentrantLock.tryLock();
+// 在指定的时间内获取锁，成功则返回true，失败则一直阻塞，直到超过指定时间返回false
+reentrantLock.tryLock(long timeout, TimeUnit unit);
+// 可中断获取锁，成功则返回true，否则一直阻塞，直到中断
+reentrantLock.lockInterruptibly();
+```
+
+## 公平锁和非公平锁的区别
+
+- 公平锁能保证：老的线程排队使用锁，新线程仍然排队使用锁。 
+- 非公平锁保证：老的线程排队使用锁，**但是无法保证新线程抢占已经在排队的线程的锁**。
+
+- 非公平锁的效率高于公平锁，因为非公平锁降低了线程被挂起的机率，后来的线程有一定机率逃离被挂起，避免了线程挂起的开销。
+
+两者获取锁的源码解读如下
+
+```java
+/**
+ * Performs non-fair tryLock.  tryAcquire is implemented in
+ * subclasses, but both need nonfair try for trylock method.
+ */
+// 非公平锁获取锁的方法
+final boolean nonfairTryAcquire(int acquires) {
+    final Thread current = Thread.currentThread();
+    int c = getState();
+    if (c == 0) {
+        if (compareAndSetState(0, acquires)) {
+            setExclusiveOwnerThread(current);
+            return true;
+        }
+    }
+    else if (current == getExclusiveOwnerThread()) {
+        int nextc = c + acquires;
+        if (nextc < 0) // overflow
+            throw new Error("Maximum lock count exceeded");
+        setState(nextc);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Fair version of tryAcquire.  Don't grant access unless
+ * recursive call or no waiters or is first.
+ */
+// 公平锁获取锁的方法
+protected final boolean tryAcquire(int acquires) {
+    final Thread current = Thread.currentThread();
+    int c = getState();
+    if (c == 0) {
+        // 公平锁多出了 hasQueuedPredecessors() 方法
+        // 该方法保障了不论是新的线程还是已经排队的线程都顺序使用锁
+        if (!hasQueuedPredecessors() &&
+            compareAndSetState(0, acquires)) {
+            setExclusiveOwnerThread(current);
+            return true;
+        }
+    }
+    else if (current == getExclusiveOwnerThread()) {
+        int nextc = c + acquires;
+        if (nextc < 0)
+            throw new Error("Maximum lock count exceeded");
+        setState(nextc);
+        return true;
+    }
+    return false;
+}
+```
+
+参考 
+
+- https://blog.csdn.net/zhilinboke/article/details/83104597 （写的非常好）
+- https://blog.csdn.net/m47838704/article/details/80013056
