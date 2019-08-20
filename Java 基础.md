@@ -31,7 +31,7 @@
 
 ## “==” 和 “equals” 的区别
 
-## final修饰符
+## final 关键字
 
 - final 修饰的类，不能被继承
 - final 修饰的方法，不能被重写
@@ -39,11 +39,13 @@
 
 **因为父类的 private 修饰的方法是不能被子类重写，所以 private 修饰的方法默认隐性被 final 修饰的。**
 
-## static修饰符
+## static 关键字
 
-## protected修饰符
+静态内部类
 
-## String类为什么不可变
+## protected 关键字
+
+## String 为什么是不可变类
 
 1. 首先我们看看什么是不可变对象？
 
@@ -75,6 +77,8 @@
    ```
 
    
+
+## volatile 关键字
 
    
 
