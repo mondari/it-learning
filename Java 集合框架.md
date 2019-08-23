@@ -1,8 +1,10 @@
-# Java Collection Framework
+[TOC]
 
-- ArrayList：有序，可重复，支持空元素，线程不安全，初始容量为10
+
+- ArrayList：有序，可重复，支持空元素，线程不安全，初始容量为10。
 - Vector：有序，可重复，支持空元素，线程安全，初始容量为10。Vector 其实就是异步的ArrayList，其它都和 Vector 相同。
-- LinkedList：双向链表，有序，可重复，支持空元素，线程不安全
+- LinkedList：双向链表，有序，可重复，支持空元素，线程不安全。
+- Stack：栈，继承 Vector，一般不推荐使用，而是使用 Deque 接口的实现类。
 
 
 
@@ -27,3 +29,41 @@ HashMap 和 Hashtable 都是哈希表实现，两者大体上相同，不同的�
 
 - Queue
 - Deque
+
+
+
+## 为什么使用 ConcurrentHashMap？
+
+因为 HashMap 不是线程安全，而 Hashtable 虽然是线程安全的，但也只是简单地把 HashMap 的方法声明为 synchronized 来保证线程安全，这样就会导致所有并发操作都竞争同一把锁，一个线程在同步操作时，另一个线程只能等待，大大降低了并发操作的效率。另外，使用 Collections 工具类提供的同步包装器 SynchronizedMap 也无法满足高并发的需求，虽然它的方法不再声明为 synchronized，但是它只是利用传入的 Map 来构造另一个版本，使用 this 作为同步监视器，并没有真正意义上的改进！所以，Hashtable 和 Collections 的同步包装器只是适合低并发的场景。
+
+```java
+private static class SynchronizedMap<K,V>
+    implements Map<K,V>, Serializable {
+    private static final long serialVersionUID = 1978198479659022715L;
+
+    private final Map<K,V> m;     // Backing Map
+    final Object      mutex;        // Object on which to synchronize
+
+    SynchronizedMap(Map<K,V> m) {
+        this.m = Objects.requireNonNull(m);
+        mutex = this;
+    }
+
+    SynchronizedMap(Map<K,V> m, Object mutex) {
+        this.m = m;
+        this.mutex = mutex;
+    }
+
+    public int size() {
+        synchronized (mutex) {return m.size();}
+    }
+    
+    //...
+}    
+```
+
+
+
+## ConcurrentHashMap 如何实现？
+
+JDK 7 和 JDK 8 两个版本的区别。
