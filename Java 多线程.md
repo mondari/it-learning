@@ -113,15 +113,17 @@ public synchronized void method() {
 
 - synchronized 是 JVM 实现的，而 ReentrantLock 是 JDK 实现的。
 
-- synchronized 有的功能， ReentrantLock 都有，而且更多。
+- synchronized 有的功能， ReentrantLock 都有，而且更多，能够实现很多 synchronized 无法做到的细节控制。
+
+- 所以，我们通常说 synchronized 是轻量级锁，而 ReentrantLock 是重量级锁。
 
 - synchronized 会自动释放锁，而 ReentrantLock 需要手动释放。
 
 - synchronized 的锁是非公平的，而 ReentrantLock 的锁支持公平和不公平，但是默认情况下是非公平的，可通过 new ReentrantLock(true) 切换为公平锁。
 
-- ReentrantLock 支持定时锁、可中断锁
+- ReentrantLock 支持超时锁、中断锁
 
-- ReentrantLock 支持同时绑定多个 Condition 对象。
+- ReentrantLock 支持绑定多个 Condition 对象。
 
   JDK1.8 后，两者的性能已经没什么区别，所以，如果不需要使用 ReentrantLock 的高级功能，推荐使用 synchronized。
 
@@ -206,3 +208,148 @@ protected final boolean tryAcquire(int acquires) {
 
 - https://blog.csdn.net/zhilinboke/article/details/83104597 （写的非常好）
 - https://blog.csdn.net/m47838704/article/details/80013056
+
+## 什么是死锁？如何诊断死锁？如何避免死锁？
+
+两个或多个线程之间互相等待对方持有锁的释放而陷入无限等待状态。
+
+一个锁的例子：
+
+```java
+public class DeadLock extends Thread {
+    private final String lock1;
+    private final String lock2;
+
+    public DeadLock(String name, String lock1, String lock2) {
+        super(name);
+        this.lock1 = lock1;
+        this.lock2 = lock2;
+    }
+
+    @Override
+    public void run() {
+        synchronized (lock1) {
+            // do something
+            System.out.println(this.getName() + " obtained: " + lock1);
+
+            // sleep for a while
+            try {
+                Thread.sleep(1000L);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            synchronized (lock2) {
+                // do something
+                System.out.println(this.getName() + " obtained: " + lock2);
+            }
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        String lockA = "lockA";
+        String lockB = "lockB";
+        DeadLock t1 = new DeadLock("Thread1", lockA, lockB);
+        DeadLock t2 = new DeadLock("Thread2", lockB, lockA);
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+    }
+}
+```
+
+结果如下：
+
+```bash
+Thread1 obtained: lockA
+Thread2 obtained: lockB
+```
+
+使用 jstack 可以诊断死锁：
+
+```bash
+$ jstack <pid>
+Found one Java-level deadlock:
+=============================
+"Thread2":
+  waiting to lock monitor 0x000000001c7de178 (object 0x000000076b959558, a java.lang.String),
+  which is held by "Thread1"
+"Thread1":
+  waiting to lock monitor 0x000000001c7de018 (object 0x000000076b959590, a java.lang.String),
+  which is held by "Thread2"
+
+Java stack information for the threads listed above:
+===================================================
+"Thread2":
+        at com.mondari.DeadLock.run(DeadLock.java:28)
+        - waiting to lock <0x000000076b959558> (a java.lang.String)
+        - locked <0x000000076b959590> (a java.lang.String)
+"Thread1":
+        at com.mondari.DeadLock.run(DeadLock.java:28)
+        - waiting to lock <0x000000076b959590> (a java.lang.String)
+        - locked <0x000000076b959558> (a java.lang.String)
+
+Found 1 deadlock.
+```
+
+当然也可以使用 Java 提供的标准管理 API，ThreadMXBean 来定位死锁：
+
+```java
+public static void main(String[] args) throws InterruptedException {
+    ThreadMXBean mbean = ManagementFactory.getThreadMXBean();
+    Runnable dlCheck = () -> {
+        long[] threadIds = mbean.findDeadlockedThreads();
+        if (threadIds != null) {
+            ThreadInfo[] threadInfos = mbean.getThreadInfo(threadIds);
+            System.out.println("Detected deadlock threads:");
+            for (ThreadInfo threadInfo : threadInfos) {
+                System.out.println(threadInfo.getThreadName());
+            }
+        }
+    };
+
+    ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    // 稍等 5 秒，然后每 10 秒进行一次死锁扫描
+    scheduler.scheduleAtFixedRate(dlCheck, 5L, 10L, TimeUnit.SECONDS);
+
+    // 死锁样例代码
+}
+
+```
+
+结果如下：
+
+```bash
+Thread1 obtained: lockA
+Thread2 obtained: lockB
+Detected deadlock threads:
+Thread2
+Thread1
+```
+
+但是要注意的是，对线程进行快照本身是一个相对重量级的操作，要慎重选择频率和时机。
+
+
+
+如何避免死锁？这里举两个方法
+
+1. 设计好锁的获取顺序
+
+2. 非阻塞式获取锁或带超时获取锁。
+
+   ```java
+   if (lock.tryLock() || lock.tryLock(timeout, unit)) {
+       // ...
+   }
+   ```
+
+   
+
+极客时间版权所有: https://time.geekbang.org/column/article/9266
+
+
+
+## 银行家算法
+
+## 生产者消费者问题
