@@ -353,3 +353,46 @@ Thread1
 ## 银行家算法
 
 ## 生产者消费者问题
+
+## Round-Robin 循环调度算法
+
+编写一个线程安全的负载均衡轮询算法
+
+```java
+/**
+ * 线程安全
+ */
+private static AtomicInteger next = new AtomicInteger();
+
+public static void main(String[] args) {
+    List<Object> serverlist = Arrays.asList(0, 1, 2, 3, 4);
+
+    for (int i = 0; i < 10; i++) {
+        System.out.println(roundRobbin(serverlist));
+    }
+
+}
+
+static Object roundRobbin(List<Object> list) {
+
+    int i = next.getAndIncrement() % list.size();
+    return list.get(i);
+
+}
+```
+
+结果如下：
+
+```bash
+0
+1
+2
+3
+4
+0
+1
+2
+3
+4
+```
+
