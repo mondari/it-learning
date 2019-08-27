@@ -354,9 +354,9 @@ Thread1
 
 ## 生产者消费者问题
 
-## Round-Robin 循环调度算法
+## Round-Robin 轮询调度算法
 
-编写一个线程安全的负载均衡轮询算法
+编写一个线程安全的负载均衡轮询调度算法
 
 ```java
 /**
@@ -365,6 +365,7 @@ Thread1
 private static AtomicInteger next = new AtomicInteger();
 
 public static void main(String[] args) {
+    // 服务器列表
     List<Object> serverlist = Arrays.asList(0, 1, 2, 3, 4);
 
     for (int i = 0; i < 10; i++) {
@@ -396,3 +397,6 @@ static Object roundRobbin(List<Object> list) {
 4
 ```
 
+轮询调度算法假设所有服务器的处理能力都相同，不关心每台服务器的当前连接数和响应速度，当请求服务间隔时间变化比较大时，容易导致服务器间的负载不平衡。所以该算法只适合于服务器组中的所有服务器都有相同的软硬件配置并且平均服务请求相对均衡的情况。
+
+参考：https://blog.csdn.net/wordwarwordwar/article/details/79953880
