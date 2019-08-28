@@ -27,6 +27,64 @@
 
 参考 [Primitive Data Types](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)
 
+注：浮点数字面量默认表示 double 类型
+
+## 静态代码块、非静态代码块、构造方法执行顺序
+
+```java
+class Parent {
+
+    static {
+        System.out.println("static code block in Parent");
+    }
+
+    {
+        System.out.println("code block in Parent");
+    }
+
+    Parent() {
+        System.out.println("constructor in Parent");
+    }
+
+}
+
+class Son extends Parent {
+
+    static {
+        System.out.println("static code block in Son");
+    }
+
+    {
+        System.out.println("code block in Son");
+    }
+
+    Son() {
+        System.out.println("constructor in Son");
+    }
+}
+
+public class Test {
+
+    public static void main(String[] args) {
+        new Son();
+    }
+
+}
+```
+
+执行结果如下：
+
+```bash
+static code block in Parent
+static code block in Son
+code block in Parent
+constructor in Parent
+code block in Son
+constructor in Son
+```
+
+由此可见，静态代码块是在类加载的时候执行，非静态代码是在构造方法调用前执行，父类的构造方法先于子类执行
+
 ## 重写（override）和重载（overload）的区别
 
 重写：父类和子类中方法的名称和参数相同，但实现不同；
