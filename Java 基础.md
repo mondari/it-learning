@@ -94,10 +94,15 @@ constructor in Son
 ## 接口和抽象类的区别
 
 1. 接口中的所有方法都是抽象的，而抽象类只要求至少一个抽象方法；
-2. 一个类可以实现多个接口，但只能继承一个抽象类；
+2. 一个类可以实现多个接口，但只能继承一个抽象类；**另外，接口也可以继承**
 3. 接口中的变量只能是 public static final，且默认就是 public static final；
 4. 接口中的方法只能是 public，且默认声明为 public abstract；
 5. Java 8 后接口允许有默认方法和静态方法，但必须要有方法体。
+
+使用场景
+
+- 可以把公共的方法提取到抽象类中，然后具体的方法可以留给子类实现即可
+- 接口表示的是这个对象能做什么，抽象类表示的是这个对象是什么。所以，如果关注对象的操作的话，使用接口。
 
 ## Exception 和 Error 的区别
 
@@ -158,6 +163,26 @@ NoClassDefFoundError：如果Java虚拟机或 ClassLoader 实例试图加载**�
 
 ## “==” 和 “equals” 的区别
 
+- ”==“，如果表达式两边是基本数据类型或包装类，则比较两者的值是否相等。如果是其它引用数据类型，则比较两者的内存地址是否相同
+- ”equals“，如果表达式两边是包装类，则比较两者的类型和值是否都相同。如果是其它引用数据类型，则看具体实现，默认实现是”==“比较两者的内存地址。
+
+```java
+// Integer 类的实现
+public boolean equals(Object obj) {
+    if (obj instanceof Integer) {
+        return value == ((Integer)obj).intValue();
+    }
+    return false;
+}
+
+// Object 类的实现
+public boolean equals(Object obj) {
+    return (this == obj);
+}
+```
+
+
+
 ## final 关键字
 
 - final 修饰的类，不能被继承
@@ -173,6 +198,14 @@ NoClassDefFoundError：如果Java虚拟机或 ClassLoader 实例试图加载**�
 ## protected 关键字
 
 ## String 为什么是不可变类
+
+一是为了提高性能，使其能够缓存到字符串常量池，
+
+二是为了线程安全，多线程场景下数据不会发生篡改，
+
+三是为了能够缓存字符串的哈希值。
+
+
 
 1. 首先我们看看什么是不可变对象？
 
@@ -203,3 +236,15 @@ NoClassDefFoundError：如果Java虚拟机或 ClassLoader 实例试图加载**�
 
 ## volatile 关键字
 
+volatile 有两个作用，一是保证变量的可见性，二是防止指令重排序优化。
+
+什么是变量的可见性：一个线程对共享变量进行修改，另一个线程能立即看到这个修改。
+
+
+
+## cookie 和 session 的区别
+
+- cookie 存放在客户端浏览器上，而 session 存放在服务器上。
+- cookie 不安全
+- cookie 有大小和数量的限制，session 的大小取决于服务器的内存
+- 一般建议把登录信息可以存放在 session，其它信息存放在 cookie

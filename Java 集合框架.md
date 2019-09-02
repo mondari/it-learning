@@ -12,6 +12,10 @@
 
 - Arrays工具类里的 sort 方法使用了双轴快速排序算法（Dual-Pivot QuickSort），binarySearch 方法使用了二分查找算法。
 
+## ArrayList 和 数组的区别
+
+
+
 ## Map
 
 - HashMap：无序，支持空的键和值，非线程安全，初始容量设置过高会影响遍历性能。默认初始容量为16，默认负载系数为0.75。在哈希散列正常的情况下，可以提供常数时间复杂度的添加和删除操作。
@@ -107,3 +111,5 @@ private static class SynchronizedMap<K,V>
 ## ConcurrentHashMap 如何实现？
 
 JDK 7 和 JDK 8 两个版本的区别。
+
+JDK 8 中，ConcurrentHashMap 使用 volatile 保证了哈希表的可见性。
