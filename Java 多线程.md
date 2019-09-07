@@ -34,20 +34,166 @@
 
 参考 [Java 并发](https://cyc2018.github.io/CS-Notes/#/notes/Java%20%E5%B9%B6%E5%8F%91)
 
-## 线程池有哪些?
+## 线程池有哪些?它们的区别和使用场景？
 
 Java 的线程池有如下四种，其内部实现都是基于 ThreadPoolExecutor
 
 ```java
-//单线程的线程池
+//单线程的线程池（适用于一个接着一个执行任务的场景）
 ExecutorService newSingleThreadExecutor = Executors.newSingleThreadExecutor();
-//固定大小的线程池
+//固定大小的线程池（适用于执行少量耗时较长的任务）
 ExecutorService newFixedThreadPool = Executors.newFixedThreadPool(int nThreads);
-//带缓存的线程池
+//带缓存的线程池（适用于执行大量耗时较短的任务）
 ExecutorService newCachedThreadPool = Executors.newCachedThreadPool();
-//计划任务线程池
+//计划任务线程池（适用于执行周期性的任务）
 ExecutorService newScheduledThreadPool = Executors.newScheduledThreadPool(int corePoolSize);
 ```
+
+它们的构造函数如下
+
+```java
+/**
+ * 单线程的线程池
+ *
+ * 线程池中保留的线程数以及允许的最大线程数都是1，多余空闲线程保留的最长时间为0s
+ * 任务队列的数据结构是 LinkedBlockingQueue
+ *
+ * @return
+ */
+public static ExecutorService newSingleThreadExecutor() {
+    return new FinalizableDelegatedExecutorService
+           (new ThreadPoolExecutor(1, 1,
+                                   0L, TimeUnit.MILLISECONDS,
+                                   new LinkedBlockingQueue<Runnable>()));
+}
+
+/**
+ * 固定大小的线程池
+ *
+ * 线程池中保留的线程数以及允许的最大线程数都是nThreads，多余空闲线程保留的最长时间为0s
+ * 任务队列的数据结构是 LinkedBlockingQueue
+ *
+ * @param nThreads
+ * @return
+ */
+public static ExecutorService newFixedThreadPool(int nThreads) {
+    return new ThreadPoolExecutor(nThreads, nThreads,
+                                  0L, TimeUnit.MILLISECONDS,
+                                  new LinkedBlockingQueue<Runnable>());
+}
+
+/**
+ * 带缓存的线程池
+ *
+ * 线程池中保留的线程数是0，允许的最大线程数都是Integer的最大值，
+ * 多余空闲线程保留的最长时间为60s，任务队列的数据结构是 SynchronousQueue
+ * 
+ * @return
+ */
+public static ExecutorService newCachedThreadPool() {
+    return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                                  60L, TimeUnit.SECONDS,
+                                  new SynchronousQueue<Runnable>());
+}
+
+/**
+ * 任务计划线程池
+ *
+ * ScheduledThreadPoolExecutor 其实也是调用 ThreadPoolExecutor 的构造方法
+ * 
+ * 线程池中保留的线程数是corePoolSize，允许的最大线程数都是Integer的最大值，
+ * 多余空闲线程保留的最长时间为0s，任务队列的数据结构是 DelayedWorkQueue
+ * 
+ * @param corePoolSize
+ * @return
+ */
+public static ScheduledExecutorService newScheduledThreadPool(int corePoolSize) {
+    return new ScheduledThreadPoolExecutor(corePoolSize);
+}
+```
+
+线程池的底层使用的是 ThreadPoolExecutor：
+
+```java
+/**
+ * Creates a new {@code ThreadPoolExecutor} with the given initial
+ * parameters and default thread factory and rejected execution handler.
+ * It may be more convenient to use one of the {@link Executors} factory
+ * methods instead of this general purpose constructor.
+ *
+ * @param corePoolSize 线程池保留的线程数
+ *        the number of threads to keep in the pool, even
+ *        if they are idle, unless {@code allowCoreThreadTimeOut} is set
+ * @param maximumPoolSize 线程池允许的最大线程数
+ *        the maximum number of threads to allow in the
+ *        pool
+ * @param keepAliveTime 多余空闲线程保留的最长时间
+ *        when the number of threads is greater than
+ *        the core, this is the maximum time that excess idle threads
+ *        will wait for new tasks before terminating.
+ * @param unit 时间单位
+ *        the time unit for the {@code keepAliveTime} argument
+ * @param workQueue 存放待执行任务的工作队列
+ *        the queue to use for holding tasks before they are
+ *        executed.  This queue will hold only the {@code Runnable}
+ *        tasks submitted by the {@code execute} method.
+ * @throws IllegalArgumentException if one of the following holds:<br>
+ *         {@code corePoolSize < 0}<br>
+ *         {@code keepAliveTime < 0}<br>
+ *         {@code maximumPoolSize <= 0}<br>
+ *         {@code maximumPoolSize < corePoolSize}
+ * @throws NullPointerException if {@code workQueue} is null
+ */
+public ThreadPoolExecutor(int corePoolSize,
+                          int maximumPoolSize,
+                          long keepAliveTime,
+                          TimeUnit unit,
+                          BlockingQueue<Runnable> workQueue) {
+    this(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue,
+         Executors.defaultThreadFactory(), defaultHandler);
+}
+
+/**
+ * ScheduledThreadPoolExecutor 其实也是调用 ThreadPoolExecutor 的构造方法
+ * 
+ * Creates a new {@code ScheduledThreadPoolExecutor} with the
+ * given core pool size.
+ *
+ * @param corePoolSize the number of threads to keep in the pool, even
+ *        if they are idle, unless {@code allowCoreThreadTimeOut} is set
+ * @throws IllegalArgumentException if {@code corePoolSize < 0}
+ */
+public ScheduledThreadPoolExecutor(int corePoolSize) {
+    super(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,
+          new DelayedWorkQueue());
+}
+```
+
+由上可知，线程池中常使用的队列是 LinkedBlockingQueue、SynchronousQueue 和 DelayedWorkQueue，另外可用于线程池的队列还有 ArrayBlockingQueue 和 PriorityBlockingQueue。
+
+
+
+[当一个任务通过 execute(Runnable) 方法欲添加到线程池时](https://blog.csdn.net/wangwenhui11/article/details/6760474)： 
+
+- 如果当前线程池中线程的数量小于 corePoolSize，则创建新的线程来处理添加的任务，即使线程池中的线程都处于空闲状态。
+- 如果当前线程池中线程的数量等于 corePoolSize，则把任务放入缓冲队列里。
+- 如果缓冲队列满了，且当前线程池中线程的数量小于 maximumPoolSize，则创建新的线程来处理添加的任务
+- 如果缓冲队列满了，且当前线程池中线程的数量等于 maximumPoolSize，则根据 handler 所指定的策略来拒绝处理此任务。
+
+也就是说，任务的处理方式需要依次判断三个条件是否满了：核心线程 corePoolSize、任务队列 workQueue、最大线程 maximumPoolSize，如果三者都满了，则根据 handler 所指定的策略来拒绝处理此任务。
+
+另外当线程池中的线程数量大于 corePoolSize时，如果某线程空闲时间超过 keepAliveTime，线程将被终止。这样，线程池可以动态的调整池中的线程数。
+
+
+
+ThreadPoolExecutor 提供了四种拒绝策略：
+
+- ThreadPoolExecutor.AbortPolicy：直接抛出 RejectedExecutionException 拒绝执行异常，简单粗暴。
+- ThreadPoolExecutor.CallerRunsPolicy：直接调用任务的 run 方法去运行，简单粗暴，不过会阻塞主线程。
+- ThreadPoolExecutor.DiscardPolicy：啥都不干，简单粗暴
+- ThreadPoolExecutor.DiscardOldestPolicy：抛弃任务队列中最旧的任务也就是最先加入队列的任务，再把这个新任务添加进去。
+
+
 
 ## 线程相关的方法
 
@@ -353,6 +499,73 @@ Thread1
 ## 银行家算法
 
 ## 生产者消费者问题
+
+参考 https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/BlockingQueue.html
+
+```java
+public class Test {
+
+    public static void main(String[] args) {
+        BlockingQueue q = new ArrayBlockingQueue(2);
+        Producer p = new Producer(q);
+        Consumer c1 = new Consumer(q);
+        Consumer c2 = new Consumer(q);
+        new Thread(p).start();
+        new Thread(c1).start();
+        new Thread(c2).start();
+    }
+
+}
+
+class Producer implements Runnable {
+    private final BlockingQueue queue;
+
+    Producer(BlockingQueue q) {
+        queue = q;
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                queue.put(produce());
+            }
+        } catch (InterruptedException ex) {
+            //...
+        }
+    }
+
+    Object produce() {
+        System.out.println("生产");
+        return "produce";
+    }
+}
+
+class Consumer implements Runnable {
+    private final BlockingQueue queue;
+
+    Consumer(BlockingQueue q) {
+        queue = q;
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                consume(queue.take());
+            }
+        } catch (InterruptedException ex) {
+            //...
+        }
+    }
+
+    void consume(Object x) {
+        System.out.println("消费");
+    }
+}
+```
+
+
 
 ## Round-Robin 轮询调度算法
 

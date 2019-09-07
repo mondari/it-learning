@@ -94,9 +94,19 @@ constructor in Son
 ## 接口和抽象类的区别
 
 1. 接口中的所有方法都是抽象的，而抽象类只要求至少一个抽象方法；
-2. 一个类可以实现多个接口，但只能继承一个抽象类；**另外，接口也可以继承**
+
+2. 一个类可以实现多个接口，但只能继承一个抽象类；**另外，接口也可以继承接口，比如**
+
+   ```java
+   public interface BlockingQueue<E> extends Queue<E>
+   ```
+
+   BlockingQueue 和 Queue 都是接口。
+
 3. 接口中的变量只能是 public static final，且默认就是 public static final；
+
 4. 接口中的方法只能是 public，且默认声明为 public abstract；
+
 5. Java 8 后接口允许有默认方法和静态方法，但必须要有方法体。
 
 使用场景
