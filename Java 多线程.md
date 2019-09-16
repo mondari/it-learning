@@ -2,10 +2,9 @@
 
 ## 进程与线程的区别
 
-- **进程**：进程是正在运行的程序。
-- **线程**：线程是进程的执行单元，是程序执行的最小单位。
-- **两者的关系**：
-  一个进程可以拥有多个线程，一个线程必须有一个父进程。线程拥有自己的堆栈，它与父进程的其他线程共享该进程所拥有的全部资源。
+- **进程**：进程是正在运行的程序。程序需要加载到内存中才能运行，在内存中运行的程序叫做进程。
+- **线程**：线程是进程的执行单元，是系统调度的最小单元。
+- **两者的关系**：一个进程可以拥有多个线程，一个线程必须有一个父进程。线程拥有自己的栈、寄存器、本地存储，它与父进程的其他线程共享该进程所拥有的全部资源。
 
 ## 线程的六种状态
 
@@ -55,7 +54,7 @@ ExecutorService newScheduledThreadPool = Executors.newScheduledThreadPool(int co
 /**
  * 单线程的线程池
  *
- * 线程池中保留的线程数以及允许的最大线程数都是1，多余空闲线程保留的最长时间为0s
+ * 线程池中保留的线程数以及允许的最大线程数都是1，额外的线程能够闲置的时间为0s
  * 任务队列的数据结构是 LinkedBlockingQueue
  *
  * @return
@@ -70,7 +69,7 @@ public static ExecutorService newSingleThreadExecutor() {
 /**
  * 固定大小的线程池
  *
- * 线程池中保留的线程数以及允许的最大线程数都是nThreads，多余空闲线程保留的最长时间为0s
+ * 线程池中保留的线程数以及允许的最大线程数都是nThreads，额外的线程能够闲置的时间为0s
  * 任务队列的数据结构是 LinkedBlockingQueue
  *
  * @param nThreads
@@ -86,7 +85,7 @@ public static ExecutorService newFixedThreadPool(int nThreads) {
  * 带缓存的线程池
  *
  * 线程池中保留的线程数是0，允许的最大线程数都是Integer的最大值，
- * 多余空闲线程保留的最长时间为60s，任务队列的数据结构是 SynchronousQueue
+ * 额外的线程能够闲置的时间为60s，任务队列的数据结构是 SynchronousQueue
  * 
  * @return
  */
@@ -102,7 +101,7 @@ public static ExecutorService newCachedThreadPool() {
  * ScheduledThreadPoolExecutor 其实也是调用 ThreadPoolExecutor 的构造方法
  * 
  * 线程池中保留的线程数是corePoolSize，允许的最大线程数都是Integer的最大值，
- * 多余空闲线程保留的最长时间为0s，任务队列的数据结构是 DelayedWorkQueue
+ * 额外的线程能够闲置的时间为0s，任务队列的数据结构是 DelayedWorkQueue
  * 
  * @param corePoolSize
  * @return
@@ -127,7 +126,7 @@ public static ScheduledExecutorService newScheduledThreadPool(int corePoolSize) 
  * @param maximumPoolSize 线程池允许的最大线程数
  *        the maximum number of threads to allow in the
  *        pool
- * @param keepAliveTime 多余空闲线程保留的最长时间
+ * @param keepAliveTime 额外的线程能够闲置的时间
  *        when the number of threads is greater than
  *        the core, this is the maximum time that excess idle threads
  *        will wait for new tasks before terminating.
@@ -255,23 +254,20 @@ public synchronized void method() {
 
 尽量使用同步代码块而不是同步方法，减少同步范围，从而减少锁竞争。
 
+## 什么是线程安全问题？
+
+线程安全是指多线程访问同一数据不会产生不确定的结果。如果数据**不是共享的**，或者**不是可修改的**，也就不存在线程安全问题。
+
+PS：注意区分**线程安全**、**线程安全问题**这几个名词
+
 ## synchronized 和 ReentrantLock 的区别
 
-- synchronized 是 JVM 实现的，而 ReentrantLock 是 JDK 实现的。
-
-- synchronized 有的功能， ReentrantLock 都有，而且更多，能够实现很多 synchronized 无法做到的细节控制。
-
-- 所以，我们通常说 synchronized 是轻量级锁，而 ReentrantLock 是重量级锁。
-
+- synchronized 是 JVM 内部实现的，而 ReentrantLock 是 JDK 实现的。
 - synchronized 会自动释放锁，而 ReentrantLock 需要手动释放。
-
 - synchronized 的锁是非公平的，而 ReentrantLock 的锁支持公平和不公平，但是默认情况下是非公平的，可通过 new ReentrantLock(true) 切换为公平锁。
+- ReentrantLock 支持非阻塞锁（获取不到则返回 false）、超时锁、中断锁，并支持绑定多个 Condition 对象。
 
-- ReentrantLock 支持超时锁、中断锁
-
-- ReentrantLock 支持绑定多个 Condition 对象。
-
-  JDK1.8 后，两者的性能已经没什么区别，所以，如果不需要使用 ReentrantLock 的高级功能，推荐使用 synchronized。
+总的来说，synchronized 有的功能， ReentrantLock 都有，并支持更多高级功能。所以，我们通常说 synchronized 是轻量级锁，而 ReentrantLock 是重量级锁。需要注意的是，JDK1.8 后，两者的性能已经没什么区别，所以如果不需要使用 ReentrantLock 的高级功能，推荐使用 synchronized。
 
 参考 [Java 并发](https://cyc2018.github.io/CS-Notes/#/notes/Java%20%E5%B9%B6%E5%8F%91)
 
@@ -354,6 +350,12 @@ protected final boolean tryAcquire(int acquires) {
 
 - https://blog.csdn.net/zhilinboke/article/details/83104597 （写的非常好）
 - https://blog.csdn.net/m47838704/article/details/80013056
+
+## 什么是自旋锁？自旋锁的使用场景？
+
+线程在竞争锁失败的情况下，会不断循环获取锁，直到成功为止。
+
+自旋锁适合线程占用锁的时间非常短的场景，因为这种情况下自旋的资源消耗会小于线程进入阻塞状态的上下文开销。
 
 ## 什么是死锁？如何诊断死锁？如何避免死锁？
 
@@ -496,7 +498,7 @@ Thread1
 
 
 
-## 银行家算法
+## *银行家算法
 
 ## 生产者消费者问题
 
@@ -618,9 +620,11 @@ static Object roundRobbin(List<Object> list) {
 
 ## ‌如何设计一个高并发系统
 
-MQ：限流
-缓存：提高查询效率，保护后端存储
-系统拆分：一个系统拆分成多个子系统，每个系统连接一个数据库
-分库分表：降低单表单库的压力
-主从复制，读写分离：高可用
-ElasticSearch：
+要设计一个高并发系统，需要具备以下条件
+
+- MQ：限流
+- 缓存：提高查询效率，保护后端存储
+- 系统拆分：一个系统拆分成多个子系统，每个系统连接一个数据库
+- 分库分表：降低单表单库的压力
+- 主从复制，读写分离：MySQL 高可用
+- ElasticSearch：

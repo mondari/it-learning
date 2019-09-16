@@ -14,7 +14,10 @@
 
 ## ArrayList 和 数组的区别
 
+- ArrayList：基于动态数组，容量可以动态增长，但由于扩容时使用 Arrays.copyOf 复制数组，所以会牺牲一定的性能；
+- 数组：由于容量固定无法动态增长，所以插入性能比 ArrayList 高；
 
+总结：优先使用数组，无法确定数组大小时才使用 ArrayList ！
 
 ## Map
 
@@ -70,14 +73,53 @@ static class Entry<K,V> extends HashMap.Node<K,V> {
 - LinkedHashSet：双向链表，有序（按插入顺序排序），不可重复，支持空元素，线程不安全，容量大小不影响遍历性能。
 - TreeSet：有序，不可重复，**元素不能为空**，线程不安全
 
-## Queue
+## Queue 和 Deque 和 Stack
 
-- Queue
-- Deque
+- Queue：队列，FIFO 的数据结构
+- Deque：支持对头尾都进行插入和删除的队列
+- Stack：栈，LIFO 的数据结构
 
-### Blocking Queue
 
-Summary of BlockingQueue methods
+
+Queue 提供以下操作方法：
+
+|             | *Throws exception*                                           | *Returns special value*                                      |
+| ----------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **Insert**  | [`add(e)`](https://docs.oracle.com/javase/8/docs/api/java/util/Queue.html#add-E-) | [`offer(e)`](https://docs.oracle.com/javase/8/docs/api/java/util/Queue.html#offer-E-) |
+| **Remove**  | [`remove()`](https://docs.oracle.com/javase/8/docs/api/java/util/Queue.html#remove--) | [`poll()`](https://docs.oracle.com/javase/8/docs/api/java/util/Queue.html#poll--) |
+| **Examine** | [`element()`](https://docs.oracle.com/javase/8/docs/api/java/util/Queue.html#element--) | [`peek()`](https://docs.oracle.com/javase/8/docs/api/java/util/Queue.html#peek--) |
+
+Deque 提供以下操作方法：
+
+|             | **First Element (Head)**                                     | **Last Element (Tail)**                                      |                                                              |                                                              |
+| ----------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+|             | *Throws exception*                                           | *Special value*                                              | *Throws exception*                                           | *Special value*                                              |
+| **Insert**  | [`addFirst(e)`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#addFirst-E-) | [`offerFirst(e)`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#offerFirst-E-) | [`addLast(e)`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#addLast-E-) | [`offerLast(e)`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#offerLast-E-) |
+| **Remove**  | [`removeFirst()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#removeFirst--) | [`pollFirst()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#pollFirst--) | [`removeLast()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#removeLast--) | [`pollLast()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#pollLast--) |
+| **Examine** | [`getFirst()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#getFirst--) | [`peekFirst()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#peekFirst--) | [`getLast()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#getLast--) | [`peekLast()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#peekLast--) |
+
+Queue 和 Deque 操作方法的对比：
+
+| **Queue Method**                                             | **Equivalent Deque Method**                                  |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| [`add(e)`](https://docs.oracle.com/javase/8/docs/api/java/util/Queue.html#add-E-) | [`addLast(e)`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#addLast-E-) |
+| [`offer(e)`](https://docs.oracle.com/javase/8/docs/api/java/util/Queue.html#offer-E-) | [`offerLast(e)`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#offerLast-E-) |
+| [`remove()`](https://docs.oracle.com/javase/8/docs/api/java/util/Queue.html#remove--) | [`removeFirst()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#removeFirst--) |
+| [`poll()`](https://docs.oracle.com/javase/8/docs/api/java/util/Queue.html#poll--) | [`pollFirst()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#pollFirst--) |
+| [`element()`](https://docs.oracle.com/javase/8/docs/api/java/util/Queue.html#element--) | [`getFirst()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#getFirst--) |
+| [`peek()`](https://docs.oracle.com/javase/8/docs/api/java/util/Queue.html#peek--) | [`peekFirst()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#peek--) |
+
+Stack 和 Deque 操作方法的对比：
+
+| **Stack Method**                                             | **Equivalent Deque Method**                                  |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| [`push(e)`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#push-E-) | [`addFirst(e)`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#addFirst-E-) |
+| [`pop()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#pop--) | [`removeFirst()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#removeFirst--) |
+| [`peek()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#peek--) | [`peekFirst()`](https://docs.oracle.com/javase/8/docs/api/java/util/Deque.html#peekFirst--) |
+
+## BlockingQueue
+
+BlockingQueue 提供以下操作方法，它比 Queue 接口新增了两列操作 Blocks 和 Times out。
 
 
 |             | *Throws exception*                                           | *Special value*                                              | *Blocks*                                                     | *Times out*                                                  |
@@ -86,7 +128,13 @@ Summary of BlockingQueue methods
 | **Remove**  | [`remove()`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/BlockingQueue.html#remove-java.lang.Object-) | [`poll()`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/BlockingQueue.html#poll-long-java.util.concurrent.TimeUnit-) | [`take()`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/BlockingQueue.html#take--) | [`poll(time, unit)`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/BlockingQueue.html#poll-long-java.util.concurrent.TimeUnit-) |
 | **Examine** | [`element()`](https://docs.oracle.com/javase/8/docs/api/java/util/Queue.html#element--) | [`peek()`](https://docs.oracle.com/javase/8/docs/api/java/util/Queue.html#peek--) | *not applicable*                                             | *not applicable*                                             |
 
+## 有界队列和无界队列
 
+有界队列：ArrayBlockingQueue（基于数组，界限就是容量）、LinkedBlockingQueue（基于链表，理论上是无界的，但实际上是有界的，如果不指定容量，则默认最大容量是Integer.MAX_VALUE）
+
+无界队列：PriorityBlockingQueue、ConcurrentLinkedQuque
+
+SynchronousQueue：容量为0，每个删除操作都要等待插入操作，反之每个插入操作也都要等待删除动作
 
 ## 为什么使用 ConcurrentHashMap？
 

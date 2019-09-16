@@ -147,7 +147,7 @@ static final int MAXIMUM_CAPACITY = 1 << 30;
 
 
 
-### 知识点：HashMap中的tableSizeFor方法
+### 知识点：HashMap 中的 tableSizeFor 方法
 
 我们在 `new HashMap()` 时，如果指定的参数初始容量不是2的幂的话，HashMap会调用tableSizeFor方法，找到大于或等于初始容量的2的最小幂作为初始容量。例如，我们传入的初始容量大小为3，而大于或等于3的2的最小幂为4，所以HashMap的容量实际上是4而不是3。同理，如果我们传入0，实际上1；传入6，实际上是8；传入10，实际上是16……
 
@@ -219,9 +219,9 @@ static final int tableSizeFor(int cap) {
 
 
 
-### 知识点：HashMap中的hash方法
+### 知识点：HashMap 中的 hash 方法
 
-HashMap中key的哈希值并不是通过hashCode方法获得的，而是通过HashMap中的hash方法获得的。如以下代码所示
+HashMap 中 key 的哈希值并不是通过 hashCode 方法获得的，而是通过 HashMap 中的 hash 方法获得的。如以下代码所示
 
 ```java
 /**
@@ -247,7 +247,7 @@ static final int hash(Object key) {
 
 ```
 
-由上可知，HashMap中key的哈希值其实是通过 `key.hashCode() ^ (h >>> 16)` 来计算的，`h >>> 16` 是将哈希值无符号右移16位，高位补零。这样子做就是为了让低16位同时包含高位和低位的信息，在计算下标时，由于高位和低位的同时参与，可以减少哈希碰撞。
+由上可知，HashMap 中 key 的哈希值其实是通过 `key.hashCode() ^ (h >>> 16)` 来计算的，`h >>> 16` 是将哈希值无符号右移16位，高位补零。这样子做就是为了让低16位同时包含高位和低位的信息，在计算下标时，由于高位和低位的同时参与，可以减少哈希碰撞。
 
 ## 扩容机制
 
@@ -356,8 +356,8 @@ static final class TreeNode<K,V> extends LinkedHashMap.Entry<K,V> {
 2. 判断插入位置是否已有元素，没有则直接插入，有则走下一步
 3. 判断已有元素和插入元素的哈希值和键值是否相等，相等则覆盖，不相等则走下一步
 4. 判断已有元素是链表节点还是树节点，然后遍历链表或树，查看有无键相同的节点，没有则新增，已有则覆盖
-6. 是否树化
-7. 是否扩容
+6. 是否要树化
+7. 是否要扩容
 
 核心代码解读如下：
 
