@@ -60,12 +60,10 @@ insert into student values('08' , '王菊' , '1990-01-20' , '女');
 insert into course values('01' , '语文' , '02');
 insert into course values('02' , '数学' , '01');
 insert into course values('03' , '英语' , '03');
-
 --教师表测试数据
 insert into teacher values('01' , '张三');
 insert into teacher values('02' , '李四');
 insert into teacher values('03' , '王五');
-
 --成绩表测试数据
 insert into score values('01' , '01' , 80);
 insert into score values('01' , '02' , 90);
@@ -92,19 +90,29 @@ insert into score values('07' , '03' , 98);
 
 ```sql
 -- 1、查询"01"课程比"02"课程成绩高的学生的信息及课程分数	
-	
-select a.* ,b.s_score as 01_score,c.s_score as 02_score from 
-student a 
-	join score b on a.s_id=b.s_id and b.c_id='01'
-	left join score c on a.s_id=c.s_id and c.c_id='02' or c.c_id = NULL where b.s_score>c.s_score
-	
---也可以这样写
-	select a.*,b.s_score as 01_score,c.s_score as 02_score from student 		  a,score b,score c 
-			where a.s_id=b.s_id 
-			and a.s_id=c.s_id 
-			and b.c_id='01' 
-			and c.c_id='02' 
-			and b.s_score>c.s_score
+-- 法一：	
+select a.* ,b.s_score as 01_score,c.s_score as 02_score 
+from student a 
+join score b on a.s_id=b.s_id and b.c_id='01'
+left join score c on a.s_id=c.s_id and c.c_id='02' or c.c_id = NULL 
+where b.s_score>c.s_score
+-- 法二：
+SELECT a.s_score AS 01_score, b.s_score AS 02_score, c.* 
+FROM score a 
+INNER JOIN score b ON a.s_id = b.s_id 
+INNER JOIN student c ON c.s_id = a.s_id 
+WHERE a.s_score > b.s_score AND a.c_id = '01' AND b.c_id = '02';
+-- 法一和法二的区别是前者是用 left join，后者是用 inner join，说说两者的区别？
+
+-- 法三（最简单的写法）
+select a.*,b.s_score as 01_score,c.s_score as 02_score 
+from student a,score b,score c 
+where a.s_id=b.s_id 
+	and a.s_id=c.s_id 
+	and b.c_id='01' 
+	and c.c_id='02' 
+	and b.s_score>c.s_score
+
 -- 2、查询"01"课程比"02"课程成绩低的学生的信息及课程分数
 	
 select a.* ,b.s_score as 01_score,c.s_score as 02_score from 
@@ -507,3 +515,9 @@ from (select s_id,SUM(s_score) as sum_score from score GROUP BY s_id ORDER BY su
 -- 50、查询下月过生日的学生
 	select * from student where MONTH(DATE_FORMAT(NOW(),'%Y%m%d'))+1 =MONTH(s_birth)
 ```
+
+## 参考
+
+https://blog.csdn.net/fashion2014/article/details/78826299
+
+https://blog.csdn.net/flycat296/article/details/63681089
