@@ -518,6 +518,6 @@ from (select s_id,SUM(s_score) as sum_score from score GROUP BY s_id ORDER BY su
 
 ## 参考
 
-https://blog.csdn.net/fashion2014/article/details/78826299
+[SQL 语句练习50题(MySQL版)](https://blog.csdn.net/fashion2014/article/details/78826299)
 
-https://blog.csdn.net/flycat296/article/details/63681089
+[超经典 SQL 练习题，做完这些你的 SQL 就过关了](https://blog.csdn.net/flycat296/article/details/63681089)

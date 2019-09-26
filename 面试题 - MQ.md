@@ -50,3 +50,27 @@
 - RabbitMQ
 
   基于主从架构实现高可用，并发能力很强，微秒级别延迟（处理十万、百万级别请求面不改色心不跳），适合吞吐量不高的场景，但是基于 erlang 开发，定制能力低。
+
+## 如何解决RabbitMQ消息丢失的问题？
+
+从三个方面解决这个问题：
+
+1. 生产者发送消息，需要确保消息发送到路由，并路由到队列：开启 Confirm 模式，RabbitTemplate 设置 ConfirmCallback 和 ReturnCallback。
+
+2. Exchange 交换器持久化、消息队列持久化、消息持久化：
+
+   Exchange 交换机持久化：new DirectExchange(“name”, true);
+
+   队列持久化：new Queue(“name”, true);
+
+   消息持久化：默认就是持久化的
+
+3. 确保消费者正确消费消息：关闭消费者自动 ACK 确认功能，手动 ACK 确认
+
+参考：
+
+[如何保证消息的可靠性传输？（如何处理消息丢失的问题）](https://github.com/doocs/advanced-java/blob/master/docs/high-concurrency/how-to-ensure-the-reliable-transmission-of-messages.md)
+
+[RabbitMQ：消息发送确认 与 消息接收确认（ACK）]()
+
+[RabbitMQ之消息持久化](https://blog.csdn.net/u013256816/article/details/60875666)

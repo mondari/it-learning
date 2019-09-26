@@ -52,11 +52,6 @@
 
 ## location 匹配规则
 
-参考：
-
-1. https://moonbingbing.gitbooks.io/openresty-best-practices/content/ngx/nginx_local_pcre.html
-2. http://nginx.org/en/docs/http/ngx_http_core_module.html#location
-
 ### 语法规则
 
 > location [=|~|~*|^~] /uri/ { … }
@@ -181,6 +176,11 @@ location / {
     proxy_pass http://tomcat:8080/
 }
 ```
+
+参考：
+
+1. https://moonbingbing.gitbooks.io/openresty-best-practices/content/ngx/nginx_local_pcre.html
+2. http://nginx.org/en/docs/http/ngx_http_core_module.html#location
 
 ## proxy_pass 反向代理指令 
 

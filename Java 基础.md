@@ -4,13 +4,13 @@
 
 ## 面向对象的三大特征
 
-继承
+继承：
 
-封装
+封装：
 
 多态：重写（override）和重载（overload）
 
-## 面向对象的基本原则
+## *面向对象的基本原则
 
 
 
@@ -27,7 +27,7 @@
 
 参考 [Primitive Data Types](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)
 
-注：浮点数字面量默认表示 double 类型
+**注：浮点数字面量默认表示 double 类型**
 
 ## 静态代码块、非静态代码块、构造方法执行顺序
 
@@ -83,13 +83,13 @@ code block in Son
 constructor in Son
 ```
 
-由此可见，静态代码块是在类加载的时候执行，非静态代码是在构造方法调用前执行，父类的构造方法先于子类执行
+由此可见，静态代码块是在类加载的时候执行，非静态代码块是在构造方法调用前执行，父类的构造方法先于子类执行，即：静态代码块 > 父类非静态代码块 > 父类构造方法 > 子类非静态代码块 > 子类构造方法
 
 ## 重写（override）和重载（overload）的区别
 
 重写：父类和子类中方法的名称和参数相同，但实现不同；
 
-重载：方法名相同，但参数不同（本质上方法签名不同）。另外，方法名和参数相同，但是返回值不同，这不是有效的重载，编译时会报错。
+重载：方法名相同，但参数不同。方法名+参数=方法签名，所以重载其实就是方法签名不同。需要注意的是，重载跟返回值没有任何关系，不管返回值相不相同，只要方法名和参数相同，都不是有效的重载，编译时会报错。
 
 ## 接口和抽象类的区别及使用场景
 
@@ -213,6 +213,8 @@ public boolean equals(Object obj) {
 静态内部类
 
 ## protected 关键字
+
+## *String StringBuilder StringBuffer 的区别
 
 ## String 为什么是不可变类
 
@@ -415,6 +417,16 @@ private static List<String> randomStringArray(int size) {
     return list;
 }
 ```
+
+## *删除字符串中字符出现次数最多的字符
+
+比如 abbccd，得到结果为 ad
+
+步骤如下：
+
+1. 使用 String 的 subString(0, 1) 方法将字符串拆分成一个一个的字符，放到 HashMap 中，并统计其数量
+2. 遍历 HashMap 中字符的个数，将字符个数最大的字符放到 ArrayList 中
+3. 使用 String 的 replaceAll() 方法替换字符
 
 ## 如何防止表单重复提交
 
