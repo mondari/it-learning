@@ -326,4 +326,11 @@ SELECT * FROM table 100 OFFSET 100000
 select * from table where id >= (select id from table limit 100000,1) limit 100;
 ```
 
+## 一条 SQL 语句是如何执行的？
+
+连接器：管理连接，登录验证，用户名和密码是否正确
+分析器：词法分析，语法分析，让MySQL知道这条SQL语句要干什么，语法有没有毛病
+优化器：给出SQL语句的最优的执行方案
+执行器：执行SQL语句并返回结果，但在执行前会判断是否对表有权限
+
 ## *B+树是怎样的数据结构？B树又是怎样的数据结构，两者的区别？

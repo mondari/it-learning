@@ -388,7 +388,7 @@ protected final boolean tryAcquire(int acquires) {
 
 两个或多个线程之间互相等待对方持有锁的释放而陷入无限等待状态。
 
-一个锁的例子：
+一个死锁的例子：
 
 ```java
 public class DeadLock extends Thread {
@@ -525,7 +525,58 @@ Thread1
 
 
 
-## *银行家算法
+## *两个线程交替打印1-10
+
+参考：[经典线程面试题-两个线程交替打印](https://blog.csdn.net/afsvsv/article/details/86521789)
+
+使用 synchronized、wait、notify、AtomicInteger、AtomicBoolean
+
+```java
+Object lock = new Object();
+AtomicBoolean flag = new AtomicBoolean(true);
+AtomicInteger integer = new AtomicInteger();
+
+new Thread(() -> {
+    while (integer.get() <= 10) {
+        synchronized (lock) {
+            if (flag.get()) {
+                System.out.println("thread-1: " + integer.getAndIncrement());
+                flag.set(false);
+                lock.notify();
+            } else {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
+}).start();
+
+new Thread(() -> {
+    while (integer.get() <= 10) {
+        synchronized (lock) {
+            if (!flag.get()) {
+                System.out.println("thread-2: " + integer.getAndIncrement());
+                flag.set(true);
+                lock.notify();
+            } else {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
+}).start();
+
+```
+
+
 
 ## 生产者消费者问题
 
@@ -598,7 +649,7 @@ class Consumer implements Runnable {
 
 ## Round-Robin 轮询调度算法
 
-编写一个线程安全的负载均衡轮询调度算法
+编写一个线程安全的负载均衡轮询调度算法。
 
 ```java
 /**
@@ -617,7 +668,7 @@ public static void main(String[] args) {
 }
 
 static Object roundRobbin(List<Object> list) {
-
+	// 核心思想（类似于 HashMap 的散列思想）
     int i = next.getAndIncrement() % list.size();
     return list.get(i);
 

@@ -93,9 +93,11 @@ constructor in Son
 
 ## 接口和抽象类的区别及使用场景
 
-1. 接口中的所有方法都是抽象的，而抽象类只要求至少一个抽象方法；
+1. 接口中的所有方法都是抽象的，而抽象类则不是；
 
-2. 接口是实现，而抽象类是继承，一个类可以实现多个接口，但只能继承一个抽象类，因为类是单继承的；**最重要的是，接口也可以继承接口，并可以继承多个接口，比如 ApplicationContext：**
+2. 接口是实现，而抽象类是继承，一个类可以实现多个接口，但只能继承一个抽象类，因为类是单继承的；
+
+3. **接口可以继承接口，并可以继承多个接口，比如 ApplicationContext：**
 
    ```java
    public interface ApplicationContext extends EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,
@@ -104,18 +106,75 @@ constructor in Son
 
    接口不能实现接口，因为接口中的方法都必须是抽象的。
 
-3. 接口中的变量不管有没有显式地声明，默认都是 public static final；
+4. 接口中的变量不管有没有显式地声明，都是 public static final；
 
-4. 接口中的方法不管有没有显式地声明，默认都是 public abstract；
+5. 接口中的方法不管有没有显式地声明，都是 public abstract；
 
-5. Java 8 中接口新增默认方法和静态方法，这两种方法必须要有方法体。
+6. Java 8 中接口新增默认方法和静态方法，这两种方法必须要有方法体。
 
-6. 接口表示的是这个对象能做什么，而抽象类表示的是这个对象是什么。
+**使用场景**：
 
-使用场景：
+- 如果多个类有相同的方法（方法的实现是一样的），并且能够抽象出共同的父类，则使用抽象类将相同的方法提取封装出来。
 
-1. 一般将子类中相同方法的实现提取到抽象类中，其余方法留给不同的子类去实现。
-2. 接口可以作为作为一种标识，没有任何方法和属性，比如 java.lang.Cloneable、java.io.Serializable。
+- 如果多个类不能抽象出共同的父类，但是却有相同的行为，则使用接口将这些行为封装起来。
+
+- 接口可以作为作为一种标识，没有任何方法和属性，比如 java.lang.Cloneable、java.io.Serializable。
+
+比如：报纸、杂志、手机都可以用来阅读，但是三者不能抽象出共同的父类，应该使用接口将“阅读”这个行为封装起来；另外报纸、杂志两者可以抽象出共同的父类“出版物”，可以使用抽象类将两者封装起来。于是就成了酱紫：
+
+```java
+/**
+ * “阅读”行为
+ */
+interface Readable {
+    Object read();
+}
+
+/**
+ * 手机
+ */
+class Phone implements Readable {
+
+    @Override
+    public Object read() {
+        // do something...
+        return null;
+    }
+
+}
+
+/**
+ * 出版物
+ */
+abstract class Press implements Readable {
+}
+
+/**
+ * 杂志
+ */
+class Magazine extends Press {
+
+    @Override
+    public Object read() {
+        // do something...
+        return null;
+    }
+}
+
+/**
+ * 报纸
+ */
+class Newspaper extends Press {
+
+    @Override
+    public Object read() {
+        // do something...
+        return null;
+    }
+}
+```
+
+
 
 ## Exception 和 Error 的区别
 
@@ -130,7 +189,7 @@ Error：是错误，一般指与虚拟机相关的问题，是不可以预料的
 运行时异常：是指编译期不进行检查，但运行时会出现的异常，不强制要求捕获处理。常见的运行时异常有：NullPointerException 空指针异常、ArrayIndexOutOfBoundsException 数组越界异常、ClassCastException 类型转换异常、ArithmeticException 算术异常、IllegalArgumentException 非法传参异常等
 
 ## ClassNotFoundException 和 NoClassDefFoundError 的区别
-ClassNotFoundException：当程序试图根据字符串名称通过以下三个方法加载类时，如果没找到就会抛出该异常。
+ClassNotFoundException：当程序试图根据字符串名称通过以下三个方法加载类时，如果没找到类的定义就会抛出该异常。
 
 - Class.forName
 
@@ -138,7 +197,7 @@ ClassNotFoundException：当程序试图根据字符串名称通过以下三个�
 
 - ClassLoader.loadClass
 
-NoClassDefFoundError：如果Java虚拟机或 ClassLoader 实例试图加载**类的定义**时无法找到该类的定义，则抛出该错误。要查找的类在编译的时候是存在的，运行的时候却找不到了。造成该问题的原因一般是 jar 包遭到损坏或篡改，或者打包的时候漏掉了部分类。
+NoClassDefFoundError：这是 JVM 在编译时能找到类的定义，但在运行时找不到类的定义而引发的错误。造成该问题的原因一般是 jar 包遭到损坏或篡改，或者打包的时候漏掉了部分类。
 
 ## throw 和 throws 的区别
 
