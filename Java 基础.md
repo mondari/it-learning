@@ -2,22 +2,26 @@
 
 
 
-## 面向对象的三大特征
+## *面向对象的三大特征
 
-继承：
+继承：子类继承父类的特性和行为
 
-封装：
+封装：隐藏对象的内部状态和实现细节，只对外公开接口
 
-多态：重写（override）和重载（overload）
+多态：同一个行为具有多个不同表现形式。主要体现在方法重写（override）、方法重载（overload）、抽象类和接口
 
-## *面向对象的基本原则
+## *面向对象的五大基本原则
 
-
+单一职责原则（Single Responsibility Principle，简称SRP）：一个类只负责一项职责
+开放封闭原则（Open Close Principle，简称OCP）：对扩展开放，对修改封闭
+里氏替换原则（Liskov Substitution Principle，简称LSP）
+依赖倒置原则（Dependence Inversion Principle，简称DIP）
+接口隔离原则（Interface Segregation Principles，简称ISP）
 
 ## 基本数据类型的范围
 
 - byte/8
-- char/16
+- **char/16**
 - short/16
 - int/32
 - float/32
@@ -143,7 +147,7 @@ constructor 's field: 10, staticField: 20
 
 重写：父类和子类中方法的名称和参数相同，但实现不同；
 
-重载：方法名相同，但参数不同。方法名+参数=方法签名，所以重载其实就是方法签名不同。需要注意的是，重载跟返回值没有任何关系，不管返回值相不相同，只要方法名和参数相同，都不是有效的重载，编译时会报错。
+重载：方法名相同，但参数不同。方法名+参数=方法签名，重载其实就是方法名相同，但是方法签名不同。需要注意的是，重载跟返回值没有任何关系，不管返回值相不相同，只要方法名和参数相同，都不是有效的重载，编译时会报错。
 
 ## 接口和抽象类的区别及使用场景
 
@@ -259,6 +263,14 @@ throw 用于手动抛出异常
 
 throws 用于在方法或类签名上抛出一个或多个异常
 
+```java
+public void method() throws Exception {
+    throw new Exception();
+}
+```
+
+
+
 ## 列几个 finally 不会被执行的情况
 
 1. try 或 catch 中异常退出
@@ -293,13 +305,15 @@ throws 用于在方法或类签名上抛出一个或多个异常
 
 ## “==” 和 “equals” 的区别
 
-- ”==“，如果表达式两边是基本数据类型或包装类，则比较两者的值是否相等。如果是其它引用数据类型，则比较两者的内存地址是否相同
+- ”==“，如果表达式两边是基本数据类型，或者一边是包装类一边是基本数据类型，则比较两者的值是否相等。如果是其它引用数据类型，则比较两者的内存地址是否相同
 - ”equals“，如果表达式两边是包装类，则比较两者的类型和值是否都相同。如果是其它引用数据类型，则看具体实现，默认实现是”==“比较两者的内存地址。
 
 ```java
 // Integer 类的实现
 public boolean equals(Object obj) {
+    // 相比较对象的类型
     if (obj instanceof Integer) {
+        // 再比较对象的值
         return value == ((Integer)obj).intValue();
     }
     return false;
@@ -311,21 +325,40 @@ public boolean equals(Object obj) {
 }
 ```
 
+例如：
 
+```
+Integer integer = 1;
+double d = 1.0;
+
+// 一边是包装类，一边是基本数据类型，比较值是否相等，返回结果是 true
+System.out.println(integer == d);
+
+// equals 比较包装类，先比较类型是否相同，再比较值是否相等，返回结果是 false
+System.out.println(integer.equals(d));
+```
 
 ## final 关键字
 
 - final 修饰的类，不能被继承
 - final 修饰的方法，不能被重写
-- final 修饰的变量，不能被二次赋值。
+- final 修饰的变量，不能被重复赋值（保证对象的引用不发生改变，但是对象的内部状态可以发生改变。）
 
 **因为父类的 private 修饰的方法是不能被子类重写，所以 private 修饰的方法默认隐性被 final 修饰的。**
 
-## static 关键字
+## *protected 关键字
 
-静态内部类
+## *volatile 关键字
 
-## protected 关键字
+volatile 有两个作用，一是保证变量的可见性，二是防止指令重排序优化。
+
+什么是变量的可见性：一个线程对共享变量进行修改，另一个线程能立即看到这个修改。
+
+**什么是指令重排序优化**：Object o = new Object()
+
+## *静态内部类的作用及使用场景
+
+# 字符串篇
 
 ## *String StringBuilder StringBuffer 的区别
 
@@ -367,45 +400,6 @@ final class ImmutableClass {
 三是为了能够缓存字符串的哈希值，保证了字符串哈希值的不变性。
 
 ## *为什么其它包装类是不可变类？
-
-## *volatile 关键字
-
-volatile 有两个作用，一是保证变量的可见性，二是防止指令重排序优化。
-
-什么是变量的可见性：一个线程对共享变量进行修改，另一个线程能立即看到这个修改。
-
-**什么是指令重排序优化**：Object o = new Object()
-
-## cookie 和 session 的区别
-
-- cookie 存放在客户端浏览器上，而 session 存放在服务器上。
-
-- cookie 不安全
-
-- cookie 有大小和数量的限制，而 session 的大小取决于服务器的内存
-
-  PS：一个浏览器能创建的 Cookie 数量最多为 300 个，并且每个不能超过 4KB，每个 Web 站点能设置的 Cookie 总数不能超过 20 个
-
-一般建议把登录信息等重要信息存放在 session，其它信息存放在 cookie
-
-## Token 的使用场景
-
-Token 是身份验证的一种方式，我们通常叫它：令牌。Token 一般用在授权、登录、注册场景中。
-
-Token 使用步骤如下：
-
-1. 当用户登录成功时，服务端会生成一个 Token，将其保存到数据库，并发送给客户端；
-2. 客户端拿到这个 Token 值，会保存到本地，下一次网络请求时会带上这个 Token 值；
-3. 服务端接收到请求后，会将客户端的 Token 值与数据库的 Token 值对比
-   1. Token 值相同，说明当前用户登录成功过，处于已登录状态
-   2. Token 值不同，说明原来的登录信息已经失效，需要重新登录
-   3. Token 值不存在，说明没有登录成功过。
-
-## JSP 与 Servlet 的区别
-
-1. JSP 编译后就是 Servlet
-2. 一般页面显示放在 JSP，业务逻辑放在 Servlet
-3. Servlet 中没有内置对象，JSP 中的内置对象都是必须通过 HttpServletRequest 对象，HttpServletResponse 对象以及 HttpServlet 对象得到。
 
 ## Java 生成随机字符串数组
 
@@ -543,6 +537,53 @@ private static List<String> randomStringArray(int size) {
 2. 遍历 HashMap 中字符的个数，将字符个数最大的字符放到 ArrayList 中
 3. 使用 String 的 replaceAll() 方法替换字符
 
+# JSP 篇
+
+## JSP 与 Servlet 的区别
+
+1. JSP 编译后就是 Servlet
+2. JSP 负责处理页面显示，Servlet 负责处理业务逻辑
+3. Servlet 中没有内置对象，必须通过 HttpServletRequest 对象，HttpServletResponse 对象以及 HttpServlet 对象得到 JSP 中的内置对象。
+
+## JSP 九大内置对象
+
+| 内置对象    | 类型                | 作用                 |
+| ----------- | ------------------- | -------------------- |
+| request     | HttpServletRequest  |                      |
+| response    | HttpServletResponse |                      |
+| session     | HttpSession         |                      |
+| application | ServletContext      |                      |
+| pageContext | PageContext         | 获取其他八个内置对象 |
+| config      | ServletConfig       | 获取服务器的配置信息 |
+| page        | Object(this)        | 代表JSP页面本身      |
+| out         | JspWriter           | 在浏览器中打印信息   |
+| exception   | Throwable           |                      |
+
+## cookie 和 session 的区别
+
+- cookie 存放在客户端浏览器上，而 session 存放在服务器上。
+
+- cookie 不安全
+
+- cookie 有大小和数量的限制，而 session 的大小取决于服务器的内存
+
+  PS：一个浏览器能创建的 Cookie 数量最多为 300 个，并且每个不能超过 4KB，每个 Web 站点能设置的 Cookie 总数不能超过 20 个
+
+一般建议把登录信息等重要信息存放在 session，其它信息存放在 cookie
+
+## Token 的使用场景
+
+Token 是身份验证的一种方式，我们通常叫它：令牌。Token 一般用在授权、登录、注册场景中。
+
+Token 使用步骤如下：
+
+1. 当用户登录成功时，服务端会生成一个 Token，将其保存到数据库，并发送给客户端；
+2. 客户端拿到这个 Token 值，会保存到本地，下一次网络请求时会带上这个 Token 值；
+3. 服务端接收到请求后，会将客户端的 Token 值与数据库的 Token 值对比
+   1. Token 值相同，说明当前用户登录成功过，处于已登录状态
+   2. Token 值不同，说明原来的登录信息已经失效，需要重新登录
+   3. Token 值不存在，说明没有登录成功过。
+
 ## 如何防止表单重复提交
 
 参考：[如何防止表单重复提交](https://www.cnblogs.com/wenlj/p/4951766.html)
@@ -557,6 +598,6 @@ private static List<String> randomStringArray(int size) {
 
 二、**防止表单重复提交的方法**
 
-1. 表单提交后将提交按钮设置为不可用。但是如果客户端禁止使用 JavaScript，这个方法旧无效。
+1. 表单提交后将提交按钮设置为不可用。但是如果客户端禁止使用 JavaScript，这个方法无效。
 2. Post/Redirect/Get 模式。表单提交后进行页面重定向，转到提交成功信息页面。
 3. 数据库添加唯一索引。
