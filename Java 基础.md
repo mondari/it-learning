@@ -29,21 +29,21 @@
 
 **注：浮点数字面量默认表示 double 类型**
 
-## 静态代码块、非静态代码块、构造方法执行顺序
+## 静态代码块、普通代码块、构造方法执行顺序
 
 ```java
 class Parent {
 
     static {
-        System.out.println("static code block in Parent");
+        System.out.println("parent static codeblock");
     }
 
     {
-        System.out.println("code block in Parent");
+        System.out.println("parent codeblock");
     }
 
     Parent() {
-        System.out.println("constructor in Parent");
+        System.out.println("parent constructor");
     }
 
 }
@@ -51,15 +51,15 @@ class Parent {
 class Son extends Parent {
 
     static {
-        System.out.println("static code block in Son");
+        System.out.println("son static codeblock");
     }
 
     {
-        System.out.println("code block in Son");
+        System.out.println("son codeblock");
     }
 
     Son() {
-        System.out.println("constructor in Son");
+        System.out.println("son constructor");
     }
 }
 
@@ -75,15 +75,69 @@ public class Test {
 执行结果如下：
 
 ```bash
-static code block in Parent
-static code block in Son
-code block in Parent
-constructor in Parent
-code block in Son
-constructor in Son
+parent static codeblock
+son static codeblock
+parent codeblock
+parent constructor
+son codeblock
+son constructor
 ```
 
-由此可见，静态代码块是在类加载的时候执行，非静态代码块是在构造方法调用前执行，父类的构造方法先于子类执行，即：静态代码块 > 父类非静态代码块 > 父类构造方法 > 子类非静态代码块 > 子类构造方法
+由此可见，静态代码块是在类加载的时候执行，普通代码块是在构造方法调用前执行，父类的构造方法先于子类执行，即：静态代码块 > 父类普通代码块 > 父类构造方法 > 子类普通代码块 > 子类构造方法
+
+
+
+**静态变量初始化和静态代码块执行，哪个优先？**
+
+**在静态代码块中创建一个对象，并在构造方法和普通代码块中打印其成员变量，成员变量会被初始化吗？**
+
+请带着这些问题看以下代码：
+
+```java
+public class Test {
+
+    int field = 10;
+
+    static int staticField = 20;
+
+    static {
+        // 静态代码块中创建一个对象
+        Test test = new Test();
+        // 这里打印了静态变量，从执行结果中可以判断静态变量初始化、静态代码块的执行顺序
+        System.out.println("static codeblock 's field: " + test.field + ", staticField: " + staticField);
+
+    }
+
+    {
+        System.out.println("codeblock 's field: " + field + ", staticField: " + staticField);
+    }
+
+    public Test() {
+        System.out.println("constructor 's field: " + field + ", staticField: " + staticField);
+    }
+
+    public static void main(String[] args) {
+        new Test();
+    }
+
+}
+```
+
+执行结果如下：
+
+```
+codeblock 's field: 10, staticField: 20
+constructor 's field: 10, staticField: 20
+static codeblock 's field: 10, staticField: 20
+codeblock 's field: 10, staticField: 20
+constructor 's field: 10, staticField: 20
+```
+
+由此可见：
+
+1. 类加载时，先初始化静态变量，然后再执行静态代码块；
+2. 凡是调用了构造方法，都会先执行普通代码块；
+3. 在静态代码块中创建对象，对象内部的成员变量也会初始化好。
 
 ## 重写（override）和重载（overload）的区别
 
@@ -275,42 +329,44 @@ public boolean equals(Object obj) {
 
 ## *String StringBuilder StringBuffer 的区别
 
+## 什么是不可变类，如何创建不可变类？
+
+**什么是不可变类？**
+
+不可变类是指创建出来的对象其内部状态不能发生改变的类，任何改变都会创建一个新的对象赋予原来的引用变量。不可变类创建出来的对象叫做不可变对象。不可变类有 String、Integer 及其它包装类。
+
+**如何创建不可变类？**
+
+1. 类声明为 final， 使其不能被继承。
+2. 类的所有成员变量声明为 final ，防止对象的内部状态发生改变。
+3. 没有 set 方法，只有 get 方法。
+
+```java
+final class ImmutableClass {
+
+ private final String name;
+
+    public ImmutableClass(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+}
+```
+
+
 ## String 为什么是不可变类
 
-一是为了提高性能，使其能够缓存到字符串常量池，
+一是为了提高性能，实现字符串常量池。字符串是频繁使用的数据类型，将字符串字面量缓存到字符串常量池中，当要使用的时候从中直接获取，无需频繁创建，有利于提高性能。
 
-二是为了线程安全，多线程场景下数据不会发生篡改，
+二是为了线程安全，保障多线程场景下数据不会发生篡改。
 
-三是为了能够缓存字符串的哈希值。
+三是为了能够缓存字符串的哈希值，保证了字符串哈希值的不变性。
 
-
-
-1. 什么是不可变类和不可变对象？
-
-   由不可变类创建出来的对象就是不可变对象，不可变对象一旦被创建出来，其内部状态就不能发生改变，任何修改都会创建一个新的对象赋给原来的引用变量。不可变类有 String、Integer 及其它包装类。
-
-2. 如何创建不可变类？
-
-   1. 类声明为 final， 避免子类修改父类字段的的不可变性。
-   2. 类的所有成员变量声明为 final ，防止对象的内部状态发生改变。
-
-   ```java
-   final class ImmutableClass {
-   
-    private final String name;
-   
-       public ImmutableClass(String name) {
-           this.name = name;
-       }
-   
-       public String getName() {
-           return name;
-       }
-   
-   }
-   ```
-
-   
+## *为什么其它包装类是不可变类？
 
 ## *volatile 关键字
 
@@ -318,7 +374,7 @@ volatile 有两个作用，一是保证变量的可见性，二是防止指令�
 
 什么是变量的可见性：一个线程对共享变量进行修改，另一个线程能立即看到这个修改。
 
-什么是指令重排序优化：Object o = new Object()
+**什么是指令重排序优化**：Object o = new Object()
 
 ## cookie 和 session 的区别
 
