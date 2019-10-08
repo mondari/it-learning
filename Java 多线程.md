@@ -216,6 +216,10 @@ Thread 中的方法
 
 参考 [Java 并发](https://cyc2018.github.io/CS-Notes/#/notes/Java%20%E5%B9%B6%E5%8F%91)
 
+## yeild() 
+
+当前线程由运行状态进入就绪状态，不释放锁，只是将CPU资源让步给优先级相同的线程，但是无法保证一定能达到让步目的，因为当前线程有可能再次被CPU调度运行。
+
 ## notify() 和 notifyAll() 的区别
 
 - notify() 唤醒等待该对象的锁的多个线程中的一个
