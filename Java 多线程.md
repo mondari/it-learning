@@ -172,14 +172,16 @@ public ScheduledThreadPoolExecutor(int corePoolSize) {
 
 
 
-[当一个任务通过 execute(Runnable) 方法欲添加到线程池时](https://blog.csdn.net/wangwenhui11/article/details/6760474)： 
+## [通过 execute(Runnable) 方法向添加到线程池添加任务的流程](https://blog.csdn.net/wangwenhui11/article/details/6760474)： 
 
-- 如果当前线程池中线程的数量小于 corePoolSize，则创建新的线程来处理添加的任务，即使线程池中的线程都处于空闲状态。
+一开始，线程池中是没有工作线程的，新增任务时会创建线程，直到线程数等于 corePoolSize，之后的新增任务都会添加到工作队列中，除非工作队列满了。
+
+- 如果当前线程池中线程的数量小于 corePoolSize，则创建新的线程来处理新增任务，即使线程池中的线程都处于空闲状态。
 - 如果当前线程池中线程的数量等于 corePoolSize，则把任务放入缓冲队列里。
-- 如果缓冲队列满了，且当前线程池中线程的数量小于 maximumPoolSize，则创建新的线程来处理添加的任务
+- 如果缓冲队列满了，且当前线程池中线程的数量小于 maximumPoolSize，则创建新的线程来处理新增任务
 - 如果缓冲队列满了，且当前线程池中线程的数量等于 maximumPoolSize，则根据 handler 所指定的策略来拒绝处理此任务。
 
-也就是说，任务的处理方式需要依次判断三个条件是否满了：核心线程 corePoolSize、任务队列 workQueue、最大线程 maximumPoolSize，如果三者都满了，则根据 handler 所指定的策略来拒绝处理此任务。
+也就是说，任务的处理方式需要依次判断三个条件是否满了：核心线程数 corePoolSize、工作队列 workQueue、最大线程数 maximumPoolSize，如果三者都满了，则根据 handler 所指定的策略来拒绝处理此任务。
 
 另外当线程池中的线程数量大于 corePoolSize时，如果某线程空闲时间超过 keepAliveTime，线程将被终止。这样，线程池可以动态的调整池中的线程数。
 
