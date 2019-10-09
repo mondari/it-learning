@@ -358,6 +358,10 @@ volatile 有两个作用，一是保证变量的可见性，二是防止指令�
 
 ## *静态内部类的作用及使用场景
 
+## 值传递与引用传递
+
+参见 [Java 虚拟机](Java 虚拟机.md)
+
 # 字符串篇
 
 ## *String StringBuilder StringBuffer 的区别
