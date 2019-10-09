@@ -33,6 +33,10 @@
 
 参考 [Java 并发](https://cyc2018.github.io/CS-Notes/#/notes/Java%20%E5%B9%B6%E5%8F%91)
 
+## 线程池的优点
+
+重复利用线程，减少线程频繁创建和销毁的开销
+
 ## 线程池有哪些?它们的区别和使用场景？
 
 Java 的线程池有如下四种，其内部实现都是基于 ThreadPoolExecutor
@@ -172,7 +176,7 @@ public ScheduledThreadPoolExecutor(int corePoolSize) {
 
 
 
-## [通过 execute(Runnable) 方法向添加到线程池添加任务的流程](https://blog.csdn.net/wangwenhui11/article/details/6760474)： 
+## [通过 execute(Runnable) 方法向线程池添加任务时线程池的执行流程](https://blog.csdn.net/wangwenhui11/article/details/6760474)： 
 
 一开始，线程池中是没有工作线程的，新增任务时会创建线程，直到线程数等于 corePoolSize，之后的新增任务都会添加到工作队列中，除非工作队列满了。
 
