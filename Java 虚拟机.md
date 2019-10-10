@@ -13,7 +13,7 @@
 - 程序计数器（Program Counter Register）是**线程私有**的一块内存区域，表示当前线程所执行的字节码的行号指示器。
 - Java 虚拟机栈（Java Virtual Machine Stacks）是**线程私有**的一块内存区域，线程执行的每个 Java 方法在虚拟机栈中都会创建一个栈帧（Stack Frame ），用于存放方法入参、局部变量（包括对象的引用）等数据。
 - 本地方法栈（Native Method Stacks）与虚拟机栈的作用相同，只不过前者是 Java 方法，而后者是本地方法。
-- Java 堆（Java Heap）是**线程共享**的一块内存区域，用于存放对象实例、数组。另外需要注意一点，垃圾回收是作用在堆上的。
+- Java 堆（Java Heap）是**线程共享**的一块内存区域，用于存放对象实例、数组。另外需要注意一点，垃圾回收是作用在堆上的。**堆分为新生代（Eden和Survivor）和老生代**
 - 方法区（Method Area）是**线程共享**的一块内存区域，用于存放已被虚拟机加载的类信息、类变量、常量等数据。
 - 运行时常量池（Runtime Constant Pool），它是方法区的一部分，用于存放编译期生成的各种字面量和符号引用。
 
@@ -25,7 +25,7 @@
 
 ## JVM 监控工具
 
-[JVM性能调优监控工具jps、jstack、jmap、jhat、jstat、hprof使用详解]()
+[JVM性能调优监控工具专题一：JVM自带性能调优工具（jps,jstack,jmap,jhat,jstat,hprof)](https://www.iteye.com/blog/josh-persistence-2161848)
 
 ## jps：打印 Java 进程状态信息
 
@@ -126,7 +126,15 @@ S0C    S1C    S0U    S1U      EC       EU        OC         OU       PC     PU  
 
 
 
-### 图形化监控工具：jconsole，jmc，jvisualvm
+### *图形化监控工具：jconsole，jmc，jvisualvm
 
 
 
+## 找出某个Java进程中最耗费CPU的线程并打印堆栈信息
+
+1. `jps -l` 查看 Java 进程的 pid
+2. `top -Hp pid` ，从中查看 TIME+ 列最大的线程的 pid
+3. `printf '%x\n' thread_pid` 将线程的 pid 转为 16 进制
+4. `jstack pid | grep thread_pid` 查看线程的堆栈信息
+
+## *[Minor GC、Major GC、Full GC的区别](https://youzhixueyuan.com/the-difference-between-minor-gc-major-gc-full-gc.html)
