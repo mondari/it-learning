@@ -191,9 +191,9 @@ public ScheduledThreadPoolExecutor(int corePoolSize) {
 
 
 
-ThreadPoolExecutor 提供了四种拒绝策略：
+## ThreadPoolExecutor 提供了四种拒绝策略
 
-- ThreadPoolExecutor.AbortPolicy：直接抛出 RejectedExecutionException 拒绝执行异常，简单粗暴。
+- ThreadPoolExecutor.AbortPolicy：默认策略，直接抛出 RejectedExecutionException 拒绝执行异常，简单粗暴。
 - ThreadPoolExecutor.CallerRunsPolicy：直接调用任务的 run 方法去运行，简单粗暴，不过会阻塞主线程。
 - ThreadPoolExecutor.DiscardPolicy：啥都不干，简单粗暴
 - ThreadPoolExecutor.DiscardOldestPolicy：抛弃任务队列中最旧的任务也就是最先加入队列的任务，再把这个新任务添加进去。
@@ -217,14 +217,91 @@ Thread 中的方法
 
 - wait() 是 Object 的方法，而 sleep() 是 Thread 的静态方法；
 - wait() 会释放锁，sleep() 不会。
-- wait() 使当前线程等待，直到其它线程通过 notify() 或 notifyAll() 唤醒，且wait() 只能用在同步方法或者同步控制块中，否则会抛出 IllegalMonitorStateException。
-- sleep() 使当前线程休眠一段时间。
+- wait() 只能在同步方法、同步代码块中使用，sleep 可在任何地方使用
+- wait() 使线程进入 WAITING 状态，直到其它线程通过 notify() 或 notifyAll() 唤醒，sleep() 使线程进入 TIMED_WAITING 状态。
 
 参考 [Java 并发](https://cyc2018.github.io/CS-Notes/#/notes/Java%20%E5%B9%B6%E5%8F%91)
 
 ## yeild() 
 
 当前线程由运行状态进入就绪状态，不释放锁，只是将CPU资源让步给优先级相同的线程，但是无法保证一定能达到让步目的，因为当前线程有可能再次被CPU调度运行。
+
+## join()：**现在有T1、T2、T3三个线程，你怎样保证T2在T1执行完后执行，T3在T2执行完后执行？**
+
+这个问题的目的是检测你对 join() 是否熟悉。
+
+```java
+class T1 extends Thread {
+    @Override
+    public void run() {
+        System.out.println("T1");
+    }
+}
+
+class T2 extends Thread {
+
+    private T1 t1;
+
+    T2(T1 t1) {
+        this.t1 = t1;
+    }
+
+    @Override
+    public void run() {
+        try {
+            t1.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("T2");
+    }
+}
+
+class T3 extends Thread {
+
+    private T1 t1;
+    private T2 t2;
+
+    T3(T1 t1, T2 t2) {
+        this.t1 = t1;
+        this.t2 = t2;
+    }
+
+    @Override
+    public void run() {
+        try {
+            t1.join();
+            t2.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("T3");
+    }
+}
+
+public class Test {
+
+    public static void main(String[] args) {
+        T1 t1 = new T1();
+        T2 t2 = new T2(t1);
+        T3 t3 = new T3(t1, t2);
+        t1.start();
+        t2.start();
+        t3.start();
+    }
+
+}
+```
+
+执行结果：
+
+```shell
+T1
+T2
+T3
+```
+
+
 
 ## notify() 和 notifyAll() 的区别
 
@@ -307,6 +384,22 @@ PS：注意区分**线程安全**、**线程安全问题**这几个名词
 总的来说，synchronized 有的功能， ReentrantLock 都有，并支持更多高级功能。所以，我们通常说 synchronized 是轻量级锁，而 ReentrantLock 是重量级锁。需要注意的是，JDK1.8 后，两者的性能已经没什么区别，所以如果不需要使用 ReentrantLock 的高级功能，推荐使用 synchronized。
 
 参考 [Java 并发](https://cyc2018.github.io/CS-Notes/#/notes/Java%20%E5%B9%B6%E5%8F%91)
+
+## *偏向锁、轻量级锁、重量级锁
+
+偏向锁：第一个获取锁对象的线程，在之后再次获取该锁时不需要进行同步操作
+
+轻量级锁：当有第二个线程获取锁时，则升级为轻量级锁，竞争锁的线程不会阻塞，而是使用自旋的方式去获取锁
+
+重量级锁：多个线程共同竞争锁时，则升级为重量级锁，使用阻塞的方式去获取锁。
+
+参考：
+
+[偏向锁、轻量级锁、重量级锁的升级以及区别](https://www.jianshu.com/p/9998a9db17f7)
+
+
+
+  
 
 ## ReentrantLock 获取锁的方式
 
