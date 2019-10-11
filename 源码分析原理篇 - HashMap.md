@@ -310,7 +310,7 @@ final Node<K,V>[] resize() {
 
 ### *知识点：树化和反树化条件？
 
-因为链表的查询性能会随着链表长度而下降，所以当 HashMap 中链表长度大于等于7（树化阈值-1）时会发生树化，将链表改造成红黑树。树化阈值由常量 `TREEIFY_THRESHOLD` 定义，值为8。
+因为链表的查询性能会随着链表长度而下降，所以当 HashMap 中链表长度大于等于7（树化阈值-1）时会发生树化，将链表改造成红黑树。树化阈值由常量 `TREEIFY_THRESHOLD` 定义，值为8，反树化的阈值由常量 `UNTREEIFY_THRESHOLD` 定义，值为6。
 
 HashMap 中红黑树的代码如下：
 
@@ -339,14 +339,15 @@ static final class TreeNode<K,V> extends LinkedHashMap.Entry<K,V> {
 
 ## 其它
 
-### 哈希冲突的解决方法有哪些？
+### 解决哈希冲突的方法有哪些？
 
 - 开放定址法
 - 再哈希法
 - 链地址法
 - 建立公共溢出区
 
-具体内容这里不详述了。
+参考：[解决哈希冲突的常用方法分析](https://www.jianshu.com/p/4d3cb99d7580)
+  
 
 ## 总结
 

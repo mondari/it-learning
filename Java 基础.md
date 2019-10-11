@@ -91,7 +91,7 @@ son constructor
 
 
 
-**静态变量初始化和静态代码块执行，哪个优先？**
+**静态变量初始化和静态代码块哪个先执行？**
 
 **在静态代码块中创建一个对象，并在构造方法和普通代码块中打印其成员变量，成员变量会被初始化吗？**
 
@@ -102,7 +102,12 @@ public class Test {
 
     int field = 10;
 
-    static int staticField = 20;
+    static int staticField = staticMethod();
+
+    static int staticMethod() {
+        System.out.println("static method execute");
+        return 20;
+    }
 
     static {
         // 静态代码块中创建一个对象
@@ -130,6 +135,7 @@ public class Test {
 执行结果如下：
 
 ```
+static method execute
 codeblock 's field: 10, staticField: 20
 constructor 's field: 10, staticField: 20
 static codeblock 's field: 10, staticField: 20
