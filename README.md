@@ -1,3 +1,3 @@
-## java-learning
+## IT-learning
 
-Java 面试笔记
+Java、SQL、源码、分布式、面试笔记
