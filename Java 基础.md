@@ -404,7 +404,7 @@ volatile 有两个作用，一是保证变量的可见性，二是防止指令�
 
 String：不可变，每次修改都会申请新的内存空间
 
-StringBuider：线程不安全，可变，初始容量为16，容量不够会自动扩容为原来两倍
+StringBuider：线程不安全，可变，初始容量为16，容量不够会自动扩容
 
 StringBuffer：线程安全，其它同 StringBuilder
 
