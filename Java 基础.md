@@ -1,10 +1,10 @@
 [TOC]
 
+（带 * 号的表示有待完善）
 
+## 面向对象的三大特征
 
-## *面向对象的三大特征
-
-继承：子类继承父类的特性和行为
+继承：子类继承父类的特征和行为
 
 封装：隐藏对象的内部状态和实现细节，只对外公开接口
 
@@ -12,11 +12,27 @@
 
 ## *面向对象的五大基本原则
 
-单一职责原则（Single Responsibility Principle，简称SRP）：一个类只负责一项职责
-开放封闭原则（Open Close Principle，简称OCP）：对扩展开放，对修改封闭
-里氏替换原则（Liskov Substitution Principle，简称LSP）
-依赖倒置原则（Dependence Inversion Principle，简称DIP）
-接口隔离原则（Interface Segregation Principles，简称ISP）
+- 单一职责原则（Single Responsibility Principle，简称SRP）：一个类有且只有一项职责
+
+- 开放封闭原则（Open Close Principle，简称OCP）：对扩展开放，对修改封闭
+
+- 里氏替换原则（Liskov Substitution Principle，简称LSP）：顾名思义，父类能用的地方，子类也能正常使用。引申的意义就是：**子类可以扩展父类的功能，但不能修改父类的原有功能。**具体来说：
+  - 子类可以实现父类的抽象方法，但不能覆盖父类的非抽象方法。
+  - 子类中可以增加自己特有的方法。
+  - 当子类的方法重载父类的方法时，方法的前置条件（即方法的入参）要比父类方法更宽松。
+  - 当子类的方法实现父类的方法时（重载/重写或实现抽象方法），方法的后置条件（即方法的返回值）要比父类更严格或相等。
+
+- 依赖倒置原则（Dependence Inversion Principle，简称DIP）：
+  - 高层模块不应该依赖底层模块，两者都应该依赖其抽象
+  - 抽象不应该依赖细节
+  - 细节应该依赖抽象 
+
+- 接口隔离原则（Interface Segregation Principles，简称ISP）：接口最小原则，不需要的接口方法不要添加接口中
+
+- 迪米特原则（Law of Demeter ，简称LoD）：只与朋友联系，不与朋友的朋友联系，由朋友（中介）来与朋友的朋友联系，从而实现低耦合，高内聚
+
+参考：[面向对象设计的七大设计原则详解](https://blog.csdn.net/qq_34760445/article/details/82931002
+
 
 ## 基本数据类型的范围
 
@@ -29,9 +45,11 @@
 - double/64
 - boolean/~
 
-参考 [Primitive Data Types](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)
-
 **注：浮点数字面量默认表示 double 类型**
+
+参考
+
+[Primitive Data Types](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)
 
 ## 静态代码块、普通代码块、构造方法执行顺序
 
@@ -151,9 +169,9 @@ constructor 's field: 10, staticField: 20
 
 ## 重写（override）和重载（overload）的区别
 
-重写：父类和子类中方法的名称和参数相同，但实现不同；
+重写：父类和子类中方法名和参数相同，但实现不同；
 
-重载：方法名相同，但参数不同。方法名+参数=方法签名，重载其实就是方法名相同，但是方法签名不同。需要注意的是，重载跟返回值没有任何关系，不管返回值相不相同，只要方法名和参数相同，都不是有效的重载，编译时会报错。
+重载：方法名相同，但参数不同。方法名+参数=方法签名，重载其实就是方法名相同，但是方法签名不同。需要注意的是，**重载跟返回值没有任何关系**，不管返回值相不相同，只要方法名和参数相同，都不是有效的重载，编译时会报错。
 
 ## 接口和抽象类的区别及使用场景
 
@@ -242,15 +260,23 @@ class Newspaper extends Press {
 
 ## Exception 和 Error 的区别
 
-Exception：是异常，指的是程序在正常运行时可能会发生的意外情况，是可以预料的问题，应该被捕获处理。
+Exception：是异常，指的是程序在正常运行时可能会发生的意外情况，是**可以预料**的问题，应该被捕获处理。
 
-Error：是错误，一般指与虚拟机相关的问题，是不可以预料的，程序是没有能力去捕获处理这些问题。常见的 Eror 有：OutOfMemoryError 内存溢出错误
+Error：是错误，一般指与虚拟机相关的问题，是**不可以预料**的，程序是没有能力去捕获处理这些问题。常见的 Eror 有：OutOfMemoryError 内存溢出错误
 
 ## 检查性异常和运行时异常的区别
 
 检查性异常：是指编译期会检查的异常，必须捕获处理，如果不知道怎么处理则应该抛出该异常。
 
-运行时异常：是指编译期不进行检查，但运行时会出现的异常，不强制要求捕获处理。常见的运行时异常有：NullPointerException 空指针异常、ArrayIndexOutOfBoundsException 数组越界异常、ClassCastException 类型转换异常、ArithmeticException 算术异常、IllegalArgumentException 非法传参异常等
+运行时异常：是指编译期不进行检查，但运行时会出现的异常，不强制要求捕获处理。
+
+常见的运行时异常有：
+
+- NullPointerException 空指针异常
+- ArrayIndexOutOfBoundsException 数组越界异常
+- ClassCastException 类型转换异常
+- ArithmeticException 算术异常
+- IllegalArgumentException 非法传参异常
 
 ## ClassNotFoundException 和 NoClassDefFoundError 的区别
 ClassNotFoundException：当程序试图根据字符串名称通过以下三个方法加载类时，如果没找到类的定义就会抛出该异常。
@@ -344,6 +370,10 @@ System.out.println(integer == d);
 System.out.println(integer.equals(d));
 ```
 
+## 为什么重写equals必须重写hashCode？
+
+保证 equals 相等的对象 hashCode 也相等
+
 ## final 关键字
 
 - final 修饰的类，不能被继承
@@ -370,7 +400,13 @@ volatile 有两个作用，一是保证变量的可见性，二是防止指令�
 
 # 字符串篇
 
-## *String StringBuilder StringBuffer 的区别
+## String StringBuilder StringBuffer 的区别
+
+String：不可变，每次修改都会申请新的内存空间
+
+StringBuider：线程不安全，可变，初始容量为16，容量不够会自动扩容为原来两倍
+
+StringBuffer：线程安全，其它同 StringBuilder
 
 ## 什么是不可变类，如何创建不可变类？
 
