@@ -22,6 +22,7 @@ yum groups install Development Tools（内含 gcc, make, git, cmake）
 net-tools.x86_64（内含 ifconfig, netstat, route）
 bash-completion.x86_64
 mlocate.x86_64
+vim (默认没有 vim)
 java-1.8.0-openjdk.x86_64
 java-1.8.0-openjdk-devel.x86_64（内含 Java 诊断工具）
 
@@ -145,7 +146,7 @@ docker-compose --version
 
 ```
 
-
+## docker-compose.yml安装常用服务
 
 ## PostgreSQL
 
@@ -161,6 +162,29 @@ $ systemctl start postgresql-11
 ```
 
 ## MySQL
+
+### 通过 docker 安装
+
+mysql-server 版（也可以使用 docker hub 官方 mysql 镜像，不过镜像更大）
+
+```shell
+// 单机MySQL。通过 -v /opt/mysql/data:/var/lib/mysql 选项可指定宿主机数据卷
+docker run -d --name=mysql-server -p=3306:3306 -e MYSQL_ROOT_HOST=% -e MYSQL_ROOT_PASSWORD=toor mysql/mysql-server
+```
+
+
+
+mysql-cluster 版
+
+```shel
+docker network create cluster --subnet=192.168.0.0/16
+docker run -d --net=cluster --name=management1 --ip=192.168.0.2 mysql/mysql-cluster ndb_mgmd
+docker run -d --net=cluster --name=ndb1 --ip=192.168.0.3 mysql/mysql-cluster ndbd
+docker run -d --net=cluster --name=ndb2 --ip=192.168.0.4 mysql/mysql-cluster ndbd
+docker run -d --net=cluster --name=mysql1 --ip=192.168.0.10 -p=3306:3306 -e MYSQL_ROOT_HOST=% -e MYSQL_ROOT_PASSWORD=toor mysql/mysql-cluster mysqld
+```
+
+
 
 ### 通过 yum 安装
 
@@ -313,7 +337,7 @@ $ docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.el
 
 ## Gogs
 
-### 通过 Docker 安装
+### 通过 docker 安装
 
 ```
 $ docker pull gogs/gogs
