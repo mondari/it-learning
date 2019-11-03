@@ -374,7 +374,9 @@ $ docker start gogs
 
 4. open a browser on http://localhost:8080 or http://localhost:8080/blue
 
-## 根分区扩容
+## 踩坑记录
+
+### 根分区扩容
 
 1. 先在救援模式下用 `fdisk` 给根分区扩容
 
@@ -394,7 +396,7 @@ $ docker start gogs
    
    ```
 
-4. 最后再给XFS文件系统扩容
+4. 最后再给XFS文件系统扩容（Centos 7 的文件系统是 XFS）
 
    ```bash
    xfs_growfs /dev/mapper/centos-root 
@@ -403,3 +405,15 @@ $ docker start gogs
    ```
 
    
+
+### NetworkManager 导致网卡无法获取 IP
+
+NetworkManager 异常导致网卡设备处以 unmanaged 状态，且无法恢复为 managed 状态，可以尝试以下操作：
+
+```
+systemctl stop network-manager
+// 清除 NetworkManager 异常状态
+rm /var/lib/NetworkManager/NetworkManager.state
+systemctl start network-manager
+```
+
