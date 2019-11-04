@@ -130,6 +130,24 @@ ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H fd:// --containerd=/run/cont
 DOCKER_HOST=tcp://DOCKER_HOST_IP:2375
 ```
 
+### Docker 容器开机自启
+
+```bash
+// 在运行docker容器时可以加如下参数来保证每次docker服务重启后容器也自动重启：
+$ docker run --restart always <CONTAINER ID>
+
+// 如果已经启动了则可以使用如下命令：
+$ docker update --restart always <CONTAINER ID>
+```
+
+--restart 具体参数值详细信息：
+
+- no - 容器退出时，不重启容器；
+
+- on-failure - 只有在非0状态退出时才从新启动容器，可设置失败次数，如 on-failure:3 失败重试3次；
+
+- always - 无论退出状态是如何，都重启容器；
+
 ### 安装 Docker Compose
 
 ```shell
@@ -326,11 +344,28 @@ $ journalctl --system | grep rabbitmq
 
 ## Elasticsearch
 
+### 通过 docker 安装
+
 ```shell
+// 安装 elasticsearch
 $ docker network create elasticsearch
-$ docker run -d --name elasticsearch --net elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch
-// 或者使用官方镜像，不过一定要加上版本号（镜像更大）
-$ docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.4.1
+$ mkdir -p /opt/elasticsearch/data && chmod 777 /opt/elasticsearch/data
+$ docker run --name elasticsearch -p 9200:9200 -p 9300:9300 \
+--net elasticsearch \
+-e "discovery.type=single-node" \
+-e "cluster.name=elasticsearch" \
+-v /opt/elasticsearch/plugins:/usr/share/elasticsearch/plugins \
+-v /opt/elasticsearch/data:/usr/share/elasticsearch/data \
+-d elasticsearch:7.4.1
+// 安装 kibana
+$ docker run --name kibana -p 5601:5601 --link elasticsearch:es -e "elasticsearch.hosts=http://es:9200" -d kibana:7.4.1
+
+// 安装监控工具
+$ docker run -d -p 9100:9100 --name elasticsearch-head mobz/elasticsearch-head:5
+$ docker run -p 9800:9800 -d --link elasticsearch:es --name elastichd containerize/elastichd
+// 然后使用 “http://es:9200” 来连接
+
+$ docker run -p 1358:1358 -d --name dejavu appbaseio/dejavu
 ```
 
 
@@ -405,6 +440,20 @@ $ docker start gogs
    ```
 
    
+
+### 设置网卡自动启动
+
+Centos 安装后有时候本地网卡不会自动启动获取IP地址，需要修改网卡配置文件：
+
+```bash
+$ vim /etc/sysconfig/network-scripts/ifcfg-ens33
+DEVICE=ens33
+BOOTPROTO=dhcp
+ONBOOT=yes
+$ nmcli connection reload
+```
+
+
 
 ### NetworkManager 导致网卡无法获取 IP
 
