@@ -270,7 +270,7 @@ net:
 // start a redis instance
 $ docker run --name redis -d redis
 // or start with persistent storage
-$ docker run --name redis -d redis redis-server --appendonly yes
+$ docker run --name redis -p 6379:6379 -d redis redis-server --appendonly yes
 ```
 
 
