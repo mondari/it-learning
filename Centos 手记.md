@@ -264,6 +264,17 @@ net:
 
 ## Redis
 
+### 通过 docker 安装
+
+```bash
+// start a redis instance
+$ docker run --name redis -d redis
+// or start with persistent storage
+$ docker run --name redis -p 6379:6379 -d redis redis-server --appendonly yes
+```
+
+
+
 ### 通过 tar 包安装
 
 ```
