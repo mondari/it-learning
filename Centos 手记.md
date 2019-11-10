@@ -161,10 +161,123 @@ sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 sudo curl -L https://raw.githubusercontent.com/docker/compose/1.24.1/contrib/completion/bash/docker-compose -o /etc/bash_completion.d/docker-compose
 // 验证
 docker-compose --version
-
+// 使用 docker-compose 启动容器
+docker-compose -f docker-compose.yml up -d
 ```
 
-## docker-compose.yml安装常用服务
+
+
+## docker-compose.yml 安装常用服务
+
+以下文件包含服务如下：
+
+- mysql
+- redis
+- mongodb
+- mongo-express
+- rabbitmq
+- nginx
+- elasticsearch
+- kibana
+
+```yaml
+version: '3'
+services:
+  mysql:
+    image: mysql/mysql-server:8.0
+    container_name: mysql
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: toor
+      MYSQL_ROOT_HOST: '%'
+    volumes:
+      - /var/lib/mysql:/var/lib/mysql #数据文件挂载
+      - /var/log/mysql:/var/log/mysql #日志文件挂载
+      - /etc/mysql/conf.d:/etc/mysql/conf.d #配置文件挂载
+  redis:
+    image: redis:5.0
+    container_name: redis
+    command: redis-server --appendonly yes
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - /var/lib/redis:/data #数据文件挂载
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    volumes:
+      - /var/lib/data:/var/lib/rabbitmq #数据文件挂载
+      - /var/log/rabbitmq:/var/log/rabbitmq #日志文件挂载
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq  #默认 guest
+      RABBITMQ_DEFAULT_PASS: rabbitmq  #默认 guest
+      # RABBITMQ_DEFAULT_VHOST: rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    restart: always
+  mongo:
+    image: mongo:4.2
+    container_name: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo
+      MONGO_INITDB_ROOT_PASSWORD: mongo
+    volumes:
+      - /var/lib/mongo:/data/db #数据文件挂载
+    ports:
+      - 27017:27017
+  mongo-express:
+    image: mongo-express:0.49
+    container_name: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: mongo
+      ME_CONFIG_MONGODB_ADMINPASSWORD: mongo
+  # nginx:
+  #   image: nginx:1.17
+  #   container_name: nginx
+  #   restart: always
+  #   ports:
+  #   - 8080:80
+  #   # - 443:443
+  #   volumes:
+  #   - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf #配置文件挂载
+  #   - /usr/share/nginx/html:/usr/share/nginx/html #静态资源根目录挂载
+  #   - /var/log/nginx:/var/log/nginx #日志文件挂载
+  elasticsearch:
+    image: elasticsearch:7.4.1
+    container_name: elasticsearch
+    environment:
+      - "cluster.name=elasticsearch" #设置集群名称为elasticsearch
+      - "discovery.type=single-node" #以单一节点模式启动
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" #设置使用jvm内存大小
+    volumes:
+      - /usr/share/elasticsearch/plugins:/usr/share/elasticsearch/plugins #插件文件挂载
+      - /usr/share/elasticsearch/data:/usr/share/elasticsearch/data #数据文件挂载（需要创建目录并赋予777权限）
+    ports:
+      - 9200:9200
+    restart: always
+  kibana:
+    image: kibana:7.4.1
+    container_name: kibana
+    links:
+      - elasticsearch:es #用es这个域名访问elasticsearch服务
+    depends_on:
+      - elasticsearch #kibana在elasticsearch启动之后再启动
+    environment:
+      - "elasticsearch.hosts=http://es:9200" #设置访问elasticsearch的地址
+    ports:
+      - 5601:5601
+    restart: always
+```
+
+
 
 ## PostgreSQL
 
