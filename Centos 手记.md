@@ -18,7 +18,7 @@ $ echo "set completion-ignore-case on">>~/.inputrc
 
 ## 安装的 yum 包
 
-yum groups install Development Tools（内含 gcc, make, git, cmake）
+yum groups install Development Tools（内含 gcc, make, git, cmake, perl）
 net-tools.x86_64（内含 ifconfig, netstat, route）
 bash-completion.x86_64
 mlocate.x86_64
@@ -63,7 +63,7 @@ $ sudo yum-config-manager \
     http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo  
     
 // Install the latest version of Docker Engine - Community and containerd    
-$ sudo yum install docker-ce docker-ce-cli containerd.io
+$ sudo yum install -y docker-ce docker-ce-cli containerd.io
 
 // 将 Docker 设为开机启动
 $ sudo systemctl enable docker
@@ -78,7 +78,6 @@ $ sudo docker run hello-world
 ### 设置 Docker Hub 镜像加速器
 
 ```shell
-sudo mkdir -p /etc/docker
 sudo tee /etc/docker/daemon.json <<-'EOF'
 {
     "registry-mirrors": [
@@ -153,6 +152,9 @@ $ docker update --restart always <CONTAINER ID>
 ```shell
 // 下载可执行文件
 sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+// 下载 docker-compose（这里使用 daocloud 镜像下载）
+sudo curl -L https://get.daocloud.io/docker/compose/releases/download/1.24.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+
 // 添加执行权限
 sudo chmod +x /usr/local/bin/docker-compose
 // 创建软连接
@@ -201,7 +203,7 @@ $ cat /proc/sys/net/ipv4/ip_forward
 
 参考：https://docs.kvasirsg.com/centos-7/prefilight-configuration/how-to-enable-ip-forwarding
 
-## docker-compose.yml 安装常用服务
+## 使用 docker-compose.yml 安装常用服务
 
 以下文件包含服务如下：
 
@@ -214,6 +216,16 @@ $ cat /proc/sys/net/ipv4/ip_forward
 - nginx
 - elasticsearch
 - kibana
+
+使用 docker-compose 安装服务需要配置好以下内容：
+
+- 镜像名
+- 容器名
+- 开机自启动
+- 端口映射
+- 用户名和密码
+- 数据卷映射：数据、日志、配置
+- 配置IP地址访问
 
 ```yaml
 version: '3'
@@ -238,9 +250,9 @@ services:
       MYSQL_ROOT_PASSWORD: toor
       MYSQL_ROOT_HOST: '%'
     volumes:
-      - /var/lib/mysql:/var/lib/mysql #数据文件挂载
-      - /var/log/mysql:/var/log/mysql #日志文件挂载
-      - /etc/mysql/conf.d:/etc/mysql/conf.d #配置文件挂载
+      - /var/lib/mysql:/var/lib/mysql #数据目录挂载
+      - /var/log/mysql:/var/log/mysql #日志目录挂载
+      - /etc/mysql/conf.d:/etc/mysql/conf.d #配置目录挂载
   redis:
     image: redis:5.0
     container_name: redis
@@ -249,13 +261,13 @@ services:
     ports:
       - 6379:6379
     volumes:
-      - /var/lib/redis:/data #数据文件挂载
+      - /var/lib/redis:/data #数据目录挂载
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
     volumes:
-      - /var/lib/data:/var/lib/rabbitmq #数据文件挂载
-      - /var/log/rabbitmq:/var/log/rabbitmq #日志文件挂载
+      - /var/lib/rabbitmq:/var/lib/rabbitmq #数据目录挂载
+      - /var/log/rabbitmq:/var/log/rabbitmq #日志目录挂载
     environment:
       RABBITMQ_DEFAULT_USER: rabbitmq  #默认 guest
       RABBITMQ_DEFAULT_PASS: rabbitmq  #默认 guest
@@ -272,7 +284,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: mongo
       MONGO_INITDB_ROOT_PASSWORD: mongo
     volumes:
-      - /var/lib/mongo:/data/db #数据文件挂载
+      - /var/lib/mongo:/data/db #数据目录挂载
     ports:
       - 27017:27017
   mongo-express:
@@ -292,9 +304,9 @@ services:
   #   - 8080:80
   #   # - 443:443
   #   volumes:
-  #   - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf #配置文件挂载
   #   - /usr/share/nginx/html:/usr/share/nginx/html #静态资源根目录挂载
-  #   - /var/log/nginx:/var/log/nginx #日志文件挂载
+  #   - /var/log/nginx:/var/log/nginx #日志目录挂载
+  #   - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf #配置目录挂载
   elasticsearch:
     image: elasticsearch:7.4.1
     container_name: elasticsearch
@@ -303,8 +315,8 @@ services:
       - "discovery.type=single-node" #以单一节点模式启动
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m" #设置使用jvm内存大小
     volumes:
-      - /usr/share/elasticsearch/plugins:/usr/share/elasticsearch/plugins #插件文件挂载
-      - /usr/share/elasticsearch/data:/usr/share/elasticsearch/data #数据文件挂载（需要创建目录并赋予777权限）
+      - /usr/share/elasticsearch/plugins:/usr/share/elasticsearch/plugins #插件目录挂载
+      - /usr/share/elasticsearch/data:/usr/share/elasticsearch/data #数据目录挂载（需要创建目录并赋予777权限）
     ports:
       - 9200:9200
     restart: always
@@ -395,6 +407,18 @@ mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'pass4wOrd!';
 
 ## MongoDB
 
+### 通过 docker 安装
+
+```bash
+$ sudo docker run --name mongo -d \
+-p 27017:27017 \
+-e MONGO_INITDB_ROOT_USERNAME=mongo -e MONGO_INITDB_ROOT_PASSWORD=mongo \
+-v /var/lib/mongo:/data/db
+mongo:4.2
+```
+
+
+
 ### 通过 yum 安装
 
 ```shell
@@ -453,6 +477,19 @@ bind 0.0.0.0
 
 
 ## RabbitMQ
+
+### 通过 docker 安装
+
+```bash
+$ sudo docker run -d --name rabbitmq \
+-p 5672:5672 -p 15672:15672 \
+-e RABBITMQ_DEFAULT_USER=rabbitmq -e RABBITMQ_DEFAULT_PASS=rabbitmq \
+-v /var/lib/rabbitmq:/var/lib/rabbitmq -v /var/log/rabbitmq:/var/log/rabbitmq \
+rabbitmq:3-management
+
+```
+
+
 
 ### 通过 yum 安装
 
@@ -535,7 +572,6 @@ $ docker run --name kibana -p 5601:5601 --link elasticsearch:es -e "elasticsearc
 $ docker run -d -p 9100:9100 --name elasticsearch-head mobz/elasticsearch-head:5
 $ docker run -p 9800:9800 -d --link elasticsearch:es --name elastichd containerize/elastichd
 // 然后使用 “http://es:9200” 来连接
-
 $ docker run -p 1358:1358 -d --name dejavu appbaseio/dejavu
 ```
 
@@ -579,6 +615,20 @@ $ docker start gogs
 3. note the admin password dumped on log: d844e5d059554c85b1012f942109226c
 
 4. open a browser on http://localhost:8080 or http://localhost:8080/blue
+
+## nacos
+
+### 通过 docker 安装
+
+```bash
+$ git clone https://github.com/nacos-group/nacos-docker.git
+$ cd nacos-docker
+$ docker-compose -f example/standalone-derby.yaml up -d
+```
+
+访问 http://127.0.0.1:8848/nacos/ 
+
+用户名和密码：nacos
 
 ## 踩坑记录
 
