@@ -103,7 +103,7 @@ docker info
 | [DaoCloud 镜像站](https://links.jianshu.com/go?to=https%3A%2F%2Fdaocloud.io%2Fmirror) | `http://f1361db2.m.daocloud.io`      | 可登录，系统分配  | Docker Hub                                                   |
 | [Azure 中国镜像](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2FAzure%2Fcontainer-service-for-azure-china%2Fblob%2Fmaster%2Faks%2FREADME.md%2322-container-registry-proxy) | `https://dockerhub.azk8s.cn`         |                   | Docker Hub、GCR、Quay                                        |
 | [科大镜像站](https://links.jianshu.com/go?to=https%3A%2F%2Fmirrors.ustc.edu.cn%2Fhelp%2Fdockerhub.html) | `https://docker.mirrors.ustc.edu.cn` |                   | Docker Hub、[GCR](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2Fustclug%2Fmirrorrequest%2Fissues%2F91)、[Quay](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2Fustclug%2Fmirrorrequest%2Fissues%2F135) |
-| [阿里云](https://links.jianshu.com/go?to=https%3A%2F%2Fcr.console.aliyun.com) | `https://.mirror.aliyuncs.com`       | 需登录，系统分配  | Docker Hub                                                   |
+| [阿里云](https://links.jianshu.com/go?to=https%3A%2F%2Fcr.console.aliyun.com) | `https://xxx.mirror.aliyuncs.com`    | 需登录，系统分配  | Docker Hub                                                   |
 | [七牛云](https://links.jianshu.com/go?to=https%3A%2F%2Fkirk-enterprise.github.io%2Fhub-docs%2F%23%2Fuser-guide%2Fmirror) | `https://reg-mirror.qiniu.com`       |                   | Docker Hub、GCR、Quay                                        |
 | [网易云](https://links.jianshu.com/go?to=https%3A%2F%2Fc.163yun.com%2Fhub) | `https://hub-mirror.c.163.com`       |                   | Docker Hub                                                   |
 | [腾讯云](https://links.jianshu.com/go?to=https%3A%2F%2Fcloud.tencent.com%2Fdocument%2Fproduct%2F457%2F9113) | `https://mirror.ccs.tencentyun.com`  |                   | Docker Hub                                                   |
@@ -165,12 +165,47 @@ docker-compose --version
 docker-compose -f docker-compose.yml up -d
 ```
 
+### 安装  Portainer
 
+Portainer 是 Docker 的 Web 管理界面。
+
+```bash
+$ docker volume create portainer_data
+$ docker run -d -p 9000:9000 -p 8000:8000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer
+
+```
+
+访问 http://localhost:9000，首次访问会提示设置密码，设置为 admin portainer.io。
+
+### 开启 IPv4 forward
+
+如果不开启 IPv4 forward，Portainer 容器无法通过外网访问，会提示“WARNING: IPv4 forwarding is disabled. Networking will not work”。
+
+
+
+```bash
+// 开启
+$ vim /etc/sysctl.conf:
+net.ipv4.ip_forward = 1
+// 重新加载
+$ sysctl -p /etc/sysctl.conf
+// 检查
+$ sysctl net.ipv4.ip_forward
+net.ipv4.ip_forward = 1
+// 或者通过以下命令检查
+$ cat /proc/sys/net/ipv4/ip_forward
+1
+```
+
+
+
+参考：https://docs.kvasirsg.com/centos-7/prefilight-configuration/how-to-enable-ip-forwarding
 
 ## docker-compose.yml 安装常用服务
 
 以下文件包含服务如下：
 
+- portainer
 - mysql
 - redis
 - mongodb
@@ -183,6 +218,16 @@ docker-compose -f docker-compose.yml up -d
 ```yaml
 version: '3'
 services:
+  portainer:
+    image: portainer/portainer
+    command: -H unix:///var/run/docker.sock
+    restart: always
+    ports:
+      - 9000:9000
+      - 8000:8000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
   mysql:
     image: mysql/mysql-server:8.0
     container_name: mysql
@@ -275,6 +320,8 @@ services:
     ports:
       - 5601:5601
     restart: always
+volumes:
+  portainer_data:    
 ```
 
 
