@@ -203,9 +203,9 @@ $ cat /proc/sys/net/ipv4/ip_forward
 
 参考：https://docs.kvasirsg.com/centos-7/prefilight-configuration/how-to-enable-ip-forwarding
 
-## 使用 docker-compose.yml 安装常用服务
+## Docker Compose 安装常用服务
 
-以下文件包含服务如下：
+常用服务包括：
 
 - portainer
 - mysql
@@ -225,7 +225,7 @@ $ cat /proc/sys/net/ipv4/ip_forward
 - 端口映射
 - 用户名和密码
 - 数据卷映射：数据、日志、配置
-- 配置IP地址访问
+- 允许外网访问
 
 ```yaml
 version: '3'
@@ -334,6 +334,21 @@ services:
     restart: always
 volumes:
   portainer_data:    
+```
+
+## Docker Compose 安装微服务
+
+- Zipkin
+
+```yaml
+version: '3'
+services:
+  zipkin:
+    image: openzipkin/zipkin #zipkin-slim镜像也可以
+    restart: always
+    ports:
+      - 9411:9411
+
 ```
 
 
