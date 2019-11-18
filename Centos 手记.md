@@ -351,7 +351,28 @@ services:
 
 ```
 
+## Cockpit
 
+Cockpit 是 Linux 的 Web 控制台。
+
+1. 安装 cockpit:
+
+   ```
+   sudo yum install cockpit
+   ```
+
+2. 启动 cockpit 服务:
+
+   ```
+   sudo systemctl enable --now cockpit.socket
+   ```
+
+3. 打开防火墙:
+
+   ```
+   sudo firewall-cmd --permanent --zone=public --add-service=cockpit
+   sudo firewall-cmd --reload
+   ```
 
 ## PostgreSQL
 
