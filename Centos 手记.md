@@ -284,7 +284,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: mongo
       MONGO_INITDB_ROOT_PASSWORD: mongo
     volumes:
-      - /var/lib/mongo:/data/db #数据目录挂载
+      - /var/lib/mongo:/data/db #数据目录挂载（启动前需要清空已有目录或使用旧密码，否则启动或登陆失败）
     ports:
       - 27017:27017
   mongo-express:
@@ -296,6 +296,8 @@ services:
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: mongo
       ME_CONFIG_MONGODB_ADMINPASSWORD: mongo
+    depends_on:
+      - mongo
   # nginx:
   #   image: nginx:1.17
   #   container_name: nginx
@@ -333,7 +335,7 @@ services:
       - 5601:5601
     restart: always
 volumes:
-  portainer_data:    
+  portainer_data:
 ```
 
 ## Docker Compose 安装微服务
@@ -373,6 +375,10 @@ Cockpit 是 Linux 的 Web 控制台。
    sudo firewall-cmd --permanent --zone=public --add-service=cockpit
    sudo firewall-cmd --reload
    ```
+   
+4. 访问  https://ip-address:9090 
+
+
 
 ## PostgreSQL
 
@@ -449,7 +455,7 @@ mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'pass4wOrd!';
 $ sudo docker run --name mongo -d \
 -p 27017:27017 \
 -e MONGO_INITDB_ROOT_USERNAME=mongo -e MONGO_INITDB_ROOT_PASSWORD=mongo \
--v /var/lib/mongo:/data/db
+-v /var/lib/mongo:/data/db \
 mongo:4.2
 ```
 
