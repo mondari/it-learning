@@ -317,8 +317,7 @@ services:
       - "discovery.type=single-node" #以单一节点模式启动
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m" #设置使用jvm内存大小
     volumes:
-      - /usr/share/elasticsearch/plugins:/usr/share/elasticsearch/plugins #插件目录挂载
-      - /usr/share/elasticsearch/data:/usr/share/elasticsearch/data #数据目录挂载（需要创建目录并赋予777权限）
+      - elastic:/usr/share/elasticsearch/data #数据目录挂载（需要创建目录并赋予777权限）
     ports:
       - 9200:9200
     restart: always
@@ -336,6 +335,7 @@ services:
     restart: always
 volumes:
   portainer_data:
+  elastic:
 ```
 
 ## Docker Compose 安装微服务
@@ -617,7 +617,92 @@ $ docker run -p 9800:9800 -d --link elasticsearch:es --name elastichd containeri
 $ docker run -p 1358:1358 -d --name dejavu appbaseio/dejavu
 ```
 
+参考：https://hub.docker.com/_/elasticsearch
 
+### 通过 Docker Compose 安装集群
+
+```yaml
+version: '2.2'
+services:
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.2
+    container_name: es01
+    environment:
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es02,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data01:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - elastic
+  es02:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.2
+    container_name: es02
+    environment:
+      - node.name=es02
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data02:/usr/share/elasticsearch/data
+    networks:
+      - elastic
+  es03:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.2
+    container_name: es03
+    environment:
+      - node.name=es03
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es02
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data03:/usr/share/elasticsearch/data
+    networks:
+      - elastic
+
+volumes:
+  data01:
+    driver: local
+  data02:
+    driver: local
+  data03:
+    driver: local
+
+networks:
+  elastic:
+    driver: bridge
+```
+
+启动后访问
+
+```bash
+curl -X GET "localhost:9200/_cat/nodes?v&pretty"
+```
+
+
+
+参考：https://www.elastic.co/guide/en/elasticsearch/reference/7.4/docker.html
 
 ## Gogs
 
