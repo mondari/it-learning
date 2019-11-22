@@ -761,7 +761,21 @@ $ docker-compose -f example/standalone-derby.yaml up -d
 
 ### 根分区扩容
 
-1. 先在救援模式下用 `fdisk` 给根分区扩容
+1. 先用 `fdisk` 给根分区扩容
+
+   ```bash
+   fdisk /dev/sda
+   > p #打印分区表
+   > d #删除分区（分区也行）
+   > n #新增分区
+   > p #打印分区表
+   > t #修改分区类型为8e(8e表示LVM，默认是不创建LVM分区)
+   > w #写分区表
+   > q #退出
+   partprobe # 或 重启机器
+   ```
+
+   
 
 2. 然后给物理卷PV扩容
 
@@ -785,6 +799,12 @@ $ docker-compose -f example/standalone-derby.yaml up -d
    xfs_growfs /dev/mapper/centos-root 
    
    
+   ```
+
+   Centos 6 的文件系统是 Ext4FS，使用
+
+   ```bash
+   resize2fs /dev/mapper/centos-root
    ```
 
    
