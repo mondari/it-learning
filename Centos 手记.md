@@ -203,19 +203,7 @@ $ cat /proc/sys/net/ipv4/ip_forward
 
 参考：https://docs.kvasirsg.com/centos-7/prefilight-configuration/how-to-enable-ip-forwarding
 
-## Docker Compose 安装常用服务
-
-常用服务包括：
-
-- portainer
-- mysql
-- redis
-- mongodb
-- mongo-express
-- rabbitmq
-- nginx
-- elasticsearch
-- kibana
+## Docker Compose 
 
 使用 docker-compose 安装服务需要配置好以下内容：
 
@@ -227,11 +215,14 @@ $ cat /proc/sys/net/ipv4/ip_forward
 - 数据卷映射：数据、日志、配置
 - 允许外网访问
 
+### 安装数据库
+
 ```yaml
 version: '3'
 services:
   portainer:
     image: portainer/portainer
+    container_name: portainer
     command: -H unix:///var/run/docker.sock
     restart: always
     ports:
@@ -253,6 +244,19 @@ services:
       - /var/lib/mysql:/var/lib/mysql #数据目录挂载
       - /var/log/mysql:/var/log/mysql #日志目录挂载
       - /etc/mysql/conf.d:/etc/mysql/conf.d #配置目录挂载
+  # phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin:4.8
+  #   container_name: phpmyadmin
+  #   environment:
+  #    - PMA_USER=root
+  #    - PMA_PASSWORD=toor
+  #   restart: always
+  #   ports:
+  #    - 8082:80
+  #   links: 
+  #    - mysql:db
+  #   depends_on:
+  #     - mysql
   redis:
     image: redis:5.0
     container_name: redis
@@ -309,6 +313,15 @@ services:
   #   - /usr/share/nginx/html:/usr/share/nginx/html #静态资源根目录挂载
   #   - /var/log/nginx:/var/log/nginx #日志目录挂载
   #   - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf #配置目录挂载
+volumes:
+  portainer_data:
+```
+
+### 安装ELK
+
+```bash
+version: '3'
+services:
   elasticsearch:
     image: elasticsearch:7.4.1
     container_name: elasticsearch
@@ -334,11 +347,12 @@ services:
       - 5601:5601
     restart: always
 volumes:
-  portainer_data:
   elastic:
 ```
 
-## Docker Compose 安装微服务
+
+
+### 安装微服务
 
 - Zipkin
 
@@ -446,6 +460,34 @@ $ mysql -uroot
 mysql> ALTER USER 'root'@'%' IDENTIFIED BY 'pass4wOrd!';
 mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'pass4wOrd!';
 ```
+
+## phpMyAdmin
+
+phpMyAdmin 目前不支持 MySQL 8 的 caching_sha2_password 认证方式。
+
+### Usage with linked server
+
+```bash
+docker run --name phpmyadmin -d --link mysql:db -p 8082:80 phpmyadmin/phpmyadmin:4.8
+
+```
+
+### Usage with external server
+
+```bash
+docker run --name phpmyadmin -d -e PMA_HOST=dbhost -e PMA_PORT=3306 \
+-p 8082:80 phpmyadmin/phpmyadmin:4.8
+
+```
+
+### Usage with arbitrary server
+
+```bash
+docker run --name phpmyadmin -d -e PMA_ARBITRARY=1 -p 8082:80 phpmyadmin/phpmyadmin:4.8
+
+```
+
+参考：https://hub.docker.com/r/phpmyadmin/phpmyadmin
 
 ## MongoDB
 
@@ -604,8 +646,7 @@ $ docker run --name elasticsearch -p 9200:9200 -p 9300:9300 \
 --net elasticsearch \
 -e "discovery.type=single-node" \
 -e "cluster.name=elasticsearch" \
--v /opt/elasticsearch/plugins:/usr/share/elasticsearch/plugins \
--v /opt/elasticsearch/data:/usr/share/elasticsearch/data \
+-v /usr/share/elasticsearch/data:/usr/share/elasticsearch/data \
 -d elasticsearch:7.4.1
 // 安装 kibana
 $ docker run --name kibana -p 5601:5601 --link elasticsearch:es -e "elasticsearch.hosts=http://es:9200" -d kibana:7.4.1
