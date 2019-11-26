@@ -20,11 +20,42 @@ $ echo "set completion-ignore-case on">>~/.inputrc
 
 yum groups install Development Tools（内含 gcc, make, git, cmake, perl）
 net-tools.x86_64（内含 ifconfig, netstat, route）
+yum-cron
 bash-completion.x86_64
 mlocate.x86_64
 vim (默认没有 vim)
 java-1.8.0-openjdk.x86_64
 java-1.8.0-openjdk-devel.x86_64（内含 Java 诊断工具）
+epel-release（EPEL仓库有Python3）
+yum install python-pip（默认安装pyhon-pip2）
+pip install --upgrade pip（更新pip）
+
+## 配置EPEL镜像
+
+```bash
+###备份(如有配置其他epel源)
+
+$ mv /etc/yum.repos.d/epel.repo /etc/yum.repos.d/epel.repo.backup
+$ mv /etc/yum.repos.d/epel-testing.repo /etc/yum.repos.d/epel-testing.repo.backup
+
+###下载新repo 到/etc/yum.repos.d/
+$ wget -O /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo
+
+```
+
+## 配置PyPi镜像
+
+```bash
+$ mkdir ~/.pip
+$ cat > ~/.pip/pip.conf <<EOF
+[global]
+index-url = https://mirrors.aliyun.com/pypi/simple/
+
+[install]
+trusted-host=mirrors.aliyun.com
+```
+
+
 
 ## neofetch
 
@@ -215,7 +246,7 @@ $ cat /proc/sys/net/ipv4/ip_forward
 - 数据卷映射：数据、日志、配置
 - 允许外网访问
 
-### 安装数据库
+### 部署数据库服务
 
 ```yaml
 version: '3'
@@ -317,7 +348,7 @@ volumes:
   portainer_data:
 ```
 
-### 安装ELK
+### 部署ELK
 
 ```bash
 version: '3'
@@ -352,7 +383,7 @@ volumes:
 
 
 
-### 安装微服务
+### 部署微服务
 
 - Zipkin
 
@@ -366,6 +397,14 @@ services:
       - 9411:9411
 
 ```
+
+### 部署CI/CD
+
+```bash
+
+```
+
+
 
 ## Cockpit
 
@@ -762,14 +801,10 @@ $ docker start gogs
 ### 通过 docker 安装
 
 1. ```bash
-   docker pull jenkinsci/blueocean
-   
-   ```
-
-2. ```bash
-   docker run \
-   -u root \
-     --rm \
+   $ docker volume create jenkins-data
+   $ docker run \
+     -u root \
+    --rm \
      -d \
      -p 8080:8080 \
      -p 50000:50000 \
@@ -779,10 +814,51 @@ $ docker start gogs
      jenkinsci/blueocean
    
    ```
-
+   
 3. note the admin password dumped on log: d844e5d059554c85b1012f942109226c
 
 4. open a browser on http://localhost:8080 or http://localhost:8080/blue
+
+## Nexus3
+
+Nexus3 用于搭建Maven私有仓库
+
+### 通过 docker 安装
+
+```bash
+$ docker volume create --name nexus-data
+$ docker run -d -p 8083:8081 --name nexus -v nexus-data:/nexus-data sonatype/nexus3:3.19.1
+$ curl http://localhost:8083/
+```
+
+默认用户名为 admin，密码存在 admin.password 文件中
+
+```bash
+cat /var/lib/docker/volumes/nexus-data/_data/admin.password
+```
+
+首次登录会提示修改密码。
+
+参考：https://hub.docker.com/r/sonatype/nexus3
+
+
+
+## Docker Registry
+
+### 通过 docker 安装
+
+```bash
+$ docker volume create --name registry-data
+$ docker run -d -p 5000:5000 --name registry -v registry-data:/var/lib/registry registry:2.7
+```
+
+参考：
+
+https://hub.docker.com/_/registry
+
+https://docs.docker.com/registry/deploying/
+
+
 
 ## nacos
 
