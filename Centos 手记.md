@@ -204,11 +204,11 @@ Portainer 是 Docker 的 Web 管理界面。
 
 ```bash
 $ docker volume create portainer_data
-$ docker run -d -p 9000:9000 -p 8000:8000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer
+$ docker run -d -p 9000:9000 -p 8000:8000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer:1.22.2
 
 ```
 
-访问 http://localhost:9000，首次访问会提示设置密码，设置为 admin portainer.io。
+访问 http://localhost:9000，首次访问会提示设置用户名密码，分别设置为 admin 和 portainer.io。
 
 ### 开启 IPv4 forward
 
@@ -357,11 +357,10 @@ services:
     image: elasticsearch:7.4.1
     container_name: elasticsearch
     environment:
-      - "cluster.name=elasticsearch" #设置集群名称为elasticsearch
       - "discovery.type=single-node" #以单一节点模式启动
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m" #设置使用jvm内存大小
     volumes:
-      - elastic:/usr/share/elasticsearch/data #数据目录挂载（需要创建目录并赋予777权限）
+      - elastic-data:/usr/share/elasticsearch/data #数据目录挂载（需要创建目录并赋予777权限）
     ports:
       - 9200:9200
     restart: always
@@ -378,7 +377,7 @@ services:
       - 5601:5601
     restart: always
 volumes:
-  elastic:
+  elastic-data:
 ```
 
 
@@ -680,24 +679,72 @@ $ journalctl --system | grep rabbitmq
 ```shell
 // 安装 elasticsearch
 $ docker network create elasticsearch
-$ mkdir -p /opt/elasticsearch/data && chmod 777 /opt/elasticsearch/data
-$ docker run --name elasticsearch -p 9200:9200 -p 9300:9300 \
+$ docker volume create elastic-data
+$ docker run --name elasticsearch \
+-p 9200:9200 -p 9300:9300 \
 --net elasticsearch \
--e "discovery.type=single-node" \
--e "cluster.name=elasticsearch" \
--v /usr/share/elasticsearch/data:/usr/share/elasticsearch/data \
+-e "discovery.type=single-node" -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" \
+-e "http.cors.enabled=true" \
+-e "http.cors.allow-origin=*" \
+-e "http.cors.allow-headers=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization" \
+-e "http.cors.allow-credentials=true" \
+-v elastic-data:/usr/share/elasticsearch/data \
 -d elasticsearch:7.4.1
 // 安装 kibana
-$ docker run --name kibana -p 5601:5601 --link elasticsearch:es -e "elasticsearch.hosts=http://es:9200" -d kibana:7.4.1
+$ docker run --name kibana -p 5601:5601 --net elasticsearch -d kibana:7.4.1
+// 安装 logstash
+$ docker run --rm -it -v ~/pipeline/:/usr/share/logstash/pipeline/ --name logstash -d logstash:7.4.2 #方法一，提供 logstash.conf 文件
+$ docker run --rm -it -v ~/settings/:/usr/share/logstash/config/ --name logstash -d logstash:7.4.2 #方法二，提供 logstash.yml 文件
+$ docker run --rm -it -v ~/settings/logstash.yml:/usr/share/logstash/config/ --name logstash -d logstash.yml logstash:7.4.2
 
-// 安装监控工具
-$ docker run -d -p 9100:9100 --name elasticsearch-head mobz/elasticsearch-head:5
-$ docker run -p 9800:9800 -d --link elasticsearch:es --name elastichd containerize/elastichd
-// 然后使用 “http://es:9200” 来连接
-$ docker run -p 1358:1358 -d --name dejavu appbaseio/dejavu
+// ###安装监控工具###
+// 这个监控工具需要保证ES在同一Docker Network才能使用 “http://elasticsearch:9200” 连接
+$ docker run -p 9800:9800 --net elasticsearch --name elastichd -d containerize/elastichd
+// 这两款监控工具只能通过 http://centos-vm://9200 打开（centos-vm是ES服务在宿主机的域名，即虚拟机在宿主机的域名，因为ES服务部署在虚拟机上）
+$ docker run -p 9100:9100 --net elasticsearch --name elasticsearch-head -d mobz/elasticsearch-head:5
+$ docker run -p 1358:1358 --net elasticsearch --name dejavu -d appbaseio/dejavu
 ```
 
-参考：https://hub.docker.com/_/elasticsearch
+参考：
+
+https://hub.docker.com/_/elasticsearch
+
+https://hub.docker.com/_/kibana
+
+https://hub.docker.com/r/mobz/elasticsearch-head
+
+https://github.com/360EntSecGroup-Skylar/ElasticHD 
+
+https://hub.docker.com/r/appbaseio/dejavu
+
+
+
+logstash.conf 配置文件
+
+```conf
+input {
+     beats {
+         port => 5044
+         type => beats
+     }
+     tcp {
+         port => 5000
+         type => syslog
+     }
+ }
+ filter {
+ }
+ output {
+     elasticsearch { 
+         hosts => ["elasticsearch:9200"]
+     }
+     stdout { codec => rubydebug }
+ }
+```
+
+参考：https://www.elastic.co/guide/en/logstash/current/docker-config.html
+
+
 
 ### 通过 Docker Compose 安装集群
 
@@ -705,7 +752,7 @@ $ docker run -p 1358:1358 -d --name dejavu appbaseio/dejavu
 version: '2.2'
 services:
   es01:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.1
     container_name: es01
     environment:
       - node.name=es01
@@ -725,7 +772,7 @@ services:
     networks:
       - elastic
   es02:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.1
     container_name: es02
     environment:
       - node.name=es02
@@ -743,7 +790,7 @@ services:
     networks:
       - elastic
   es03:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.1
     container_name: es03
     environment:
       - node.name=es03
@@ -804,14 +851,13 @@ $ docker start gogs
    $ docker volume create jenkins-data
    $ docker run \
      -u root \
-    --rm \
      -d \
      -p 8080:8080 \
      -p 50000:50000 \
      -v jenkins-data:/var/jenkins_home \
      -v /var/run/docker.sock:/var/run/docker.sock \
      --name jenkins-blueocean \
-     jenkinsci/blueocean
+     jenkinsci/blueocean:
    
    ```
    
@@ -851,6 +897,33 @@ cat /var/lib/docker/volumes/nexus-data/_data/admin.password
 $ docker volume create --name registry-data
 $ docker run -d -p 5000:5000 --name registry -v registry-data:/var/lib/registry registry:2.7
 ```
+
+使用示例：
+
+```
+$ docker pull ubuntu
+$ docker tag ubuntu localhost:5000/ubuntu
+$ docker push localhost:5000/ubuntu
+$ curl localhost:5000/v2/_catalog
+{"repositories":["ubuntu"]}
+```
+
+PS：目前不知道 Docker 私仓的镜像删除方法，使用时请慎用。
+
+配置 Docker 允许非 `HTTPS` 方式推送镜像，编辑 `/etc/docker/daemon.json` 中为如下内容：
+
+```json
+{
+  "registry-mirror": [
+    "https://dockerhub.azk8s.cn"
+  ],
+  "insecure-registries": [
+    "192.168.199.100:5000"
+  ]
+}
+```
+
+
 
 参考：
 
