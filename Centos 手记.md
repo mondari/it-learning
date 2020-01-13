@@ -723,6 +723,7 @@ logstash.conf 配置文件
 
 ```conf
 input {
+	 stdin { }
      beats {
          port => 5044
          type => beats
