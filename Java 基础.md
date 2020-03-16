@@ -593,17 +593,17 @@ private static List<String> randomStringArray(int size) {
 
 ## JSP 九大内置对象
 
-| 内置对象    | 类型                | 作用                 |
-| ----------- | ------------------- | -------------------- |
-| request     | HttpServletRequest  |                      |
-| response    | HttpServletResponse |                      |
-| session     | HttpSession         |                      |
-| application | ServletContext      |                      |
-| pageContext | PageContext         | 获取其他八个内置对象 |
-| config      | ServletConfig       | 获取服务器的配置信息 |
-| page        | Object(this)        | 代表JSP页面本身      |
-| out         | JspWriter           | 在浏览器中打印信息   |
-| exception   | Throwable           |                      |
+| 内置对象    | 类型                | 作用                                  |
+| ----------- | ------------------- | ------------------------------------- |
+| request     | HttpServletRequest  |                                       |
+| response    | HttpServletResponse |                                       |
+| session     | HttpSession         |                                       |
+| application | ServletContext      |                                       |
+| pageContext | PageContext         | 获取其他八个内置对象                  |
+| config      | ServletConfig       | 获取服务器的配置信息                  |
+| page        | Object(this)        | 代表JSP页面本身，即JSP转换后的Servlet |
+| out         | JspWriter           | 在浏览器中打印信息                    |
+| exception   | Throwable           |                                       |
 
 ## cookie 和 session 的区别
 
