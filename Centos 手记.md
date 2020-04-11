@@ -59,7 +59,7 @@ trusted-host=mirrors.aliyun.com
 
 ## neofetch
 
-```shell
+```bash
 curl -o /etc/yum.repos.d/konimex-neofetch-epel-7.repo https://copr.fedorainfracloud.org/coprs/konimex/neofetch/repo/epel-7/konimex-neofetch-epel-7.repo
 
 yum install neofetch
@@ -71,7 +71,7 @@ yum install neofetch
 
 ### 安装 docker-ce
 
-```shell
+```bash
 // Uninstall old versions
 $ sudo yum remove docker \
                   docker-client \
@@ -108,7 +108,7 @@ $ sudo docker run hello-world
 
 ### 设置 Docker Hub 镜像加速器
 
-```shell
+```bash
 sudo tee /etc/docker/daemon.json <<-'EOF'
 {
     "registry-mirrors": [
@@ -144,7 +144,7 @@ docker info
 
 ### 开启远程访问
 
-```shell
+```bash
 [root@docker]# vim /usr/lib/systemd/system/docker.service
 #修改ExecStart这行
 ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H fd:// --containerd=/run/containerd/containerd.sock
@@ -180,7 +180,7 @@ $ docker update --restart always <CONTAINER ID>
 
 ### 安装 Docker Compose
 
-```shell
+```bash
 // 下载可执行文件
 sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 // 下载 docker-compose（这里使用 daocloud 镜像下载）
@@ -451,7 +451,7 @@ $ systemctl start postgresql-11
 
 mysql-server 版（也可以使用 docker hub 官方 mysql 镜像，不过镜像更大）
 
-```shell
+```bash
 // 单机MySQL。通过 -v /opt/mysql/data:/var/lib/mysql 选项可指定宿主机数据卷
 docker run -d --name=mysql-server -p=3306:3306 -e MYSQL_ROOT_HOST=% -e MYSQL_ROOT_PASSWORD=toor mysql/mysql-server
 ```
@@ -543,7 +543,7 @@ mongo:4.2
 
 ### 通过 yum 安装
 
-```shell
+```bash
 $ vim /etc/yum.repos.d/mongodb-org-4.0.repo
 [mongodb-org-4.0]
 name=MongoDB Repository
@@ -676,7 +676,7 @@ $ journalctl --system | grep rabbitmq
 
 ### 通过 docker 安装
 
-```shell
+```bash
 // 安装 elasticsearch
 $ docker network create elasticsearch
 $ docker volume create elastic-data
@@ -947,6 +947,17 @@ $ docker-compose -f example/standalone-derby.yaml up -d
 访问 http://127.0.0.1:8848/nacos/ 
 
 用户名和密码：nacos
+
+## Zipkin
+
+### 通过 docker 安装
+
+```bash
+docker run -d -p 9411:9411 openzipkin/zipkin
+
+```
+
+参考：https://github.com/openzipkin/zipkin/tree/master/docker
 
 ## 踩坑记录
 
