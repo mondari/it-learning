@@ -1,5 +1,9 @@
 [TOC]
 
+## Redis 特点
+
+单线程+IO多路复用
+
 ## Redis 的数据结构及其使用场景
 
 - string 字符串：普通的键值对数据
@@ -22,15 +26,98 @@ Redis没有中心节点，节点之间使用PING-PONG机制进行通信
 
 每个Redis集群理论上最多支持有16384个节点（即2的14次方个节点）
 
-## 缓存失效、缓存并发、缓存穿透、缓存雪崩
+## 缓存失效
 
-**缓存失效**：在高并发的情况下可能会出在某一个时刻同时生成了很多的缓存，并且过期时间都一样，当过期时间到后，这些缓存就会同时失效，请求全部转发到数据库，数据库的压力就会剧增。
+在高并发的情况下可能会出在某一个时刻同时生成了很多的缓存，并且过期时间都一样，当过期时间到后，这些缓存就会同时失效，请求全部转发到数据库，数据库的压力就会剧增。
 
 解决方案：将缓存失效时间分散开，比如我们可以在原有的失效时间基础上增加一个随机值，比如1-5分钟随机，这样每一个缓存的过期时间的重复率就会降低，就很难引发集体失效的事件。
 
 
 
-**缓存并发**：高并发的情况下，缓存失效的瞬间，会有大量线程来重建缓存，数据库压力剧增。
+## 缓存穿透
+
+大量查询不存在value的key
+
+查询一个根本不存在的数据，缓存层和存储层都不会命中，这样就会导致每次请求都要到存储层去查询，失去了缓存保护后端存储的意义。
+
+
+
+**解决方案**：
+
+1. 存空值
+
+   存储层不命中后，仍然将空对象保留到缓存层中，之后再访问这个数据将会从缓存中获取，保护了后端存储。
+
+   **缺点**
+
+   1. 需要更多的内存空间（解决方法：设置过期时间）
+   2. 缓存层和存储层会有一段时间的数据不一致
+
+2. 布隆过滤器
+
+   将数据库中所有的数据的key，放入布隆过滤器中，当一个查询请求过来时，先经过布隆过滤器进行查询，如果不存在，则直接返回空；存在，则继续查；
+
+   Redis 使用布隆过滤器伪代码：
+
+   - 先查布隆过滤器 => 再查 Redis => 最后查数据库
+
+   ```java
+   String get(String key) {
+   
+       // 1.先查布隆过滤器
+       if (!bloomFilter.mightContain(key)) {
+           return null;
+       } else {
+           // 2.再查 Redis
+           String value = redis.get(key);
+           if (value == null) {
+               // 3.最后查数据库
+               value = db.get(key);
+               redis.set(key, value);
+           }
+           return value;
+       }
+   
+   }
+   ```
+
+   - 先查 Redis => 再查布隆过滤器 => 布隆过滤器存在则查数据库
+
+   ```java
+   String get(String key) {
+       // 1.先查 Redis
+       String value = redis.get(key);
+       if (value == null) {
+           // 2.再查布隆过滤器
+           if (!bloomFilter.mightContain(key)) {
+               return null;
+           } else {
+               // 3. 布隆过滤器存在则查数据库
+               value = db.get(key);
+               redis.set(key, value);
+           }
+       }
+       return value;
+   }
+   ```
+
+   
+
+   **缺点**
+
+   1. 需要另外维护一个集合来存放缓存的Key
+   2. 布隆过滤器不支持删值操作
+   3. 代码复杂度增大
+
+   **参考**
+
+   https://www.cnblogs.com/rinack/p/9712477.html
+
+
+
+## 缓存并发|缓存击穿
+
+高并发的情况下，缓存失效的瞬间，会有大量线程来重建缓存，数据库压力剧增。
 
 解决方案：
 
@@ -39,23 +126,68 @@ Redis没有中心节点，节点之间使用PING-PONG机制进行通信
 
 
 
-**缓存穿透**：查询一个根本不存在的数据，缓存层和存储层都不会命中，这样就会导致每次请求都要到存储层去查询，失去了缓存保护后端存储的意义。
+## 缓存雪崩
 
-解决方案：存储层不命中后，仍然将空对象保留到缓存层中，之后再访问这个数据将会从缓存中获取，保护了后端存储。
+比缓存并发|击穿更可怕的是，当某一时刻发生大规模的缓存失效，会有大量请求走向数据库，导致数据库压力剧增甚至挂掉
 
-缺点：
+**解决方法**
 
-1. 需要更多的内存空间
-2. 缓存层和存储层会有一段时间的数据不一致
-
-
-
-**缓存雪崩**：缓存不可用导致高并发请求走向数据库，导致数据库压力剧增甚至挂掉
-
-解决方法：
-
-1. 搭建Redis，使用主从备份+哨兵模式保障高可用
+1. 搭建Redis集群，使用主从备份+哨兵模式保障高可用
 2. 使用熔断进行限流
+
+**参考**
+
+[阿里一面：关于【缓存穿透、缓存击穿、缓存雪崩、热点数据失效】问题的解决方案](https://mp.weixin.qq.com/s/5MloHIa5zKvYYsVVEWZjQA)
+
+## 缓存不一致
+
+## 布隆过滤器
+
+**应用场景**
+
+1. 解决缓存穿透
+2. 推荐去重
+
+**原理**
+
+**使用布隆过滤器示例**
+
+```java
+import com.google.common.hash.BloomFilter;
+import com.google.common.hash.Funnels;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Test {
+
+    private static int size = 1000000;
+
+    private static BloomFilter<Integer> bloomFilter = BloomFilter.create(Funnels.integerFunnel(), size);
+
+    public static void main(String[] args) {
+        for (int i = 0; i < size; i++) {
+            bloomFilter.put(i);
+        }
+
+        List<Integer> list = new ArrayList<>(1000);
+        //故意取10000个不在过滤器里的值，看看有多少个会被认为在过滤器里
+        for (int i = size + 10000; i < size + 20000; i++) {
+            if (bloomFilter.mightContain(i)) {
+                list.add(i);
+            }
+        }
+        // 该布隆过滤器默认的误判率为0.03
+        System.out.println("误判的数量：" + list.size());
+        // 说明布隆过滤器中存在，并不代表真的存在，有可能实际上并不存在。
+    }
+
+}
+
+```
+
+
+
+
 
 ## 设计一个分布式订单系统
 
