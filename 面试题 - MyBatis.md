@@ -16,10 +16,10 @@ resultMap（结果映射）的元素如下：
   - `arg` - 对象的构造方法非ID入参
 - association（关联）：级联对象一对一关联
   - association的嵌套select查询
-  - association的嵌套结果映射
+  - association的嵌套结果映射（不推荐）
 - collection（集合）：级联对象一对多关联（多对多关联需要拆分成两个一对多关联）
   - collection的嵌套select查询
-  - collection的嵌套结果映射
+  - collection的嵌套结果映射（不推荐）
 - discriminator（鉴别器）：根据结果值来决定使用哪个 `resultMap`
 
 

@@ -5,15 +5,21 @@
 ```groovy
 allprojects{
 	repositories {
-		maven {
-			url 'https://mirrors.huaweicloud.com/repository/maven/'
-		}
+		mavenLocal()
+		maven { url 'https://maven.aliyun.com/repository/public/' }
+        maven { url 'https://maven.aliyun.com/repository/spring/'}
+        maven { url 'https://maven.aliyun.com/repository/spring-plugin/'}
+        maven { url 'https://maven.aliyun.com/repository/google/'}
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin/'}
 	}
 	buildscript {
 		repositories {
-			maven {
-				url 'https://mirrors.huaweicloud.com/repository/maven/'
-			}
+			mavenLocal()
+			maven { url 'https://maven.aliyun.com/repository/public/' }
+        	maven { url 'https://maven.aliyun.com/repository/spring/'}
+        	maven { url 'https://maven.aliyun.com/repository/spring-plugin/'}
+        	maven { url 'https://maven.aliyun.com/repository/google/'}
+        	maven { url 'https://maven.aliyun.com/repository/gradle-plugin/'}
 		}
 	}
 }
