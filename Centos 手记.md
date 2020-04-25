@@ -275,19 +275,6 @@ services:
       - /var/lib/mysql:/var/lib/mysql #数据目录挂载
       - /var/log/mysql:/var/log/mysql #日志目录挂载
       - /etc/mysql/conf.d:/etc/mysql/conf.d #配置目录挂载
-  # phpmyadmin:
-  #   image: phpmyadmin/phpmyadmin:4.8
-  #   container_name: phpmyadmin
-  #   environment:
-  #    - PMA_USER=root
-  #    - PMA_PASSWORD=toor
-  #   restart: always
-  #   ports:
-  #    - 8082:80
-  #   links: 
-  #    - mysql:db
-  #   depends_on:
-  #     - mysql
   redis:
     image: redis:5.0
     container_name: redis
@@ -311,6 +298,15 @@ services:
       - 5672:5672
       - 15672:15672
     restart: always
+volumes:
+  portainer_data:
+```
+
+### mongo.yaml
+
+```yaml
+version: '3'
+services:
   mongo:
     image: mongo:4.2
     container_name: mongo
@@ -344,9 +340,10 @@ services:
   #   - /usr/share/nginx/html:/usr/share/nginx/html #静态资源根目录挂载
   #   - /var/log/nginx:/var/log/nginx #日志目录挂载
   #   - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf #配置目录挂载
-volumes:
-  portainer_data:
+
 ```
+
+
 
 ### 部署ELK
 
@@ -384,17 +381,35 @@ volumes:
 
 ### 部署微服务
 
-- Zipkin
-
 ```yaml
 version: '3'
 services:
+  nacos:
+    image: nacos/nacos-server:latest
+    container_name: nacos-standalone
+    ports:
+      - 8848:8848
+    restart: on-failure
+    volumes: 
+      - nacos-data
+  seata-server:
+    image: seataio/seata-server:latest
+    container_name: seata-server
+    hostname: seata-server
+    ports:
+      - 8091:8091
+    environment:
+      - SEATA_PORT=8091
+    expose:
+      - 8091
   zipkin:
     image: openzipkin/zipkin #zipkin-slim镜像也可以
+    container_name: zipkin
     restart: always
     ports:
       - 9411:9411
-
+volumes:
+  nacos_data:
 ```
 
 ### 部署CI/CD
@@ -939,6 +954,12 @@ https://docs.docker.com/registry/deploying/
 ### 通过 docker 安装
 
 ```bash
+$ docker run --name nacos-standalone -e MODE=standalone -p 8848:8848 -d nacos/nacos-server:latest
+```
+
+或
+
+```bash
 $ git clone https://github.com/nacos-group/nacos-docker.git
 $ cd nacos-docker
 $ docker-compose -f example/standalone-derby.yaml up -d
@@ -948,13 +969,24 @@ $ docker-compose -f example/standalone-derby.yaml up -d
 
 用户名和密码：nacos
 
+参考：https://github.com/nacos-group/nacos-docker/blob/master/README_ZH.md
+
+## seata
+
+### 通过 docker 安装
+
+```bash
+$ docker run --name seata-server -p 8091:8091 seataio/seata-server:latest -d
+```
+
+参考：https://hub.docker.com/r/seataio/seata-server
+
 ## Zipkin
 
 ### 通过 docker 安装
 
 ```bash
-docker run -d -p 9411:9411 openzipkin/zipkin
-
+$ docker run -d -p 9411:9411 openzipkin/zipkin --name zipkin
 ```
 
 参考：https://github.com/openzipkin/zipkin/tree/master/docker
@@ -1029,10 +1061,23 @@ $ nmcli connection reload
 
 NetworkManager 异常导致网卡设备处以 unmanaged 状态，且无法恢复为 managed 状态，可以尝试以下操作：
 
-```
+```bash
 systemctl stop network-manager
 // 清除 NetworkManager 异常状态
 rm /var/lib/NetworkManager/NetworkManager.state
 systemctl start network-manager
+```
+
+### 防火墙开放端口
+
+```bash
+// 开放端口
+firewall-cmd --add-port=80/tcp --zone=public --permanent
+// 重新加载配置
+firewall-cmd --reload
+// 查询是否开放
+firewall-cmd --query-port=80/tcp
+// 查询所有开放端口
+firewall-cmd --list-port
 ```
 
