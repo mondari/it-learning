@@ -341,3 +341,31 @@ select * from table where id >= (select id from table limit 100000,1) limit 100;
 执行器：执行SQL语句并返回结果，但在执行前会判断是否对表有权限
 
 ## *B+树是怎样的数据结构？B树又是怎样的数据结构，两者的区别？
+
+## 生成随机字符串或随机数字
+
+1. 生成20位随机字符串示例：
+
+   ```sql
+   SELECT SUBSTRING(MD5(RAND()), 1, 20)
+   ```
+
+   - RAND() 函数生成随机大于0小于1的随机数字
+   - MD5() 函数生成指定参数的MD5值
+   - SUBSTRING() 函数截取字符串
+
+2. 生成3位随机数字示例：
+
+   ```sql
+   SELECT FLOOR(RAND()*1000)
+   ```
+
+   - FLOOR() 函数向下取整
+   - CEIL() 函数向上取整，FLOOR() 可以替换为 CEIL()
+
+   
+
+   
+
+   
+
