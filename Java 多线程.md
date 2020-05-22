@@ -8,7 +8,11 @@
 
 ## 线程的六种状态
 
-参考 [Java 并发](https://cyc2018.github.io/CS-Notes/#/notes/Java%20%E5%B9%B6%E5%8F%91)
+参考 
+
+[Java 并发](https://cyc2018.github.io/CS-Notes/#/notes/Java%20%E5%B9%B6%E5%8F%91)
+
+https://blog.csdn.net/pange1991/article/details/53860651
 
 重点关注线程的几种状态及其如何转换。
 
