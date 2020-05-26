@@ -991,6 +991,16 @@ $ docker run -d -p 9411:9411 openzipkin/zipkin --name zipkin
 
 参考：https://github.com/openzipkin/zipkin/tree/master/docker
 
+## xxl-job-admin
+
+### 通过 docker 安装
+
+```bash
+$ docker run -e PARAMS="--spring.datasource.username=root --spring.datasource.password=toor --spring.datasource.url=jdbc:mysql://centos-vm:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai" -p 8080:8080 -v /tmp:/data/applogs --name xxl-job-admin -d xuxueli/xxl-job-admin:2.2.0
+```
+
+
+
 ## 踩坑记录
 
 ### 根分区扩容
