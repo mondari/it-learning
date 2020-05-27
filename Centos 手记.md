@@ -1031,6 +1031,16 @@ curl -L http://mirrors.host900.com:9090/snail007/proxy_admin_free/install_auto.s
 
 安装成功后，打开浏览器访问：[http://127.0.0.1:32080](http://127.0.0.1:32080/) , 首次默认账号是root，密码是123，登录后记得第一时间修改。
 
+## xxl-job-admin
+
+### 通过 docker 安装
+
+```bash
+$ docker run -e PARAMS="--spring.datasource.username=root --spring.datasource.password=toor --spring.datasource.url=jdbc:mysql://centos-vm:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai" -p 8080:8080 -v /tmp:/data/applogs --name xxl-job-admin -d xuxueli/xxl-job-admin:2.2.0
+```
+
+
+
 ## 踩坑记录
 
 ### 设置时区
