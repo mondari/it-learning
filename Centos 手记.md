@@ -204,7 +204,7 @@ Portainer 是 Docker 的 Web 管理界面。
 
 ```bash
 $ docker volume create portainer_data
-$ docker run -d -p 9000:9000 -p 8000:8000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer:1.22.2
+$ docker run -d -p 9000:9000 -p 8000:8000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer:latest
 
 ```
 
@@ -889,7 +889,7 @@ Nexus3 用于搭建Maven私有仓库
 
 ```bash
 $ docker volume create --name nexus-data
-$ docker run -d -p 8083:8081 --name nexus -v nexus-data:/nexus-data sonatype/nexus3:3.19.1
+$ docker run -d -p 8083:8081 --name nexus -v nexus-data:/nexus-data sonatype/nexus3:3.23.0
 $ curl http://localhost:8083/
 ```
 
@@ -899,7 +899,7 @@ $ curl http://localhost:8083/
 cat /var/lib/docker/volumes/nexus-data/_data/admin.password
 ```
 
-首次登录会提示修改密码。
+首次登录会提示修改密码。一般将用户名和密码改为 `nexus`
 
 参考：https://hub.docker.com/r/sonatype/nexus3
 
