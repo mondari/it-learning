@@ -899,7 +899,14 @@ $ curl http://localhost:8083/
 cat /var/lib/docker/volumes/nexus-data/_data/admin.password
 ```
 
-首次登录会提示修改密码。一般将用户名和密码改为 `nexus`
+首次登录会提示修改密码，这里将密码改为 `admin` 。
+
+
+
+安装后配置：
+
+1. 开启**匿名访问**私有仓库。这样不用用户名和密码也可以下载私仓的 jar 包。
+2. maven-central 要配置阿里云镜像。默认是从 maven 官方下载，速度很慢。
 
 参考：https://hub.docker.com/r/sonatype/nexus3
 
