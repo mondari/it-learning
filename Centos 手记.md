@@ -445,7 +445,17 @@ Cockpit 是 Linux 的 Web 控制台。
    
 4. 访问  https://ip-address:9090 
 
+## Rancher
 
+Rancher 开源的企业级 Kubernetes 管理平台。
+
+### 通过 docker 安装
+
+```bash
+docker run -d --restart=unless-stopped -p 80:80 -p 443:443 --name=rancher rancher/rancher
+```
+
+用户名默认为 admin，安装后会提示设置密码，这里设置为 admin
 
 ## PostgreSQL
 
