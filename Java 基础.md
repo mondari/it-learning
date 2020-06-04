@@ -398,6 +398,23 @@ volatile 有两个作用，一是保证变量的可见性，二是防止指令�
 
 参见 [Java 虚拟机](Java 虚拟机.md)
 
+## Lambda 表达式的优缺点
+
+优点：
+
+1. 代码简洁
+
+2. 非常容易进行并行计算
+
+
+缺点：
+
+1. 代码可读性变差（因为代码简洁了，所以可读性变差了）
+2. 若不用并行计算，很多时候计算速度没有比传统的 for 循环快（并行计算有时需要预热才显示出效率优势）
+3. 不容易进行调试（或者说不方便调试）
+
+参考：[说说Lamda表达式的优缺点](https://www.nowcoder.com/questionTerminal/5d29d10e35fd4003b3c186b02ab073f0)
+
 # 字符串篇
 
 ## String StringBuilder StringBuffer 的区别
@@ -647,3 +664,13 @@ Token 使用步骤如下：
 1. 表单提交后将提交按钮设置为不可用。但是如果客户端禁止使用 JavaScript，这个方法无效。
 2. Post/Redirect/Get 模式。表单提交后进行页面重定向，转到提交成功信息页面。
 3. 数据库添加唯一索引。
+
+# 新特性篇
+
+## JDK8
+
+- lambda 表达式（由此带来的函数式编程、Stream流）
+- 新的日期时间类：LocalDateTime
+- synchronize
+
+## JDK9
