@@ -21,7 +21,16 @@ AOP（Aspect-Oriented Programming，面向切面编程），是将与业务无�
 
 Spring AOP 基于动态代理，动态代理有两种实现方式，如果被代理的对象实现了某个接口，就会使用JDK 动态代理去创建代理对象，否则使用 CGlib 字节码操纵技术生成被代理类的子类去创建代理对象。
 
-## IOC 容器如何实现？
+## 动态代理的实现方式
+
+动态代理的优点是在不改变原有类的基础上增强其功能。
+
+动态代理有两种实现方式，一种是 JDK 动态代理，一种是 CGlib 动态代理。
+
+- JDK 动态代理：基于反射机制实现，只有实现了接口的业务类才能生成代理对象。新版本也开始结合ASM机制。
+- CGlib 动态代理：基于ASM机制实现，通过生成业务类的子类来创建代理对象。
+
+## *IOC 容器如何实现？
 
 要看 IOC 容器如何实现，要从最经典的IOC容器类 XmlBeanFactory 入手。
 
@@ -79,17 +88,6 @@ On shutdown of a bean factory, the following lifecycle methods apply:
 - websocket：为每个 websocket 对象创建一个实例，仅在 web 相关的 ApplicationContext 中有效
 - application：为每个 ServletContext 对象创建一个实例，仅在 web 相关的 ApplicationContext 中有效
 
-## *AOP 的原理？
-
-## 动态代理的实现方式
-
-动态代理的优点是在不改变原有类的基础上增强其功能。
-
-动态代理有两种实现方式，一种是 JDK 动态代理，一种是 cglib 动态代理。
-
-- JDK 动态代理：基于反射机制实现，只有实现了接口的业务类才能生成代理对象。新版本也开始结合ASM机制。
-- cglib 动态代理：基于ASM机制实现，通过生成业务类的子类作为代理类。
-
 ## Spring MVC 核心类说明
 
 DispatcherServlet 前端控制器：拦截请求并调用 doServic->doDispatch 方法处理
@@ -120,6 +118,10 @@ View 视图：根据 ModelAndView 中的 Model 渲染视图
 
 
 
+## Spring Boot 自动装配原理
+
+基于条件注解
+
 ## 为什么使用 nacos？对比 eureka 的优点？
 
 以下是俺的总结：
@@ -131,3 +133,6 @@ View 视图：根据 ModelAndView 中的 Model 渲染视图
 - 支持对服务进行手动上下线，在线上环境可以对异常的服务进行下线，也在开发的时候方便进行调试
 - 支持流量权重，将更多的流量分配给权重大的服务
 
+## *注册中心如何实现
+
+## *Gateway 和 Zuul 的区别
