@@ -119,6 +119,10 @@ final Node<K,V>[] resize() {
 
 ## HashMap 中有哪些重要的方法？
 
+### resize 方法
+
+初始化容量和扩容
+
 ### tableSizeFor 方法
 
 我们在 `new HashMap()` 时，如果指定的参数初始容量不是2的幂的话，HashMap会调用tableSizeFor方法，找到大于或等于初始容量的2的最小幂作为初始容量。例如，我们传入的初始容量大小为3，而大于或等于3的2的最小幂为4，所以HashMap的容量实际上是4而不是3。同理，如果我们传入0，实际上1；传入6，实际上是8；传入10，实际上是16……
@@ -219,7 +223,7 @@ static final int hash(Object key) {
 
 ```
 
-由上可知，HashMap 中 key 的哈希值其实是通过 `key.hashCode() ^ (h >>> 16)` 来计算的，`h >>> 16` 是将哈希值无符号右移16位，高位补零。这样子做就是为了让低16位同时包含高位和低位的信息，在计算下标时，由于高位和低位的同时参与，可以减少哈希碰撞。
+由上可知，HashMap 中 key 的哈希值其实是通过 `key.hashCode() ^ (h >>> 16)` 来计算的，`h >>> 16` 是将哈希值无符号右移16位，高位补零。然后和自身进行与运算得到哈希值。这样子做就是为了让低16位同时包含高位和低位的信息，在计算下标时，由于高位和低位的同时参与，可以减少哈希碰撞。
 
 ## 扩容机制
 
@@ -311,7 +315,7 @@ static final class TreeNode<K,V> extends LinkedHashMap.Entry<K,V> {
 
 ### 树化和反树化的条件？
 
-- 树化的条件：链表的长度达到树化阈值8 (TREEIFY_THRESHOLD)，**并且**哈希表的容量超过最小树化容量64 (MIN_TREEIFY_CAPACITY)，才会将链表转为红黑树。
+- 树化的条件：链表的长度达到树化阈值8 (TREEIFY_THRESHOLD)，**并且**哈希表的容量达到最小树化容量64 (MIN_TREEIFY_CAPACITY)，才会将链表转为红黑树。
 
 - 反树化的条件：红黑树的节点数达到反树化阈值6 (UNTREEIFY_THRESHOLD)。树化阈值和反树化阈值两者之间隔了个1的原因是避免**链表和红黑树频繁转换**。
 
@@ -333,7 +337,7 @@ for (int binCount = 0; ; ++binCount) {
 // 其中 treeifyBin 方法如下：
 final void treeifyBin(Node<K,V>[] tab, int hash) {
     int n, index; Node<K,V> e;
-    if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY)
+    if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY)// 需要哈希数组的长度大于等于64才树化
         resize();
     else if ((e = tab[index = (n - 1) & hash]) != null) {
         //...
@@ -384,7 +388,7 @@ final void split(HashMap<K,V> map, Node<K,V>[] tab, int index, int bit) {
 
 
 
-### 为什么HashMap不直接使用红黑树而是链表？
+### 为什么 HashMap 不直接使用红黑树而是链表？
 
 链表的时间复杂度是O(n)，红黑树的时间复杂度O(logn)，很显然，红黑树的时间复杂度是优于链表，但为什么不直接用红黑树呢？
 
@@ -409,7 +413,11 @@ final void split(HashMap<K,V> map, Node<K,V>[] tab, int index, int bit) {
 
 参考：[JDK1.8以后的hashmap为什么在链表长度为8的时候变为红黑树](https://blog.csdn.net/baidu_37147070/article/details/98785367)
 
+### HashMap 高并发下存在的问题？
 
+HashMap 在扩容的时候会调用 resize 方法，resize 方法主要是负责创建新的哈希表，并将旧的哈希表上的元素重新哈希到新的哈希表上。但是在重新哈希时多个线程同时操作可能会导致链表出现环，如果查找一个不存在 value 的 key，而这个 key 的下标刚好是链表出现环的单元上，则会导致程序出现死循环。
+
+参考：https://mp.weixin.qq.com/s/dzNq50zBQ4iDrOAhM4a70A
 
 ### *哈希函数的构造方法有哪些？
 

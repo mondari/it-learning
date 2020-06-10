@@ -32,6 +32,76 @@ Spring AOP 基于动态代理，动态代理有两种实现方式，如果代理
 - JDK 动态代理：基于反射机制实现，只有实现了接口的业务类才能生成代理对象。新版本也开始结合ASM机制。
 - CGlib 动态代理：基于ASM机制实现，通过生成业务类的子类来创建代理对象。
 
+## JDK 动态代理
+
+有空将其挪到一个项目中去
+
+```java
+public class App {
+    public static void main(String[] args) {
+        // 被代理对象（需要实现某个接口）
+        RealSubject realSubject = new RealSubject();
+
+        // JDK动态代理
+        Subject proxyObject = (Subject) Proxy.newProxyInstance(App.class.getClassLoader(), new Class[]{Subject.class}, new ProxyInvocationHandler(realSubject));
+        proxyObject.action();
+    }
+}
+
+```
+
+
+
+```java
+/**
+ * JDK动态代理 - 需要实现 InvocationHandler接口
+ */
+public class ProxyInvocationHandler implements InvocationHandler {
+
+    Subject subject;
+
+    public ProxyInvocationHandler(Subject subject) {
+        this.subject = subject;
+    }
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        System.out.println("before dynamic proxy");
+        subject.action();
+        System.out.println("after dynamic proxy");
+        return null;
+    }
+}
+```
+
+接口：
+
+```java
+/**
+ * 代理类要实现该接口
+ */
+public interface Subject {
+
+    void action();
+
+}
+
+```
+
+实现了某个接口的代理类
+
+```java
+public class RealSubject implements Subject {
+
+    @Override
+    public void action() {
+        System.out.println("这是代理类");
+    }
+}
+```
+
+
+
 ## *IOC 容器如何实现？
 
 要看 IOC 容器如何实现，要从最经典的IOC容器类 XmlBeanFactory 入手。
@@ -204,6 +274,8 @@ On shutdown of a bean factory, the following lifecycle methods apply:
 - websocket：为每个 websocket 对象创建一个实例，仅在 web 相关的 ApplicationContext 中有效
 - application：为每个 ServletContext 对象创建一个实例，仅在 web 相关的 ApplicationContext 中有效
 
+# MVC 篇
+
 ## Spring MVC 核心类说明
 
 DispatcherServlet 前端控制器：拦截请求并调用 doService->doDispatch 方法处理
@@ -234,9 +306,17 @@ View 视图：根据 ModelAndView 中的 Model 渲染视图
 
 
 
+# Boot 篇
+
+## Spring Boot 启动流程？
+
 ## Spring Boot 自动装配原理
 
 基于条件注解
+
+
+
+# Cloud 篇
 
 ## 为什么使用 nacos？对比 eureka 的优点？
 
