@@ -33,8 +33,7 @@
 
 参考：[面向对象设计的七大设计原则详解](https://blog.csdn.net/qq_34760445/article/details/82931002
 
-
-## 基本数据类型的范围
+## 基本数据类型的大小
 
 - byte/8
 - **char/16**
@@ -45,13 +44,17 @@
 - double/64
 - boolean/~
 
-**注：浮点数字面量默认表示 double 类型**
+**注：浮点数字面量默认是 double 类型**，这个在笔试题中出现过。
 
-参考
 
-[Primitive Data Types](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)
+
+参考：[Primitive Data Types](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)
 
 ## 静态代码块、普通代码块、构造方法执行顺序
+
+静态代码块是在类加载的时候执行，普通代码块是在构造方法调用前执行，父类的构造方法先于子类执行。
+
+示例代码：
 
 ```java
 class Parent {
@@ -105,42 +108,34 @@ son codeblock
 son constructor
 ```
 
-由此可见，静态代码块是在类加载的时候执行，普通代码块是在构造方法调用前执行，父类的构造方法先于子类执行，即：静态代码块 > 父类普通代码块 > 父类构造方法 > 子类普通代码块 > 子类构造方法
+总结上面的执行顺序：静态代码块 > 父类普通代码块 > 父类构造方法 > 子类普通代码块 > 子类构造方法
 
 
 
-**静态变量初始化和静态代码块哪个先执行？**
+## 静态变量赋值和静态代码块哪个先执行？
 
-**在静态代码块中创建一个对象，并在构造方法和普通代码块中打印其成员变量，成员变量会被初始化吗？**
+1. 类加载时，会先初始化静态变量，然后再执行静态代码块；
+2. 在静态代码块中创建对象，对象内部的成员变量也会初始化好。
 
-请带着这些问题看以下代码：
+示例代码：
 
 ```java
 public class Test {
 
     int field = 10;
 
-    static int staticField = staticMethod();
-
-    static int staticMethod() {
-        System.out.println("static method execute");
-        return 20;
-    }
+    static int staticField = 20;
 
     static {
-        // 静态代码块中创建一个对象
-        Test test = new Test();
-        // 这里打印了静态变量，从执行结果中可以判断静态变量初始化、静态代码块的执行顺序
-        System.out.println("static codeblock 's field: " + test.field + ", staticField: " + staticField);
+        // 先打印静态变量，判断是否已经初始化并赋值
+        System.out.println("静态变量值为: " + staticField);
+        // 再给静态变量赋值
+        staticField = 30;
+        System.out.println("静态变量值为: " + staticField);
 
-    }
-
-    {
-        System.out.println("codeblock 's field: " + field + ", staticField: " + staticField);
-    }
-
-    public Test() {
-        System.out.println("constructor 's field: " + field + ", staticField: " + staticField);
+        // 静态代码块中创建一个对象，判断是否会初始化其内部成员变量
+        Test local = new Test();
+        System.out.println("成员变量值为：" + local.field);
     }
 
     public static void main(String[] args) {
@@ -153,27 +148,20 @@ public class Test {
 执行结果如下：
 
 ```
-static method execute
-codeblock 's field: 10, staticField: 20
-constructor 's field: 10, staticField: 20
-static codeblock 's field: 10, staticField: 20
-codeblock 's field: 10, staticField: 20
-constructor 's field: 10, staticField: 20
+静态变量值为: 20
+静态变量值为: 30
+成员变量值为：10
 ```
 
-由此可见：
 
-1. 类加载时，先初始化静态变量，然后再执行静态代码块；
-2. 凡是调用了构造方法，都会先执行普通代码块；
-3. 在静态代码块中创建对象，对象内部的成员变量也会初始化好。
 
 ## 重写（override）和重载（overload）的区别
 
-重写：父类和子类中方法名和参数相同，但实现不同；
+重写：**方法名、参数和返回值都相同**，但实现不同。它是子类去重写父类的方法，或者是实现类去实现接口的方法。
 
-重载：方法名相同，但参数不同。方法名+参数=方法签名，重载其实就是方法名相同，但是方法签名不同。需要注意的是，**重载跟返回值没有任何关系**，不管返回值相不相同，只要方法名和参数相同，都不是有效的重载，编译时会报错。
+重载：**方法名相同，但参数不同**。重载的本质就是方法名相同，而方法签名不同，其中方法签名=方法名+参数。需要注意的是，**重载跟返回值没有任何关系**，不管返回值相不相同，只要方法名和参数相同，都不是有效的重载，编译时会报错。
 
-## 接口和抽象类的区别及使用场景
+## *接口和抽象类的区别及使用场景
 
 1. 接口中的所有方法都是抽象的，而抽象类则不是；
 
@@ -194,13 +182,29 @@ constructor 's field: 10, staticField: 20
 
 6. Java 8 中接口新增默认方法和静态方法，这两种方法必须要有方法体。
 
-**使用场景**：
+**接口的使用场景**：
 
-- 如果多个类有相同的方法（方法的实现是一样的），并且能够抽象出共同的父类，则使用抽象类将相同的方法提取封装出来。
+1. 需要将一组类视为单一的类，调用者只通过接口来与这组类发生联系。比如 Feign 接口，IService 接口(面向接口编程，MVC)；
+2. 作为一种标识，没有任何属性和方法，比如 java.lang.Cloneable、java.io.Serializable；
+3. 需要实现特定的多项功能，而这些功能之间可能完全没有任何联系；
+
+**抽象类的使用场景**：
+
+1. 定义了一组接口，但又不想强迫每个实现类都必须实现所有接口。则可以使用抽象类来实现这组接口，然后由子类选择自己感兴趣的方法来覆盖；
+2. 定义了一组方法，其中一些方法是共同的，与状态无关的，可以共享的，无需子类分别实现；而另一些方法却需要各个子类根据自己的状态来实现特定的功能；
+
+
+
+参考：[抽象类和接口的区别以及使用场景（记）](https://blog.csdn.net/lamyuqingcsdn/article/details/50501871)
+
+
+
+**以下是我自己总结的使用场景**：
+
+- 如果多个类有**公共的属性和方法**（不管其实现是否一样的），并且能够抽象出共同的父类，则使用抽象类将公共的属性和方法封装出来。
 
 - 如果多个类不能抽象出共同的父类，但是却有相同的行为，则使用接口将这些行为封装起来。
 
-- 接口可以作为作为一种标识，没有任何方法和属性，比如 java.lang.Cloneable、java.io.Serializable。
 
 比如：报纸、杂志、手机都可以用来阅读，但是三者不能抽象出共同的父类，应该使用接口将“阅读”这个行为封装起来；另外报纸、杂志两者可以抽象出共同的父类“出版物”，可以使用抽象类将两者封装起来。于是就成了酱紫：
 
@@ -277,6 +281,8 @@ Error：是错误，一般指与虚拟机相关的问题，是**不可以预料*
 - ClassCastException 类型转换异常
 - ArithmeticException 算术异常
 - IllegalArgumentException 非法传参异常
+- FileNotFoundException 找不到文件异常
+- ClassNotFoundException 找不到类异常
 
 ## ClassNotFoundException 和 NoClassDefFoundError 的区别
 ClassNotFoundException：当程序试图根据字符串名称通过以下三个方法加载类时，如果没找到类的定义就会抛出该异常。
@@ -384,13 +390,9 @@ System.out.println(integer.equals(d));
 
 ## *protected 关键字
 
-## *volatile 关键字
+protected 修饰的成员变量和方法，可以被该类自身、同一个包中的其它类、不同包下该类的子类所访问。
 
-volatile 有两个作用，一是保证变量的可见性，二是防止指令重排序优化。
 
-什么是变量的可见性：一个线程对共享变量进行修改，另一个线程能立即看到这个修改。
-
-**什么是指令重排序优化**：Object o = new Object()
 
 ## *静态内部类的作用及使用场景
 
@@ -622,7 +624,7 @@ private static List<String> randomStringArray(int size) {
 | out         | JspWriter           | 在浏览器中打印信息                    |
 | exception   | Throwable           |                                       |
 
-## cookie 和 session 的区别
+## cookie 和 session 的区别及使用场景
 
 - cookie 存放在客户端浏览器上，而 session 存放在服务器上。
 
@@ -640,16 +642,18 @@ Token 是身份验证的一种方式，我们通常叫它：令牌。Token 一�
 
 Token 使用步骤如下：
 
-1. 当用户登录成功时，服务端会生成一个 Token，将其保存到数据库，并发送给客户端；
-2. 客户端拿到这个 Token 值，会保存到本地，下一次网络请求时会带上这个 Token 值；
+1. 当用户登录成功时，服务端会生成一个 Token，将其保存到 Redis，并返回给客户端；
+
+2. 客户端拿到这个 Token 后，会保存到本地，下一次网络请求时会带上这个 Token；
+
 3. 服务端接收到请求后，会将客户端的 Token 值与数据库的 Token 值对比
-   1. Token 值相同，说明当前用户登录成功过，处于已登录状态
-   2. Token 值不同，说明原来的登录信息已经失效，需要重新登录
-   3. Token 值不存在，说明没有登录成功过。
+
+   - 存在，说明当前用户登录成功过，处于已登录状态
+   - 不存在，说明没有登录成功过，或者是登录失效，需要重新登录
+
+   
 
 ## 如何防止表单重复提交
-
-参考：[如何防止表单重复提交](https://www.cnblogs.com/wenlj/p/4951766.html)
 
 **一、有很多的应用场景都会遇到重复提交问题，比如**：
 
@@ -665,12 +669,15 @@ Token 使用步骤如下：
 2. Post/Redirect/Get 模式。表单提交后进行页面重定向，转到提交成功信息页面。
 3. 数据库添加唯一索引。
 
+参考：[如何防止表单重复提交](https://www.cnblogs.com/wenlj/p/4951766.html)
+
 # 新特性篇
 
 ## JDK8
 
 - lambda 表达式（由此带来的函数式编程、Stream流）
 - 新的日期时间类：LocalDateTime
-- synchronize
+- 对 synchronize 进行了优化
+- 对 ConcurrentHashMap 进行了优化
 
 ## JDK9

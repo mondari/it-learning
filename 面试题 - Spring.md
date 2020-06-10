@@ -2,6 +2,10 @@
 
 
 
+## 前言
+
+Spring IOC、AOP、MVC、Boot、Cloud 微服务相关面试题统统放到这里。
+
 ## Spring、Spring MVC、Spring Boot、Spring Cloud的联系和区别
 
 - Spring 是一个相对于 Java EE 来说更轻量级的 Web 开发框架，核心是控制反转（IOC）和面向切面（AOP）
@@ -11,15 +15,13 @@
 
 ## 什么是 IOC？
 
-IOC（Inversion Of Controll，控制反转）是一种设计思想，将创建对象的控制权交给 Spring 框架去管理，开发者无需考虑对象是如何创建的，无需处理对象复杂的依赖关系，只需要配置好配置文件或注解即可，大大降低了开发难度，便于维护。
-
-参考：https://mp.weixin.qq.com/s/70m2rSQIgkLroq_GrvNDOQ
+IOC（Inversion Of Controll，控制反转）是一种设计思想，将创建对象的控制权交给 Spring 框架去管理，开发者无需考虑对象是如何创建的，无需处理对象复杂的依赖关系，只需要配置好配置文件或注解即可，大大降低了开发难度。
 
 ## 什么是 AOP？
 
 AOP（Aspect-Oriented Programming，面向切面编程），是将与业务无关的、但是被业务模块所共同调用的代码（例如事务处理、日志管理、权限控制等）封装起来，放到一块去处理，做到减少重复代码，降低模块间的耦合度，便于扩展和维护
 
-Spring AOP 基于动态代理，动态代理有两种实现方式，如果被代理的对象实现了某个接口，就会使用JDK 动态代理去创建代理对象，否则使用 CGlib 字节码操纵技术生成被代理类的子类去创建代理对象。
+Spring AOP 基于动态代理，动态代理有两种实现方式，如果代理类实现了某个接口，就会使用 JDK 动态代理去创建代理对象，否则使用 CGlib 字节码操纵技术生成代理类的子类去创建代理对象。
 
 ## 动态代理的实现方式
 
@@ -41,6 +43,120 @@ BeanFactory bf = new XmlBeanFactory(new ClassPathResource("beanFactoryTest.xml")
 1. 将 XML 配置文件封装为 Resource
 2. 然后将 Resource 逐步封装成 EncodedResource、InputSource、Document
 3. 最后从 Document 中解析并注册 BeanDefinition
+
+## *循环依赖问题
+
+Spring 依赖注入的步骤：1.实例化 Bean 2.设置 Bean 的属性
+
+循环依赖的场景下应该是A—B—A这样的顺序。
+
+假设有两个对象，A和B，A依赖于B，B依赖于A。
+
+当实例化A并设置A的属性时，发现A依赖于B，而B还没实例化，于是就实例化B，并设置B的属性，此时发现B依赖于A，而A又已经实例化，于是将A设置成B的属性。此时B已经实例化并设置属性完成，所以最后将B设置为A的属性即可，这样就解决了循环依赖的问题。
+
+## *事务传播机制
+
+Spring 定义的事务传播类型：
+
+```
+package org.springframework.transaction.annotation;
+
+public enum Propagation {
+    REQUIRED(0),// (默认)若当前存在事务，则加入该事务，若不存在事务，则新建一个事务。
+    SUPPORTS(1),
+    MANDATORY(2),
+    REQUIRES_NEW(3),
+    NOT_SUPPORTED(4),
+    NEVER(5),
+    NESTED(6);
+}
+```
+
+
+
+1. PROPAGATION_REQUIRED
+   若当前存在事务，则加入该事务，若不存在事务，则新建一个事务。
+
+    ```java
+    class C1(){
+        @Transactional(propagation = Propagation.REQUIRED)
+        function A(){
+            C2.B();
+        }
+    }
+
+    class C2(){
+        @Transactional(propagation = Propagation.REQUIRED)
+        function B(){
+            do something;
+        }
+    }
+    ```
+
+    **若B方法抛出异常，A方法进行捕获，A会抛出异常，因为B要回滚，A要提交，产生冲突。**
+
+    若**A或B**抛出异常，但没有捕获，则A、B都回滚（因为A和B处于同一个事务）。
+
+    **A、B可操作同一条记录，因为处于同一个事务中。**
+
+2. PAOPAGATION_REQUIRE_NEW
+   若当前没有事务，则新建一个事务。若当前存在事务，则新建一个事务，新老事务相互独立。外部事务抛出异常回滚不会影响内部事务的正常提交。
+
+   ```java
+   class C1(){
+       @Transactional(propagation = Propagation.REQUIRED)
+       function A(){
+           C2.B();
+       }
+   }
+   
+   class C2(){
+       @Transactional(propagation = Propagation.REQUIRE_NEW)
+       function B(){
+           do something;
+       }
+   }
+   ```
+
+   若B方法抛出异常，A方法进行捕获，B方法回滚，A方法不受B异常影响。
+
+   若B方法抛出异常，A、B方法都没有捕获，则A、B都会回滚。
+
+   若A方法抛出异常，不会影响B正常执行。
+
+   **A、B不可操作同一条记录，因为处于不同事务中，会产生死锁。**
+
+3. PROPAGATION_NESTED
+   如果当前存在事务，则嵌套在当前事务中执行。如果当前没有事务，则新建一个事务。类似 REQUIRED
+
+   ```java
+   class C1(){
+       @Transactional(propagation = Propagation.REQUIRED)
+       function A(){
+           C2.B();
+       }
+   }
+   
+   class C2(){
+       @Transactional(propagation = Propagation.NESTED)
+       function B(){
+           do something;
+       }
+   }
+   ```
+
+   若B方法抛出异常，A方法进行捕获，B方法回滚，A方法正常执行。（REQUIRED的A会抛出异常）
+
+   若**A或者B**抛出异常，不做任何处理的话，A、B都要回滚。
+
+   **A、B可操作同一条记录，因为处于同一个事务中。**
+
+
+
+参考：
+
+1. [spring事务传播机制和隔离级别](https://blog.csdn.net/qq_17085835/article/details/84837253)
+2. [JavaGuide 33-事务属性详解](https://snailclimb.gitee.io/javaguide/#/docs/system-design/framework/spring/spring-transaction?id=_33-事务属性详解)
 
 ## Bean 的生命周期
 
@@ -80,17 +196,17 @@ On shutdown of a bean factory, the following lifecycle methods apply:
 
 ## Bean 的作用域
 
-- singleton 单例：Spring 容器中自始至终只有一个 Bean 实例
-- prototype 原型：每次从容器中获取 Bean 时，容器都会创建一个新的 Bean 实例
-- request：每个 HTTP 请求，容器都会创建一个 Bean 实例，仅在当前 HTTP 请求中有效
-- session：每个 HTTP Session，容器都会创建一个 Bean 实例，仅在当前 HTTP Session 中有效
+- **singleton** 单例：Spring 容器中自始至终只有一个 Bean 实例
+- **prototype** 原型：每次从容器中获取 Bean 时，容器都会创建一个新的 Bean 实例
+- **request**：每个 HTTP 请求，容器都会创建一个 Bean 实例，仅在当前 HTTP 请求中有效
+- **session**：每个 HTTP Session，容器都会创建一个 Bean 实例，仅在当前 HTTP Session 中有效
 - globalSession：每个全局的 HTTP Session，容器都会创建一个 Bean 实例，仅在使用 Portlet 上下文时有效
 - websocket：为每个 websocket 对象创建一个实例，仅在 web 相关的 ApplicationContext 中有效
 - application：为每个 ServletContext 对象创建一个实例，仅在 web 相关的 ApplicationContext 中有效
 
 ## Spring MVC 核心类说明
 
-DispatcherServlet 前端控制器：拦截请求并调用 doServic->doDispatch 方法处理
+DispatcherServlet 前端控制器：拦截请求并调用 doService->doDispatch 方法处理
 
 HandlerMapping 处理器映射：根据请求URL找到相应的 Handler
 
@@ -108,7 +224,7 @@ View 视图：根据 ModelAndView 中的 Model 渲染视图
 
 ## Spring MVC 的执行流程
 
-当用户向服务器发送请求，被**前端控制器**（DispatcherServlet）拦截，前端控制器将请求交给处理器映射（HandlerMapping)，处理器映射根据请求 URL 找到相应的 Handler，然后将 Handler 和 HandlerInterceptor 一起封装成 HandlerExecutionChain 返回给前端控制器，前端控制器根据 Handler 找到相应的 HandlerAdapter 去执行，执行完后会返回 ModelAndView 给前端控制器，前端控制器再把 ModleAndView 交给 ViewResolver 视图解析器找到相应的 View 视图对象，View 根据 ModelAndView 的中的 Model 渲染视图，最后前端控制器把渲染后的视图返回给用户。
+当用户向服务器发送请求，被**前端控制器**（DispatcherServlet）拦截，前端控制器将请求交给处理器映射（HandlerMapping)，处理器映射根据请求 URL 找到相应的 Handler，然后将 Handler 和 HandlerInterceptor 一起封装成 HandlerExecutionChain处理器执行链 返回给前端控制器，前端控制器根据 Handler 找到相应的 HandlerAdapter 去执行，执行完后会返回 ModelAndView 给前端控制器，前端控制器再把 ModleAndView 交给 ViewResolver 视图解析器找到相应的 View 视图对象，View 根据 ModelAndView 的中的 Model 渲染视图，最后前端控制器把渲染后的视图返回给用户。
 
 （执行 Handler 之前或之后 DispatcherServlet 会分别调用 HandlerExecutionChain 的 applyPreHandle 和 applyPostHandle 方法去执行注册过的 HandlerInterceptor）
 

@@ -48,6 +48,8 @@ DELETE FROM demo WHERE id NOT IN ( SELECT * FROM ( SELECT MAX(id) FROM demo GROU
 
 ## MySQL 有哪些数据库引擎，区别？
 
+执行 `SHOW ENGINES;` 命令可以查看支持的引擎；
+
 MySQL 常用的两种数据库引擎：
 
 - InnoDB：支持事务和行级锁
@@ -71,6 +73,30 @@ InnoDB 和 MyISAM 支持 BTREE 和 FULLTEXT 索引，MEMORY 支持 HASH 和 BTRE
 ## 索引是怎样提高查询效率？
 
 使用索引可以避免全表扫描
+
+## 前缀索引、联合索引的最左匹配
+
+- 前缀索引和索引选择性
+
+  说白了就是对文本的前几个字来建立索引，这样建立起来的索引更小，查询更快。
+
+  缺点：不能在 ORDER BY 或 GROUP BY 中使用前缀索引，也不能把它们用作覆盖索引
+
+  使用场景：
+
+
+
+- 联合索引的最左匹配：
+
+  使用了 B+ 树的 MySQL 数据库引擎，比如 InnoDB 引擎，在每次查询复合字段时是从左往右匹配数据的，因此在创建联合索引的时候需要注意索引创建的顺序。例如，我们创建了一个联合索引是 idx(name,age,sex)，那么当我们使用，姓名+年龄+性别、姓名+年龄、姓名等这种最左前缀查询条件时，就会触发联合索引进行查询；然而如果非最左匹配的查询条件，例如，性别+姓名这种查询条件就不会触发联合索引。
+
+  当然，当我们已经有了（name,age）这个联合索引之后，一般情况下就不需要在 name 字段单独创建索引了，这样就可以少维护一个索引。
+
+
+
+参考：[前缀索引，一种优化索引大小的解决方案](https://www.cnblogs.com/studyzy/p/4310653.html)
+
+
 
 ## 主键索引和非主键索引
 
@@ -310,6 +336,8 @@ https://blog.csdn.net/csdnstudent/article/details/40398245
 
 主从复制后，可以实现读写分离，主库写，从库读，从库读负载均衡，降低数据库的读写压力。
 
+参考：https://github.com/alibaba/canal
+
 ## 分页查询优化
 
 分页查询的语句一般如下：
@@ -327,7 +355,7 @@ SELECT * FROM table LIMIT 100000, 100
 SELECT * FROM table 100 OFFSET 100000
 ```
 
-分页查询的本质其实是先查询 offset + rows 条数据，然后再剔除前面的 offset 条数据，所以分页查询的偏移量如果过大，查询效率会显著下降。如果表的主键ID是自增的话，则可以做一定的优化。
+分页查询的本质其实是先查询 offset + rows 条数据，然后再剔除前面的 offset 条数据，所以分页查询的偏移量如果过大，查询效率会显著下降。**如果表的主键ID是自增的话，则可以做一定的优化**。
 
 ```
 select * from table where id >= (select id from table limit 100000,1) limit 100;
@@ -336,7 +364,7 @@ select * from table where id >= (select id from table limit 100000,1) limit 100;
 ## 一条 SQL 语句是如何执行的？
 
 连接器：管理连接，登录验证，用户名和密码是否正确
-分析器：词法分析，语法分析，让MySQL知道这条SQL语句要干什么，语法有没有毛病
+分析器：词法分析，语法分析，让MySQL知道这条SQL语句要干什么，语法有没有毛病。**并查询缓存**，缓存命中，则直接返回。
 优化器：给出SQL语句的最优的执行方案
 执行器：执行SQL语句并返回结果，但在执行前会判断是否对表有权限
 
@@ -365,7 +393,10 @@ select * from table where id >= (select id from table limit 100000,1) limit 100;
 
    
 
-   
 
-   
+## MySQL 什么时候行锁会变为表锁？
+
+索引失效的时候。
+
+InnoDB 的行锁是加在索引上的，如果索引失效的话，就会升级为表锁。
 

@@ -111,43 +111,15 @@ final Node<K,V>[] resize() {
 
 
 
-### 知识点：HashMap的默认初始容量是多少？
-
-HashMap的默认初始容量是16，由常量 `DEFAULT_INITIAL_CAPACITY` 定义。如果在 `new HashMap()` 时不指定HashMap的容量的话，就会使用默认初始容量16作为HashMap的容量。
-
-```java
-/**
- * The default initial capacity - MUST be a power of two.
- */
-static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
-```
-
-
-
-### 知识点：HashMap的最大容量是多少？
-
-HashMap的最大容量是1<<30，由常量 `MAXIMUM_CAPACITY` 定义。如果在 `new HashMap()` 时设置的容量超过该值，会自动改为最大容量1<<30。
-
-```java
-/**
- * The maximum capacity, used if a higher value is implicitly specified
- * by either of the constructors with arguments.
- * MUST be a power of two <= 1<<30.
- */
-static final int MAXIMUM_CAPACITY = 1 << 30;
-```
-
-
-
 ### 知识点：元素在HashMap中的位置怎么决定？为什么HashMap的容量一定要是2的幂？
 
 因为元素在HashMap中存放的位置是由公式 `HashCode%Capacity` 决定的，HashCode是该元素的键的哈希值，Capacity是HashMap的容量。
 
 如果HashMap容量是2的幂，则可以将上述公式优化为计算机更擅长的位运算公式 `HashCode&(Capacity-1)`，两者计算结果是一样的，但是后者速度更快。
 
+## HashMap 中有哪些重要的方法？
 
-
-### 知识点：HashMap 中的 tableSizeFor 方法
+### tableSizeFor 方法
 
 我们在 `new HashMap()` 时，如果指定的参数初始容量不是2的幂的话，HashMap会调用tableSizeFor方法，找到大于或等于初始容量的2的最小幂作为初始容量。例如，我们传入的初始容量大小为3，而大于或等于3的2的最小幂为4，所以HashMap的容量实际上是4而不是3。同理，如果我们传入0，实际上1；传入6，实际上是8；传入10，实际上是16……
 
@@ -219,7 +191,7 @@ static final int tableSizeFor(int cap) {
 
 
 
-### 知识点：HashMap 中的 hash 方法
+### hash 方法
 
 HashMap 中 key 的哈希值并不是通过 hashCode 方法获得的，而是通过 HashMap 中的 hash 方法获得的。如以下代码所示
 
@@ -300,19 +272,19 @@ final Node<K,V>[] resize() {
 
 由上可知，扩容的基本步骤是在保证扩容后的容量不超过 HashMap 的最大容量的情况下，容量变为原来的两倍。
 
-### 知识点：负载因子太小会怎样，太大会怎样？
+### 知识点：负载因子太小或太大会怎样？
 
-默认负载因子大小（0.75）在时间和空间成本之间取得了良好的平衡，适合大多数场景。因为负载因子越小，空间利用率越低，扩容越频繁；负载因子越大，空间开销虽然降低，但查找成本提高。所以，通常情况下不需要改负载因子的大小。
+默认负载因子大小（0.75）在时间和空间成本之间取得了良好的平衡，适合大多数场景。因为
 
-**PS：负载因子是可以大于1的哦，这样就会导致阈值大于容量（阈值=容量*负载因子），哈希碰撞的概率上升，更多数据会被存放在链表里，进而导致查找成本提高。这就好比将20个数据存放在大小为16的数组里，数组肯定是放不下的，所以多出的数据就会存放在链表里。**
+- **负载因子越小，空间利用率越低，扩容越频繁；**
+
+- **负载因子越大，哈希碰撞的概率就越大，更多冲突的元素存到链表中，查找成本提高**。所以，通常情况下不需要改负载因子的大小。
+
+**负载因子是可以大于1的哦**，这样就会导致阈值大于容量（阈值=容量*负载因子），哈希碰撞的概率上升，更多数据会被存放在链表里，进而导致查找成本提高。这就好比将20个数据存放在大小为16的数组里，数组肯定是放不下的，所以多出的数据就会存放在链表里。
 
 
 
-### *知识点：树化和反树化条件？
-
-因为链表的查询性能会随着链表长度而下降，所以当 HashMap 中链表长度大于等于7（树化阈值-1）时会发生树化，将链表改造成红黑树。树化阈值由常量 `TREEIFY_THRESHOLD` 定义，值为8，反树化的阈值由常量 `UNTREEIFY_THRESHOLD` 定义，值为6。
-
-HashMap 中红黑树的代码如下：
+## 红黑树的代码
 
 ```java
 /**
@@ -335,31 +307,158 @@ static final class TreeNode<K,V> extends LinkedHashMap.Entry<K,V> {
 }
 ```
 
-**PS：在一定情况下，HashMap中的红黑树也会发生反树化。研究中。。。**
-
 ## 其它
 
-### 解决哈希冲突的方法有哪些？
+### 树化和反树化的条件？
 
-- 开放定址法
-- 再哈希法
-- 链地址法
-- 建立公共溢出区
+- 树化的条件：链表的长度达到树化阈值8 (TREEIFY_THRESHOLD)，**并且**哈希表的容量超过最小树化容量64 (MIN_TREEIFY_CAPACITY)，才会将链表转为红黑树。
 
-参考：[解决哈希冲突的常用方法分析](https://www.jianshu.com/p/4d3cb99d7580)
-  
+- 反树化的条件：红黑树的节点数达到反树化阈值6 (UNTREEIFY_THRESHOLD)。树化阈值和反树化阈值两者之间隔了个1的原因是避免**链表和红黑树频繁转换**。
+
+
+
+树化的源码：
+
+```java
+for (int binCount = 0; ; ++binCount) {
+    if ((e = p.next) == null) {
+        p.next = newNode(hash, key, value, null);
+        if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+            treeifyBin(tab, hash);
+        break;
+    }
+	//...
+}
+
+// 其中 treeifyBin 方法如下：
+final void treeifyBin(Node<K,V>[] tab, int hash) {
+    int n, index; Node<K,V> e;
+    if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY)
+        resize();
+    else if ((e = tab[index = (n - 1) & hash]) != null) {
+        //...
+    }
+}
+```
+
+
+
+反树化的源码：
+
+```java
+final void split(HashMap<K,V> map, Node<K,V>[] tab, int index, int bit) {
+    //...
+    
+	if (loHead != null) {
+        if (lc <= UNTREEIFY_THRESHOLD)
+            tab[index] = loHead.untreeify(map);
+        else {
+            tab[index] = loHead;
+            if (hiHead != null) // (else is already treeified)
+                loHead.treeify(tab);
+        }
+    }
+    if (hiHead != null) {
+        if (hc <= UNTREEIFY_THRESHOLD)
+            tab[index + bit] = hiHead.untreeify(map);
+        else {
+            tab[index + bit] = hiHead;
+            if (loHead != null)
+                hiHead.treeify(tab);
+        }
+    }
+}
+```
+
+
+
+参考：[JDK1.8以后的hashmap为什么在链表长度为8的时候变为红黑树](https://blog.csdn.net/baidu_37147070/article/details/98785367)
+
+
+
+### *为什么树化阈值是8？
+
+源码中注释说过这个问题，根据统计，链表中节点数是8的概率差不多是千万分之六，所以一般情况下，链表长度是很难达到8。即使达到8，也要满足哈希表的容量为64，才能树化。这样设计的目的是不到玩不得已的情况下，才让链表树化。
+
+参考：[JDK1.8以后的hashmap为什么在链表长度为8的时候变为红黑树](https://blog.csdn.net/baidu_37147070/article/details/98785367)
+
+
+
+### 为什么HashMap不直接使用红黑树而是链表？
+
+链表的时间复杂度是O(n)，红黑树的时间复杂度O(logn)，很显然，红黑树的时间复杂度是优于链表，但为什么不直接用红黑树呢？
+
+源码中的注释写的很清楚，**因为红黑树的节点所占的空间是链表节点的两倍，所以只有当链表节点足够多以至于影响查询性能时，才会使用树节点**
+
+> ```
+> *
+> * Because TreeNodes are about twice the size of regular nodes, we
+> * use them only when bins contain enough nodes to warrant use
+> * (see TREEIFY_THRESHOLD). And when they become too small (due to
+> * removal or resizing) they are converted back to plain bins.  In
+> * usages with well-distributed user hashCodes, tree bins are
+> * rarely used.  Ideally, under random hashCodes, the frequency of
+> * nodes in bins follows a Poisson distribution
+> * (http://en.wikipedia.org/wiki/Poisson_distribution) with a
+> * parameter of about 0.5 on average for the default resizing
+> * threshold of 0.75, although with a large variance because of
+> * resizing granularity. Ignoring variance, the expected
+> * occurrences of list size k are (exp(-0.5) * pow(0.5, k) /
+> * factorial(k)). The first values are:
+> ```
+
+参考：[JDK1.8以后的hashmap为什么在链表长度为8的时候变为红黑树](https://blog.csdn.net/baidu_37147070/article/details/98785367)
+
+
+
+### *哈希函数的构造方法有哪些？
+
+
+
+### *解决哈希冲突的方法有哪些？
+
+- **链地址法|拉链法**：**HashMap 采用的方法**。将哈希值冲突的元素组成一个同义词单链表，链表的头指针存在哈希表哈希冲突的单元上。
+
+  **链地址法适用于经常插入和删除的情况。**
+
+- **开放定址法**：从发生哈希冲突的那个单元起，按照一定的顺序，从哈希表中找到一个空闲的单元来存放冲突的元素。开放定址法需要的表长度要大于等于所需要存放的元素。
+
+  - **线性探查法**：线行探查法是开放定址法中最简单的冲突处理方法，它从发生冲突的单元起，**依次探查**下一个单元是否为空，当达到最后一个单元时，再从表首依次判断。直到碰到空闲的单元或者探查完全部单元为止。**如何探查完全部单元都不为空，怎么办？**
+  - 平方探查法：发生冲突时，用发生冲突的单元d<sub>[i]</sub>，加上 1²、 2²等，即 d<sub>[i]</sub> + 1²，d<sub>[i]</sub> + 2², d<sub>[i]</sub> + 3²...，**直到找到空闲单元**。
+    在实际操作中，平方探查法不能探查到全部剩余的单元。不过在实际应用中，能探查到一半单元也就可以了。若探查到一半单元仍找不到一个空闲单元，表明此散列表太满，应该重新建立。
+  - **双散列函数探查法**：
+
+- **再哈希法**：就是同时构造多个不同的哈希函数，当其中一个哈希函数发生冲突时，就用另一个哈希函数进行运算，直到不再产生哈希冲突为止。
+
+  **这种方法不易产生聚集，但是增加了计算时间。**
+
+- **建立公共溢出区**：将哈希表分为公共表和溢出表，发生冲突的元素都放入溢出表中。
+
+参考：
+
+1. [解决哈希冲突的常用方法分析](https://www.jianshu.com/p/4d3cb99d7580)
+2. [哈希表（HashTable）的构造方法和冲突解决](https://www.jianshu.com/p/7e7f52a49ffc)
+3. [构造hash函数的方法、解决冲突的方法、常见hash算法](https://www.jianshu.com/p/436175785dfb)
+
+### *常见的哈希算法有哪些？
+
+- MD2：MD 是 Message Digest Algorithm 的简称，中文名为消息摘要算法
+- MD4
+- MD5：加密后的长度是128位
+- SHA-1：SHA 是 Secure Hash Algorithm 的简称，中文名为安全哈希|散列算法。SHA-1加密后长度是160位
+- SHA-2（SHA-256、SHA-384、SHA-512）
 
 ## 总结
 
 ### HashMap Put一个元素的流程
 
-1. 如果是第一次插入元素，会调用 resize 方法初始化容量。HashMap 的容量要么时默认容量16，要么是大于等于设定容量的2的指数次方
-2. 调用 hash 方法计算元素的键的哈希值，并计算元素的下标作为插入位置
-3. 判断插入位置是否已有元素，没有则直接插入，有则走下一步
+1. 如果是第一次插入元素，会调用 resize 方法初始化容量，默认容量是16，如果在 `new HashMap()` 的时候指定了容量，那么 HashMap 会取大于等于指定容量的2的指数次方作为容量。比如如果指定容量是15，则 HashMap 会取16作为容量。
+2. 调用 hash 方法计算 key 的哈希值，并计算下标作为插入位置
+3. 判断插入位置是否为空，是则直接插入，否则走下一步
 4. 判断已有元素和插入元素的哈希值和键值是否相等，相等则覆盖，不相等则走下一步
-5. 判断已有元素是链表节点还是树节点，然后遍历链表或树，查看有无键相同的节点，没有则新增，已有则覆盖
-6. 判断是否要树化，树化的阈值是 8-1 = 7
-7. 判断是否要扩容，扩容的阈值是容量*负载因子
+5. 判断已有元素是链表节点还是树节点，然后遍历链表或树，查找有无 key 相同的节点，有则覆盖，没有则新增
+6. 判断是否要树化和反树化
+7. 判断是否要扩容
 
 核心代码解读如下：
 

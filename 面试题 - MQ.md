@@ -55,17 +55,13 @@
 
 从三个方面解决这个问题：
 
-1. 生产者发送消息，需要确保消息发送到路由，并路由到队列：开启 Confirm 模式，RabbitTemplate 设置 ConfirmCallback 和 ReturnCallback。
+1. 生产者**开启 Confirm 模式**，确保消息成功发送到队列（RabbitTemplate 设置 ConfirmCallback 和 ReturnCallback）
+2. 开启持久化，确保MQ挂了消息不丢失。
 
-2. Exchange 交换器持久化、消息队列持久化、消息持久化：
-
-   Exchange 交换机持久化：new DirectExchange(“name”, true);
-
-   队列持久化：new Queue(“name”, true);
-
-   消息持久化：默认就是持久化的
-
-3. 确保消费者正确消费消息：关闭消费者自动 ACK 确认功能，手动 ACK 确认
+   - Exchange 交换机持久化：new DirectExchange(“name”, true);
+   - 队列持久化：new Queue(“name”, true);
+   - 消息持久化：`deliveryMode` 设为2。默认就是持久化的
+3. 消费者手动 ACK 确认消费正确消息：关闭消费者自动 ACK 确认功能
 
 参考：
 

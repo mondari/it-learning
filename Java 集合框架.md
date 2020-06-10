@@ -12,6 +12,10 @@
 
 - Arrays工具类里的 sort 方法使用了双轴快速排序算法（Dual-Pivot QuickSort），binarySearch 方法使用了二分查找算法。
 
+## 简单介绍一下 ArrayList？
+
+ArrayList 的内部结构是数组（Object 数组），数组的大小会根据元素的个数动态增长。数组的初始大小是10。每次添加元素，都会判断元素的个数是否会超过数组的大小，如果超过就会发生扩容，扩容后的容量变为原来的1.5倍。扩容的主要操作是通过 `Arrays.copyOf(elementData, newCapacity)` 将旧的数组复制到容量更大的新数组。
+
 ## ArrayList 和 数组的区别
 
 - ArrayList：基于动态数组，容量可以动态增长，但由于扩容时使用 Arrays.copyOf 复制数组，所以会牺牲一定的性能；
@@ -38,6 +42,10 @@ LinkedHashMap<String, String> accessOrderedMap = new LinkedHashMap<String, Strin
 ```
 
 
+
+## 简单介绍一下 HashMap？
+
+HashMap 其内部数据结构是数组+链表，默认容量是16，
 
 ## HashMap 和 Hashtable 的区别？
 
@@ -163,7 +171,7 @@ private static class SynchronizedMap<K,V>
     }
     
     //...
-}    
+}
 ```
 
 ## ConcurrentHashMap 如何实现？
@@ -171,3 +179,5 @@ private static class SynchronizedMap<K,V>
 JDK 7 和 JDK 8 两个版本的区别。
 
 JDK 8 中，ConcurrentHashMap 使用 volatile 保证了哈希表的可见性。
+
+参见：[源码分析原理篇 - ConcurrentHashMap.md](源码分析原理篇 - ConcurrentHashMap.md)
