@@ -1,123 +1,67 @@
 [TOC]
 
+# 索引篇
 
-
-## SQL 删除重复数据只保留一条
-
-SQL 通常情况下会存在重复数据，如果这些重复数据除了主键字段不一样，其它字段的数据都一样，可以使用以下方法删除重复数据并只保留一条。如果所有字段的数据都一样，包括主键字段，那就无可奈何了。
-
-主要方法是：先根据重复字段给数据分组，此时重复数据都会在同一组中，然后再找到分组数据中的最大或最小的主键ID，最后再删除主键ID不在该范围的数据，即可把重复的数据删除。
-
-```sql
-DELETE FROM 表名 WHERE 主键ID NOT IN ( SELECT * FROM ( SELECT MAX(主键ID) FROM 表名 GROUP BY 重复的字段 ) AS b);
-```
-
-上面的 MAX 可以换成 MIN。
-
-实例：
-
-demo 表有三个字段 id、uname、age，其中 id 是主键索引，数据库中存在有 uname 和 age 都相同的重复数据，需要删除重复数据且只保留重复数据中的一条。
-
-```sql
-CREATE TABLE IF NOT EXISTS `demo` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `uname` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `age` tinyint(4) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- 正在导出表  db_example.demo 的数据：~7 rows (大约)
-DELETE FROM `demo`;
-/*!40000 ALTER TABLE `demo` DISABLE KEYS */;
-INSERT INTO `demo` (`uname`, `age`) VALUES
-	('john', 11),
-	('john', 11),
-	('john', 11),
-	('john', 13),
-	('amy', 12),
-	('amy', 12),
-	('brance', 14),
-	('candy', 10);
-```
-
-执行以下语句可以删除并保留一条重复数据：
-
-```sql
-DELETE FROM demo WHERE id NOT IN ( SELECT * FROM ( SELECT MAX(id) FROM demo GROUP BY uname, age ) AS b );
-```
-
-## MySQL 有哪些数据库引擎，区别？
-
-执行 `SHOW ENGINES;` 命令可以查看支持的引擎；
-
-MySQL 常用的两种数据库引擎：
-
-- InnoDB：支持事务和行级锁
-- MyISAM：不支持事务，只支持表级锁
-
-## MySQL 有哪些索引？
+## MySQL 支持哪些索引？
 
 MySQL 支持五种索引，分别是 PRIMARY，KEY，UNIQUE，FULLTEXT，SPATIAL，即主键索引，普通索引，唯一索引、全文索引和空间索引
-
-如果从数据结构来划分的话，有四种类型：
-
-- **B-Tree 索引**
-- **Hash 索引**
-- **R-Tree（空间）索引**
-- **Full-text 索引**
-
-InnoDB 和 MyISAM 支持 BTREE 和 FULLTEXT 索引，MEMORY 支持 HASH 和 BTREE 索引.
 
 参考：[MySQL索引背后的数据结构及算法原理](http://blog.codinglabs.org/articles/theory-of-mysql-index.html)
 
 ## 索引是怎样提高查询效率？
 
-使用索引可以避免全表扫描
+使用索引可以避免全表扫描。索引就像一本书的目录一样，通过目录去查比一页一页地翻快。
 
 ## 索引的数据结构
 
-- 哈希表：适合等值查询，不适合范围查询
+MySQL 的索引结构支持哈希表、B+树和R树（空间索引）。
 
-  ![img](D:\Workspace\mondari\it-learning\面试题 - MySQL.assets\0c62b601afda86fe5d0fe57346ace957.png)
+### 哈希表
 
-- 有序数组：适合等值查询和范围查询
+适合等值查询，不适合范围查询
 
-  使用二分查找法，算法复杂度是O(log(N))。但是插入性能低，所以适合存储静态数据。
+![img](面试题 - MySQL.assets\0c62b601afda86fe5d0fe57346ace957.png)
 
-  ![img](D:\Workspace\mondari\it-learning\面试题 - MySQL.assets\bfc907a92f99cadf5493cf0afac9ca49.png)
+### 有序数组
 
-- 二叉树：
+适合等值查询和范围查询
 
-- N叉树：
+使用二分查找法，算法复杂度是O(log(N))。但是插入性能低，所以适合存储静态数据。
 
-## 前缀索引、联合索引的最左匹配
+![img](面试题 - MySQL.assets\bfc907a92f99cadf5493cf0afac9ca49.png)
 
-- 前缀索引和索引选择性
+### B树
 
-  说白了就是对文本的前几个字来建立索引，这样建立起来的索引更小，查询更快。
+树的查询效率高(算法复杂度 `O(log(n))` )，而且能够保证有序，并且树的高度比二叉树低，有利于减少磁盘IO。
 
-  缺点：不能在 ORDER BY 或 GROUP BY 中使用前缀索引，也不能把它们用作覆盖索引
+B树的特征：
 
-  使用场景：
+- 所有叶子节点具有相同的深度
+- 中间节点保存指针和数据，叶子节点不保存指针，只保存数据。这里的数据在 MySQL 中指的的是索引和卫星数据
 
+### B+树
 
-
-- 联合索引的最左匹配：
-
-  使用了 B+ 树的 MySQL 数据库引擎，比如 InnoDB 引擎，在每次查询复合字段时是从左往右匹配数据的，因此在创建联合索引的时候需要注意索引创建的顺序。例如，我们创建了一个联合索引是 idx(name,age,sex)，那么当我们使用，姓名+年龄+性别、姓名+年龄、姓名等这种最左前缀查询条件时，就会触发联合索引进行查询；然而如果非最左匹配的查询条件，例如，性别+姓名这种查询条件就不会触发联合索引。
-
-  当然，当我们已经有了（name,age）这个联合索引之后，一般情况下就不需要在 name 字段单独创建索引了，这样就可以少维护一个索引。
-
-
-
-参考：[前缀索引，一种优化索引大小的解决方案](https://www.cnblogs.com/studyzy/p/4310653.html)
+- （最重要）叶子节点有指向下一个叶子结点的指针，形成一个有序链表，所以**范围查询**的效率比B树高
+- 叶子节点包含了所有元素。
+- 在 MySQL 中，中间节点的元素都同时存在其子节点中，并且在子节点中是最大或最小的元素。B树没有这种冗余设计。
+- 在 MySQL 中，中间节点只保存索引(和指针)，不保存数据，**只有叶子节点才保存数据（InnoDB 保存的是整行数据，而 MyISAM 保存的是卫星数据）**。由于中间节点不保存数据，所以能够容纳更多的索引
 
 
 
-## 聚簇索引和辅助索引
+参考：
 
-- 聚簇索引|聚集索引(clustered index)：也叫主键索引，其叶子节点存的是整行数据。
-- 辅助索引：也叫二级索引，其叶子节点存的是主键的值。
+1. [04 | 深入浅出索引（上）](https://time.geekbang.org/column/article/69236)
+2. [漫画：什么是B-树？](https://mp.weixin.qq.com/s/rDCEFzoKHIjyHfI_bsz5Rw)
+3. [漫画：什么是B+树？](https://mp.weixin.qq.com/s/jRZMMONW3QP43dsDKIV9VQ)
+
+
+
+
+
+## 聚集索引和辅助索引
+
+- 聚集索引|聚簇索引(clustered index)：也叫主键索引，其叶子节点存的是整行数据。聚集指的是索引和数据聚集在一起存放。
+- 辅助索引：也叫二级索引，其叶子节点存的是主键的值。查询完辅助索引后需要根据主键值再到聚集索引中查到整行数据，这个过程叫做**回表**。就是说，**基于辅助索引的查询需要多扫描一棵索引树**，因此，我们应该尽量使用主键去查询。
 
 如图所示(这是B树，而不是B+树)，其中ID是主键索引字段，k是普通索引字段：
 
@@ -127,21 +71,19 @@ InnoDB 和 MyISAM 支持 BTREE 和 FULLTEXT 索引，MEMORY 支持 HASH 和 BTRE
 
 - 如果语句是 select * from T where ID=500，即主键查询方式，则只需要搜索 ID 这棵 B+ 树；
 
-- 如果语句是 select * from T where k=5，即普通索引查询方式，则需要先搜索 k 索引树，得到 ID 的值为 500，再到 ID 索引树搜索一次。这个过程称为**回表**。
+- 如果语句是 select * from T where k=5，即普通索引查询方式，则需要先搜索 k 索引树，得到 ID 的值为 500，再到 ID 索引树搜索一次。
 
-也就是说，基于辅助索引的查询需要多扫描一棵索引树。因此，我们在应用中应该尽量使用主键查询。
+参考：[04 | 深入浅出索引（上）](https://time.geekbang.org/column/article/69236)
 
-参考：https://time.geekbang.org/column/article/69236
-
-## 什么时候用自增主键？什么时候不用？
+## 什么时候用(整型)自增主键？什么时候可以不用？
 
 这涉及到索引的维护以及索引的大小。
 
 **索引的维护**：往索引插入新值时，需要对索引进行必要的维护，以保持索引的有序性。
 
-自增主键有利于减少索引的维护，因为自增主键本来就是有序的，只需要往索引后面插入新值即可。
+**自增主键**有利于减少索引的维护，因为自增主键本来就是有序的，只需要往索引后面插入新值即可。
 
-**索引的大小**：自增主键的类型是整型，占用的空间有限。如果用整型做主键，则只要 4 个字节，如果是长整型（bigint）则是 8 个字节，而 varchar 每个字符占用 1 个字节。所以使用自增主键有利于减少普通索引的叶子节点占用的空间，从而降低普通索引的大小。
+**索引的大小**：**整型作为主键**有利于降低索引的大小。int 只要 4 个字节，bigint 则是 8 个字节，而 varchar 每个字符占用 1 个字节。所以使用整型的自增主键有利于减少普通索引的叶子节点占用的空间，从而降低普通索引的大小。
 
 **什么时候可以不用自增主键**？
 
@@ -149,9 +91,43 @@ InnoDB 和 MyISAM 支持 BTREE 和 FULLTEXT 索引，MEMORY 支持 HASH 和 BTRE
 
 
 
-参考：https://time.geekbang.org/column/article/69236
+参考：[04 | 深入浅出索引（上）](https://time.geekbang.org/column/article/69236)
 
-## *B+树是怎样的数据结构？B树又是怎样的数据结构，两者的区别？
+## 联合索引
+
+### *如何存储？
+
+
+
+### 最左匹配
+
+使用了 B+ 树的 MySQL 数据库引擎，比如 InnoDB 引擎，在每次查询复合字段时是从左往右匹配数据的，因此在创建联合索引的时候需要注意索引创建的顺序。例如，我们创建了一个联合索引是 idx(name,age,sex)，那么当我们使用，姓名+年龄+性别、姓名+年龄、姓名等这种最左前缀查询条件时，就会触发联合索引进行查询；然而如果非最左匹配的查询条件，例如，性别+姓名这种查询条件就不会触发联合索引。
+
+当然，当我们已经有了（name,age）这个联合索引之后，一般情况下就不需要在 name 字段单独创建索引了，这样就可以少维护一个索引。
+
+### 覆盖索引|索引覆盖
+
+辅助索引的叶子节点存的是主键值，如果根据辅助索引去查询主键值，则不需要再回表去查询聚集索引了，因为辅助索引已经“**覆盖了**”我们的查询需求，我们称这种查询过程为**索引覆盖**，也叫**覆盖索引**。
+
+比如下面 SQL 语句根据名称去查询 ID，假设名称 name 上已经建立了索引，则通过 name 去查 id 不需要再回表去查询聚集索引了
+
+```sql
+select id from user where name = 'amy';
+```
+
+
+
+参考：[前缀索引，一种优化索引大小的解决方案](https://www.cnblogs.com/studyzy/p/4310653.html)
+
+## *前缀索引和索引选择性
+
+什么是前缀索引：说白了就是对文本的前几个字来建立索引，这样建立起来的索引更小，查询更快。
+
+缺点：不能在 ORDER BY 或 GROUP BY 中使用前缀索引，也不能把它们用作覆盖索引
+
+参考：[前缀索引，一种优化索引大小的解决方案](https://www.cnblogs.com/studyzy/p/4310653.html)
+
+# 锁与事务篇
 
 ## 事务的四大特性 ACID
 
@@ -194,7 +170,62 @@ https://blog.csdn.net/qq_33290787/article/details/51924963
 - 可重复读（Repeatable Read）：这是 MySQL 默认隔离级别。事务无法读到其它事务已提交或未提交的**“修改”（不是新增）**，保证了事务在执行过程中读取到的数据前后一致。**解决了脏读、不可重复读的问题，但是会出现幻读的问题。**
 - 可串行化|可序列化（Serializable）：最高隔离级别。所有事务**按顺序串行化执行**，会对整个表加锁（不管是读还是写），后一个的事务必须等前一个事务执行完成，才能继续执行。**解决了脏读、不可重复读、幻读的问题，但是性能较低**
 
-## SQL 优化
+## 什么时候行锁会变为表锁？
+
+索引失效的时候。
+
+InnoDB 的行锁是加在索引上的，如果索引失效的话，就会升级为表锁。
+
+
+
+- 无锁
+
+  ```sql
+  # 主键不存在
+  select * from user where id = -1 for update;
+  ```
+
+  
+
+- 行锁
+
+  ```sql
+  select * from user where id = 1 for update;
+  select * from user where id = 1 and name = 'lucy' for update;
+  ```
+
+  
+
+- 表锁
+
+  ```sql
+  # 主键不明确
+  select * from user where name = 'lucy' for update;
+  ```
+
+  
+
+# 优化篇
+
+## 一条 SQL 语句是如何执行的？
+
+连接器：管理连接，登录验证，用户名和密码是否正确
+分析器：词法分析，语法分析，让MySQL知道这条SQL语句要干什么，语法有没有毛病。**并查询缓存**，缓存命中，则直接返回。
+优化器：给出SQL语句的最优的执行方案
+执行器：执行SQL语句并返回结果，但在执行前会判断是否对表有权限
+
+
+
+## MySQL 支持哪些数据库引擎，它们的区别？
+
+执行 `SHOW ENGINES;` 命令可以查看支持的引擎；
+
+MySQL 常用的两种数据库引擎：
+
+- InnoDB：支持事务、行级锁和外键
+- MyISAM：不支持事务，只支持表级锁
+
+## 常见的 SQL 优化
 
 SQL 优化的中心思想是查询的时候尽量使用索引，避免全表扫描。SQL 性能优化的目标：至少要达到 range 级别，要求是 ref 级别，如果可以是 consts 最好。 type 不能是 index 
 
@@ -374,14 +405,14 @@ https://blog.csdn.net/csdnstudent/article/details/40398245
 
 ## 主从复制原理
 
-主数据库启动二进制日志（Binary Log），记录任何数据库的改动操作，从数据库会监听主数据库的二进制日志，如果监测到变化，就会启动一个 IO 线程向主数据库请求二进制日志，主数据库会为每个从数据库的 IO 线程启动一个 Dump 线程发送二进制日志，从数据库会将二进制日志保存到本地的 Relay Log，然后启动 SQL 线程读取 Relay Log 进行同步操作。
+主数据库启动二进制日志（Binary Log），记录数据变更操作；从数据库会监听主数据库的二进制日志，如果监测到变化，就会启动一个 IO 线程向主数据库发送读请求，主数据库会为每个从数据库的 IO 线程启动一个 Dump 线程发送二进制日志，从数据库的 IO 线程会将接收到的二进制日志保存到本地的中继日志（Relay Log）中，然后启动 SQL 线程读取中继日志进行回放操作。
 
 总结：
 
 - 主数据库会启动 Dump 线程，从数据库会启动 IO 线程和 SQL 线程
-- IO 线程负责记录数据库的修改操作到二进制日志文件
-- Dump 线程负责发送
-- SQL 线程负责从 Relay Log 中读取日志事件并在本地重放。
+- Dump 线程负责发送二进制日志
+- IO 线程负责读取和接收二进制日志并将其保存到中继日志中
+- SQL 线程负责读取中继日志并回放操作。
 
 主从复制后，可以实现读写分离，主库写，从库读，从库读负载均衡，降低数据库的读写压力。
 
@@ -410,14 +441,51 @@ SELECT * FROM table 100 OFFSET 100000
 select * from table where id >= (select id from table limit 100000,1) limit 100;
 ```
 
-## 一条 SQL 语句是如何执行的？
+# SQL 语句篇
 
-连接器：管理连接，登录验证，用户名和密码是否正确
-分析器：词法分析，语法分析，让MySQL知道这条SQL语句要干什么，语法有没有毛病。**并查询缓存**，缓存命中，则直接返回。
-优化器：给出SQL语句的最优的执行方案
-执行器：执行SQL语句并返回结果，但在执行前会判断是否对表有权限
+## SQL 删除重复数据只保留一条
 
-## 
+SQL 通常情况下会存在重复数据，如果这些重复数据除了主键字段不一样，其它字段的数据都一样，可以使用以下方法删除重复数据并只保留一条。如果所有字段的数据都一样，包括主键字段，那就无可奈何了。
+
+主要方法是：先根据重复字段给数据分组，此时重复数据都会在同一组中，然后再找到分组数据中的最大或最小的主键ID，最后再删除主键ID不在该范围的数据，即可把重复的数据删除。
+
+```sql
+DELETE FROM 表名 WHERE 主键ID NOT IN ( SELECT * FROM ( SELECT MAX(主键ID) FROM 表名 GROUP BY 重复的字段 ) AS b);
+```
+
+上面的 MAX 可以换成 MIN。
+
+实例：
+
+demo 表有三个字段 id、uname、age，其中 id 是主键索引，数据库中存在有 uname 和 age 都相同的重复数据，需要删除重复数据且只保留重复数据中的一条。
+
+```sql
+CREATE TABLE IF NOT EXISTS `demo` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `uname` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `age` tinyint(4) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- 正在导出表  db_example.demo 的数据：~7 rows (大约)
+DELETE FROM `demo`;
+/*!40000 ALTER TABLE `demo` DISABLE KEYS */;
+INSERT INTO `demo` (`uname`, `age`) VALUES
+	('john', 11),
+	('john', 11),
+	('john', 11),
+	('john', 13),
+	('amy', 12),
+	('amy', 12),
+	('brance', 14),
+	('candy', 10);
+```
+
+执行以下语句可以删除并保留一条重复数据：
+
+```sql
+DELETE FROM demo WHERE id NOT IN ( SELECT * FROM ( SELECT MAX(id) FROM demo GROUP BY uname, age ) AS b );
+```
 
 ## 生成随机字符串或随机数字
 
@@ -443,9 +511,4 @@ select * from table where id >= (select id from table limit 100000,1) limit 100;
    
 
 
-## MySQL 什么时候行锁会变为表锁？
-
-索引失效的时候。
-
-InnoDB 的行锁是加在索引上的，如果索引失效的话，就会升级为表锁。
 
