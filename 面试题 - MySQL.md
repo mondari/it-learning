@@ -510,5 +510,55 @@ DELETE FROM demo WHERE id NOT IN ( SELECT * FROM ( SELECT MAX(id) FROM demo GROU
 
    
 
+## 查询学生总分和各科成绩
 
+表结构：
+
+```sql
+CREATE TABLE `result` (
+	`id` INT(11) NOT NULL AUTO_INCREMENT,
+	`name` VARCHAR(50) NOT NULL,
+	`course` VARCHAR(50) NOT NULL,
+	`score` INT(11) NOT NULL DEFAULT '0',
+	PRIMARY KEY (`id`)
+)ENGINE=InnoDB;
+```
+
+表数据：
+
+```sql
+DELETE FROM `result`;
+INSERT INTO `result` (`id`, `name`, `course`, `score`) VALUES
+	(1, '张三', '语文', 78),
+	(2, '张三', '数学', 83),
+	(3, '李四', '语文', 88),
+	(4, '李四', '英语', 89),
+	(5, '王二', '语文', 80),
+	(6, '王二', '数学', 76),
+	(7, '王二', '英语', 84);
+```
+
+要求查询结果如下：
+
+| 姓名 | 语文 | 数学 | 英语 | 总分 |
+| ---- | ---- | ---- | ---- | ---- |
+| 张三 | 78   | 83   | 0    | 161  |
+| 李四 | 88   | 0    | 89   | 177  |
+| 王二 | 80   | 76   | 84   | 240  |
+
+查询语句：
+
+```sql
+SELECT r.name AS '姓名', IFNULL(SUM(r.score), 0) AS '总分', IFNULL(t1.score, 0) AS '语文', IFNULL(t2.score, 0) AS '数学', IFNULL(t3.score, 0) AS '英语' FROM result r 
+LEFT JOIN (
+	SELECT NAME, score FROM result WHERE course = '语文'
+) t1 ON t1.name = r.name 
+LEFT JOIN (
+	SELECT NAME, score FROM result WHERE course = '数学'
+) t2 ON t2.name = r.name 
+LEFT JOIN (
+	SELECT NAME, score FROM result WHERE course = '英语'
+) t3 ON t3.name = r.name 
+GROUP BY r.name 
+```
 
