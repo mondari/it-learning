@@ -636,6 +636,20 @@ rabbitmq:3-management
 
 ```
 
+如要安装延迟队列插件，先下载好插件，放入 Dockerfile 文件所在目录，Dockerfile 内容如下：
+
+```dockerfile
+FROM rabbitmq:3.8.2-management
+COPY ["rabbitmq_delayed_message_exchange-3.8.0.ez" , "/plugins/"]
+RUN rabbitmq-plugins enable rabbitmq_delayed_message_exchange
+```
+
+构建镜像：
+
+```bash
+docker build -t rabbitmq:3.8.2-management .
+```
+
 
 
 ### 通过 yum 安装
@@ -696,6 +710,8 @@ $ journalctl --system | grep rabbitmq
 >  log(s)         : /var/log/rabbitmq/rabbit@bogon.log
 >       : /var/log/rabbitmq/rabbit@bogon_upgrade.log
 >  database dir   : /var/lib/rabbitmq/mnesia/rabbit@bogon
+
+
 
 ## Elasticsearch
 
@@ -1007,6 +1023,63 @@ $ docker run -d -p 9411:9411 openzipkin/zipkin --name zipkin
 ```
 
 参考：https://github.com/openzipkin/zipkin/tree/master/docker
+
+## Zookeeper
+
+### 通过 docker 安装
+
+```bash
+docker run --name zookeeper -p 2181:2181 -d zookeeper
+```
+
+### 通过 docker-compose 安装
+
+ `docker-compose -f zookeeper.yml up -d`
+
+示例 `zookeeper.yml` 文件：
+
+```yaml
+version: '3.1'
+
+services:
+  zoo1:
+    image: zookeeper
+    restart: always
+    hostname: zoo1
+    ports:
+      - 2181:2181
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=0.0.0.0:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=zoo3:2888:3888;2181
+
+  zoo2:
+    image: zookeeper
+    restart: always
+    hostname: zoo2
+    ports:
+      - 2182:2181
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181 server.2=0.0.0.0:2888:3888;2181 server.3=zoo3:2888:3888;2181
+
+  zoo3:
+    image: zookeeper
+    restart: always
+    hostname: zoo3
+    ports:
+      - 2183:2181
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=0.0.0.0:2888:3888;2181
+```
+
+
+
+参考：https://hub.docker.com/_/zookeeper
+
+## *Kafka
+
+
 
 ## [goproxy](https://gitee.com/snail/proxy)
 
