@@ -227,24 +227,27 @@ static final int hash(Object key) {
 
 ## 扩容机制
 
-### 知识点：扩容的条件？如何扩容
 
-当HashMap的大小超过阈值时，就会发生**扩容（容量变为原来的两倍）**和**重新哈希（重新分布元素的位置）**。阈值的大小就是HashMap容量和负载因子的乘积。
 
-什么是负载因子呢？它表示 HashMap 容量的多少作为负载，用来存放元素。负载因子是一个大于0的数，默认是0.75f（DEFAULT_LOAD_FACTOR），也就是说默认情况下，HashMap 容量的3/4会作为负载，当HashMap的大小超过容量的3/4，就会扩容和重新哈希。
+### 什么是负载因子？负载因子太小或太大会怎样？
 
-```java
-/**
- * The load factor used when none specified in constructor.
- */
-static final float DEFAULT_LOAD_FACTOR = 0.75f;
-```
+什么是负载因子？负载因子表示 HashMap 容量的多少作为负载来存放元素。负载因子 = 元素个数 / 容量。
 
-截取JDK8官方文档的一段话让大家深入理解负载因子和容量
+负载因子默认是 0.75f（DEFAULT_LOAD_FACTOR），也就是3/4，适合大多数场景，一般不需要更改，因为太大或太小会有以下问题：
 
-> An instance of `HashMap` has two parameters that affect its performance: *initial capacity* and *load factor*. The *capacity* is the number of buckets in the hash table, and the initial capacity is simply the capacity at the time the hash table is created. The *load factor* is a measure of how full the hash table is allowed to get before its capacity is automatically increased. When the number of entries in the hash table exceeds the product of the load factor and the current capacity, the hash table is *rehashed* (that is, internal data structures are rebuilt) so that the hash table has approximately twice the number of buckets.
+- **负载因子越小，空间利用率越低，扩容越频繁；**
 
-扩容代码如下
+- **负载因子越大，哈希碰撞的概率就越大，更多冲突的元素存到链表中，查找成本提高**。
+
+**负载因子是可以大于1的**，这样就会导致阈值大于容量（阈值=容量*负载因子），哈希碰撞的概率上升，更多数据会被存放在链表里，进而导致查找成本提高。这就好比将20个数据存放在大小为16的数组里，数组肯定是放不下的，所以多出的数据就会存放在链表里。
+
+### 扩容的条件？如何扩容？
+
+扩容的条件：当 HashMap 的大小超过阈值时，就会发生扩容。阈值 = 容量 * 负载因子。也就是说当 HashMap 的大小超过容量的 3/4 时，就会扩容。
+
+扩容主要有两个操作，**扩容（容量变为原来的两倍）**和**重新哈希（重新分布元素的位置）**。
+
+扩容代码的主要实现在 resize 方法中：
 
 ```java
 final Node<K,V>[] resize() {
@@ -258,7 +261,7 @@ final Node<K,V>[] resize() {
     
     if (oldCap > 0) {
         // 扩容算法
-        // 须保证扩容后的容量不超过最大容量的情况下
+        // 须保证扩容后的容量不超过最大容量
         if (oldCap >= MAXIMUM_CAPACITY) {
             threshold = Integer.MAX_VALUE;
             return oldTab;
@@ -276,19 +279,7 @@ final Node<K,V>[] resize() {
 
 由上可知，扩容的基本步骤是在保证扩容后的容量不超过 HashMap 的最大容量的情况下，容量变为原来的两倍。
 
-### 知识点：负载因子太小或太大会怎样？
-
-默认负载因子大小（0.75）在时间和空间成本之间取得了良好的平衡，适合大多数场景。因为
-
-- **负载因子越小，空间利用率越低，扩容越频繁；**
-
-- **负载因子越大，哈希碰撞的概率就越大，更多冲突的元素存到链表中，查找成本提高**。所以，通常情况下不需要改负载因子的大小。
-
-**负载因子是可以大于1的哦**，这样就会导致阈值大于容量（阈值=容量*负载因子），哈希碰撞的概率上升，更多数据会被存放在链表里，进而导致查找成本提高。这就好比将20个数据存放在大小为16的数组里，数组肯定是放不下的，所以多出的数据就会存放在链表里。
-
-
-
-## 红黑树的代码
+## 红黑树的抽象数据类型
 
 ```java
 /**
@@ -302,11 +293,7 @@ static final class TreeNode<K,V> extends LinkedHashMap.Entry<K,V> {
     TreeNode<K,V> right;
     TreeNode<K,V> prev;    // needed to unlink next upon deletion
     boolean red;
-    
-    TreeNode(int hash, K key, V val, Node<K,V> next) {
-        super(hash, key, val, next);
-    }
-    
+      
     //...
 }
 ```
@@ -441,6 +428,8 @@ HashMap 在扩容的时候会调用 resize 方法，resize 方法主要是负责
     在实际操作中，平方探查法不能探查到全部剩余的单元。不过在实际应用中，能探查到一半单元也就可以了。若探查到一半单元仍找不到一个空闲单元，表明此散列表太满，应该重新建立。
     
   - **双散列函数探查法**：
+
+  - **随机探测法**：发生冲突时，随机找个空闲的单元存放冲突的元素。
 
   缺点：冲突的元素容易堆积在一起
 
