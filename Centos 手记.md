@@ -2,33 +2,61 @@
 
 
 
-# Centos 配置
-
 ## 用户名和密码
 
-username: root
-password: toor
+- 用户名：root
+- 密码：toor
 
-## .inputrc
+## Centos vs Ubuntu Server
 
-```
+|            | Centos 7                     | Centos 8                  | Ubuntu Server 2018 LTS | Ubuntu Server 2020 LTS | 备注                            |
+| ---------- | ---------------------------- | ------------------------- | ---------------------- | ---------------------- | ------------------------------- |
+| Kernel     | 3.10                         | 4.18                      | 4.15                   | 5.4                    |                                 |
+| 包管理     | yum                          | dnf 替代 yum              |                        | apt                    |                                 |
+| 包仓库     | Base, Extras, Updates        | BaseOS, AppStream, Extras |                        |                        |                                 |
+| 网络管理   | NetworkManager, nmcli, nmtui | 同左                      |                        |                        |                                 |
+| 网络工具   | ip, ss                       | 同左                      |                        | ifconfig, netstat      |                                 |
+| 网络包过滤 | iptables                     | nftables                  |                        |                        | 都是内核的 netfilter 框架的成员 |
+| 防火墙     | firewalld, firewall-cmd      | 同左                      |                        | ufw                    |                                 |
+| 文件系统   | XFS                          | 同左                      |                        | ext4                   |                                 |
+| 显示服务器 | X.org                        | Wayland                   |                        |                        |                                 |
+| Web 控制台 | 默认无                       | Cockpit                   |                        |                        |                                 |
+| 容器管理   | Docker 1.13                  | Podman                    |                        |                        |                                 |
+| 容器编排   | Kubernetes 1.5.2             | -                         |                        |                        |                                 |
+| MySQL      | -                            | 8.0                       |                        |                        |                                 |
+| MariaDB    | 5.5                          | 10.3                      |                        |                        |                                 |
+| PostgreSQL | 9.2                          | 10.6                      |                        | 11                     |                                 |
+| Redis      | -                            | 5                         |                        |                        |                                 |
+| OpenJDK    | 8, 11                        | 8, 11                     |                        |                        |                                 |
+| Maven      | -                            | 3.5                       |                        |                        |                                 |
+| Python     | 3.6                          | 3.8                       |                        |                        |                                 |
+| Anaconda   | 21                           | 29                        |                        |                        |                                 |
+| PHP        | 5.4                          | 7.2                       |                        |                        |                                 |
+| Nodejs     | -                            | 10.19                     |                        |                        |                                 |
+| Nginx      | -                            | 1.14                      |                        |                        |                                 |
+| httpd      | 2.4.6                        | 2.4.37                    |                        |                        |                                 |
+
+## 配置 Bash
+
+### .inputrc
+
+```bash
 // 设置 bash 大小写不敏感
 $ echo "set completion-ignore-case on">>~/.inputrc
 ```
 
-## 安装的 yum 包
+## 常用包
 
-yum groups install Development Tools（内含 gcc, make, git, cmake, perl）
-net-tools.x86_64（内含 ifconfig, netstat, route）
+yum groups install Development Tools（内含 gcc, git, cmake, perl）
+net-tools.x86_64（内含 netstat, ifconfig, route）
 yum-cron
-bash-completion.x86_64
+bash-completion
 mlocate.x86_64
-vim (默认没有 vim)
-java-1.8.0-openjdk.x86_64
 java-1.8.0-openjdk-devel.x86_64（内含 Java 诊断工具）
 epel-release（EPEL仓库有Python3）
 yum install python-pip（默认安装pyhon-pip2）
 pip install --upgrade pip（更新pip）
+[open-vm-tools](https://github.com/vmware/open-vm-tools).x86_64（VMware 虚拟机包）
 
 ## 配置EPEL镜像
 
@@ -55,17 +83,17 @@ index-url = https://mirrors.aliyun.com/pypi/simple/
 trusted-host=mirrors.aliyun.com
 ```
 
-
-
 ## neofetch
 
-```bash
-curl -o /etc/yum.repos.d/konimex-neofetch-epel-7.repo https://copr.fedorainfracloud.org/coprs/konimex/neofetch/repo/epel-7/konimex-neofetch-epel-7.repo
+neofetch 是用来打印操作系统信息和 ASCII 版的操作系统 LOGO 图片
 
-yum install neofetch
+```bash
+$ curl -o /etc/yum.repos.d/konimex-neofetch-epel-7.repo https://copr.fedorainfracloud.org/coprs/konimex/neofetch/repo/epel-7/konimex-neofetch-epel-7.repo
+
+$ yum install neofetch
 ```
 
-
+参考：https://github.com/dylanaraps/neofetch/wiki/Installation#fedora--rhel--centos--mageia
 
 ## Docker
 
@@ -96,11 +124,8 @@ $ sudo yum-config-manager \
 // Install the latest version of Docker Engine - Community and containerd    
 $ sudo yum install -y docker-ce docker-ce-cli containerd.io
 
-// 将 Docker 设为开机启动
-$ sudo systemctl enable docker
-
-// Start Docker
-$ sudo systemctl start docker
+// 启动服务设为开机启动
+$ sudo systemctl enable --now docker
 
 // Verify
 $ sudo docker run hello-world
@@ -160,7 +185,7 @@ ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H fd:// --containerd=/run/cont
 DOCKER_HOST=tcp://DOCKER_HOST_IP:2375
 ```
 
-### Docker 容器开机自启
+### 设置容器开机自启
 
 ```bash
 // 在运行docker容器时可以加如下参数来保证每次docker服务重启后容器也自动重启：
@@ -198,42 +223,6 @@ docker-compose --version
 docker-compose -f docker-compose.yml up -d
 ```
 
-### 安装  Portainer
-
-Portainer 是 Docker 的 Web 管理界面。
-
-```bash
-$ docker volume create portainer_data
-$ docker run -d -p 9000:9000 -p 8000:8000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer:latest
-
-```
-
-访问 http://localhost:9000，首次访问会提示设置用户名密码，分别设置为 admin 和 portainer.io。
-
-### 开启 IPv4 forward
-
-如果不开启 IPv4 forward，Portainer 容器无法通过外网访问，会提示“WARNING: IPv4 forwarding is disabled. Networking will not work”。
-
-
-
-```bash
-// 开启
-$ vim /etc/sysctl.conf:
-net.ipv4.ip_forward = 1
-// 重新加载
-$ sysctl -p /etc/sysctl.conf
-// 检查
-$ sysctl net.ipv4.ip_forward
-net.ipv4.ip_forward = 1
-// 或者通过以下命令检查
-$ cat /proc/sys/net/ipv4/ip_forward
-1
-```
-
-
-
-参考：https://docs.kvasirsg.com/centos-7/prefilight-configuration/how-to-enable-ip-forwarding
-
 ## Docker Compose 
 
 使用 docker-compose 安装服务需要配置好以下内容：
@@ -246,7 +235,7 @@ $ cat /proc/sys/net/ipv4/ip_forward
 - 数据卷映射：数据、日志、配置
 - 允许外网访问
 
-### 部署数据库服务
+### 部署常用服务
 
 ```yaml
 version: '3'
@@ -302,7 +291,9 @@ volumes:
   portainer_data:
 ```
 
-### mongo.yaml
+### 部署 MongoDB
+
+mongo.yaml
 
 ```yaml
 version: '3'
@@ -345,7 +336,9 @@ services:
 
 
 
-### 部署ELK
+### 部署 ELK
+
+elk.yaml
 
 ```bash
 version: '3'
@@ -376,8 +369,6 @@ services:
 volumes:
   elastic-data:
 ```
-
-
 
 ### 部署微服务
 
@@ -412,35 +403,65 @@ volumes:
   nacos_data:
 ```
 
-### 部署CI/CD
+## Portainer
+
+Portainer 是 Docker 的 Web 管理界面。
 
 ```bash
+$ docker volume create portainer_data
+$ docker run -d -p 9000:9000 -p 8000:8000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer:latest
 
+```
+
+访问 http://localhost:9000，首次访问会提示设置用户名密码，分别设置为 admin 和 portainer.io。
+
+**开启 IPv4 forward**
+
+如果不开启 IPv4 forward，Portainer 容器无法通过外网访问，会提示“WARNING: IPv4 forwarding is disabled. Networking will not work”。
+
+```bash
+// 开启
+$ vim /etc/sysctl.conf:
+net.ipv4.ip_forward = 1
+// 重新加载
+$ sysctl -p /etc/sysctl.conf
+// 检查
+$ sysctl net.ipv4.ip_forward
+net.ipv4.ip_forward = 1
+// 或者通过以下命令检查
+$ cat /proc/sys/net/ipv4/ip_forward
+1
 ```
 
 
 
+参考：
+
+1. https://www.portainer.io/installation/
+2. http://www.senra.me/docker-management-panel-series-portainer/
+3. https://docs.kvasirsg.com/centos-7/prefilight-configuration/how-to-enable-ip-forwarding
+
 ## Cockpit
 
-Cockpit 是 Linux 的 Web 控制台。
+Cockpit 是 Linux 的 Web 控制台。Centos 8 在安装时可以选择安装该服务。
 
 1. 安装 cockpit:
 
-   ```
-   sudo yum install cockpit
+   ```bash
+   $ yum install cockpit
    ```
 
 2. 启动 cockpit 服务:
 
-   ```
-   sudo systemctl enable --now cockpit.socket
+   ```bash
+   $ systemctl enable --now cockpit.socket
    ```
 
 3. 打开防火墙:
 
-   ```
-   sudo firewall-cmd --permanent --zone=public --add-service=cockpit
-   sudo firewall-cmd --reload
+   ```bash
+   $ firewall-cmd --permanent --zone=public --add-service=cockpit
+   $ firewall-cmd --reload
    ```
    
 4. 访问  https://ip-address:9090 
@@ -457,18 +478,6 @@ docker run -d --restart=unless-stopped -p 80:80 -p 443:443 --name=rancher ranche
 
 用户名默认为 admin，安装后会提示设置密码，这里设置为 admin
 
-## PostgreSQL
-
-### 通过 yum 安装
-
-```
-$ yum install https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-$ yum install postgresql11
-$ yum install postgresql11-server
-$ /usr/pgsql-11/bin/postgresql-11-setup initdb
-$ systemctl enable postgresql-11
-$ systemctl start postgresql-11
-```
 
 ## MySQL
 
@@ -497,11 +506,64 @@ docker run -d --net=cluster --name=mysql1 --ip=192.168.0.10 -p=3306:3306 -e MYSQ
 
 ### 通过 yum 安装
 
+#### Centos 8
+
+Centos 8 的 AppStream 仓库下有 mysql-server.x86_64 的包
+
+```bash
+$ yum install mysql-server.x86_64
+$ systemctl enable --now mysqld.service # 启动并设置开机启动
+$ mysql -uroot # 登录
 ```
-$ yum install -y mysql-community-server.x86_64 (来自 mysql80-community 仓库)
-$ CREATE USER 'root'@'%' IDENTIFIED BY 'pass4wOrd!';
+
+#### Centos 7
+
+Centos 7 默认不带 MySQL，但是有 MariaDB 替代。如果要安装 MySQL，需要添加仓库。
+
+1. 从 https://dev.mysql.com/downloads/repo/yum/ 下载 rpm 仓库包
+
+2. 安装 rpm 仓库包：`yum install mysql80-community-release-el7-{version-number}.noarch.rpm` 
+
+3. 检查仓库是否已添加并开启：`yum repolist enabled | grep "mysql.*-community.*"`
+
+4. 安装并登录 MySQL 服务器：
+    ```bash
+    $ yum install -y mysql-community-server.x86_64
+    $ grep 'temporary password' /var/log/mysqld.log # 临时密码
+    $ mysql -uroot -p #登录
+    ```
+    
+    
+
+#### 安装后配置
+
+配置密码和远程访问权限：
+
+```bash
+$ CREATE USER 'root'@'%' IDENTIFIED BY 'toor';
 $ GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
 $ FLUSH PRIVILEGES;
+```
+
+配置防火墙开放端口：
+
+```bash
+$ firewall-cmd --add-service=mysql --permanent
+$ firewall-cmd --reload
+$ firewall-cmd --list-service --permanent
+```
+
+查询已有用户：
+
+```bash
+mysql> use mysql;
+mysql> select user,authentication_string,host from user;
+```
+
+删除已有用户：
+
+```bash
+mysql> drop user 'some_user@%'
 ```
 
 如果忘记MySQL密码，执行以下操作：
@@ -524,76 +586,42 @@ mysql> ALTER USER 'root'@'%' IDENTIFIED BY 'pass4wOrd!';
 mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'pass4wOrd!';
 ```
 
-## phpMyAdmin
+参考：https://dev.mysql.com/doc/refman/8.0/en/linux-installation-yum-repo.html
 
-phpMyAdmin 目前不支持 MySQL 8 的 caching_sha2_password 认证方式。
+## MariaDB
 
-### Usage with linked server
+### 通过 yum 安装
 
-```bash
-docker run --name phpmyadmin -d --link mysql:db -p 8082:80 phpmyadmin/phpmyadmin:4.8
-
-```
-
-### Usage with external server
+Centos 7 默认不带 MySQL，但是有 MariaDB 替代
 
 ```bash
-docker run --name phpmyadmin -d -e PMA_HOST=dbhost -e PMA_PORT=3306 \
--p 8082:80 phpmyadmin/phpmyadmin:4.8
-
+$ yum install mariadb-server.x86_64
+$ systemctl enable --now mariadb
 ```
 
-### Usage with arbitrary server
+安装后配置同 MySQL
 
-```bash
-docker run --name phpmyadmin -d -e PMA_ARBITRARY=1 -p 8082:80 phpmyadmin/phpmyadmin:4.8
-
-```
-
-参考：https://hub.docker.com/r/phpmyadmin/phpmyadmin
-
-## MongoDB
-
-### 通过 docker 安装
-
-```bash
-$ sudo docker run --name mongo -d \
--p 27017:27017 \
--e MONGO_INITDB_ROOT_USERNAME=mongo -e MONGO_INITDB_ROOT_PASSWORD=mongo \
--v /var/lib/mongo:/data/db \
-mongo:4.2
-```
-
-
+## PostgreSQL
 
 ### 通过 yum 安装
 
 ```bash
-$ vim /etc/yum.repos.d/mongodb-org-4.0.repo
-[mongodb-org-4.0]
-name=MongoDB Repository
-baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/4.0/x86_64/
-gpgcheck=1
-enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/server-4.0.asc
-
-$ yum install -y mongodb-org
-
-$ systemctl enable mongod.service
-$ systemctl start mongod
-$ systemctl stop mongod
-# or
-$ chkconfig mongod on
-$ service mongod start
-$ service mongod stop
-
-$ vim /etc/mongod.conf
-net:
-  port: 27017
-  bindIp: 0.0.0.0 或 bindIpAll
+$ yum install https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+$ yum install postgresql11 postgresql11-server
+$ /usr/pgsql-11/bin/postgresql-11-setup initdb
+$ systemctl enable --now postgresql-11
 ```
 
 ## Redis
+
+### 通过 yum 安装
+
+只支持 Centos 8
+
+```bash
+$ yum install redis.x86_64
+$ systemctl enable --now redis.service
+```
 
 ### 通过 docker 安装
 
@@ -604,9 +632,9 @@ $ docker run --name redis -d redis
 $ docker run --name redis -p 6379:6379 -d redis redis-server --appendonly yes
 ```
 
-
-
 ### 通过 tar 包安装
+
+Centos 7 不带 Redis，只能通过源码包编译
 
 ```
 $ curl -O http://download.redis.io/releases/redis-5.0.5.tar.gz
@@ -615,13 +643,16 @@ $ cd redis-5.0.5
 $ make distclean install 
 $ yum install tcl.x86_64
 $ make distclean test
-
-$ vim redis.conf
-bind 0.0.0.0
-
 ```
 
+### 安装后配置
 
+默认 Redis 不支持远程连接，需要配置
+
+```bash
+$ vi /etc/redis.conf
+bind 0.0.0.0
+```
 
 ## RabbitMQ
 
@@ -711,7 +742,42 @@ $ journalctl --system | grep rabbitmq
 >       : /var/log/rabbitmq/rabbit@bogon_upgrade.log
 >  database dir   : /var/lib/rabbitmq/mnesia/rabbit@bogon
 
+## MongoDB
 
+### 通过 docker 安装
+
+```bash
+$ sudo docker run --name mongo -d \
+-p 27017:27017 \
+-e MONGO_INITDB_ROOT_USERNAME=mongo -e MONGO_INITDB_ROOT_PASSWORD=mongo \
+-v /var/lib/mongo:/data/db \
+mongo:4.2
+```
+
+### 通过 yum 安装
+
+```bash
+$ vim /etc/yum.repos.d/mongodb-org-4.0.repo
+[mongodb-org-4.0]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/4.0/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/server-4.0.asc
+
+$ yum install -y mongodb-org
+
+$ systemctl enable --now mongod.service
+# or
+$ chkconfig mongod on
+$ service mongod start
+$ service mongod stop
+
+$ vim /etc/mongod.conf
+net:
+  port: 27017
+  bindIp: 0.0.0.0 或 bindIpAll
+```
 
 ## Elasticsearch
 
@@ -982,7 +1048,7 @@ https://docs.docker.com/registry/deploying/
 
 
 
-## nacos
+## Nacos
 
 ### 通过 docker 安装
 
@@ -1004,7 +1070,7 @@ $ docker-compose -f example/standalone-derby.yaml up -d
 
 参考：https://github.com/nacos-group/nacos-docker/blob/master/README_ZH.md
 
-## seata
+## Seata
 
 ### 通过 docker 安装
 
@@ -1079,7 +1145,11 @@ services:
 
 ## *Kafka
 
+参考：https://hub.docker.com/r/wurstmeister/kafka
 
+## *FastDFS
+
+参考：https://hub.docker.com/r/season/fastdfs
 
 ## [goproxy](https://gitee.com/snail/proxy)
 
@@ -1202,10 +1272,6 @@ Asia/Shanghai
 
 ```
 
-
-
-
-
 ### 根分区扩容
 
 1. 先用 `fdisk` 给根分区扩容
@@ -1258,17 +1324,9 @@ Asia/Shanghai
 
 ### 设置网卡自动启动
 
-Centos 安装后有时候本地网卡不会自动启动获取IP地址，需要修改网卡配置文件：
+Centos 安装后本地网卡不会自动启动并获取IP地址，需要使用 `nmtui` 来配置
 
-```bash
-$ vim /etc/sysconfig/network-scripts/ifcfg-ens33
-DEVICE=ens33
-BOOTPROTO=dhcp
-ONBOOT=yes
-$ nmcli connection reload
-```
-
-
+参考：https://wiki.centos.org/FAQ/CentOS7#Why_does_my_Ethernet_not_work_unless_I_log_in_and_explicitly_enable_it.3F
 
 ### NetworkManager 导致网卡无法获取 IP
 
@@ -1293,4 +1351,10 @@ firewall-cmd --query-port=80/tcp
 // 查询所有开放端口
 firewall-cmd --list-port
 ```
+
+### 为什么 Centos7 会不带 ipconfig 和 netstat 命令？
+
+Centos 7 默认不安装 `net-tools` 工具包，推荐使用 `ip` 和 `ss` 命令替代。
+
+参考：[What have you done with ifconfig/netstat?](https://wiki.centos.org/FAQ/CentOS7#What_have_you_done_with_ifconfig.2Fnetstat.3F)
 
