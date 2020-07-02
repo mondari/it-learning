@@ -47,6 +47,40 @@ network:
 
 最后 `sudo netplan apply` 使配置生效。
 
+## Docker
+
+安装
+
+```bash
+sudo apt install docker.io
+sudo apt install docker-compose
+```
+
+查看版本
+
+```bash
+$ docker -v
+Docker version 19.03.8, build afacb8b7f0
+```
+
+### 设置 Docker Hub 镜像加速器
+
+```bash
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+    "registry-mirrors": [
+        "https://1nj0zren.mirror.aliyuncs.com",
+        "https://docker.mirrors.ustc.edu.cn",
+        "http://f1361db2.m.daocloud.io",
+        "https://registry.docker-cn.com"
+    ]
+}
+EOF
+sudo systemctl restart docker
+// 验证
+docker info
+```
+
 ## RabbitMQ
 
 Centos 的仓库不带 RabbitMQ 的包，所以用 Ubuntu 来安装。
@@ -102,9 +136,9 @@ sudo rabbitmqctl delete_vhost <vhost>
 
 ## MongoDB
 
-Ubuntu 官方支持的包版本是 3.6
+Ubuntu 官方支持的包版本是 3.6，而当前最新版本是 4.2
 
-## ZooKeeper
+## *ZooKeeper
 
 版本 3.4
 
