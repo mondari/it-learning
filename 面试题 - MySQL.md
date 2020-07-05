@@ -165,18 +165,39 @@ https://blog.csdn.net/qq_33290787/article/details/51924963
 
 ## 事务的隔离级别
 
-- 读未提交（Read Uncommitted）：事务可以读到其它事务未提交的记录。所以会出现**脏读**。
-- 读已提交（Read Committed）：事务只能读到其他事务已提交的记录。**解决了脏读的问题，但是因为会读到其它事务已提交的“修改”（不是新增），所以会出现不可重复读的问题。**
-- 可重复读（Repeatable Read）：这是 MySQL 默认隔离级别。事务无法读到其它事务已提交或未提交的**“修改”（不是新增）**，保证了事务在执行过程中读取到的数据前后一致。**解决了脏读、不可重复读的问题，但是会出现幻读的问题。**
+- 读未提交（Read Uncommitted）：事务可以读到其它事务未提交的**修改**（注意这里的修改指的是更新操作，而不是插入删除操作，下同）。所以会出现**脏读**。
+- 读已提交（Read Committed）：事务只能读到其他事务已提交的修改。**解决了脏读的问题，但是因为会读到其它事务已提交的“修改”（不是新增），所以会出现不可重复读的问题。**
+- 可重复读（Repeatable Read）：这是 MySQL 默认隔离级别。事务无法读到其它事务已提交或未提交的**“修改”（不是新增）**，保证了事务在执行过程中读取到的数据前后一致。**解决了脏读、不可重复读的问题，但是会出现幻读的问题。** 
 - 可串行化|可序列化（Serializable）：最高隔离级别。所有事务**按顺序串行化执行**，会对整个表加锁（不管是读还是写），后一个的事务必须等前一个事务执行完成，才能继续执行。**解决了脏读、不可重复读、幻读的问题，但是性能较低**
+
+## *MVCC 机制
+
+MVCC(Multi Version Concurrency Control的简称)，代表多版本并发控制。与MVCC相对的，是基于锁的并发控制，Lock-Based Concurrency Control)。MySQL 的默认隔离级别“可重复读”就是通过 MVCC 机制去实现的。
+
+**MVCC 实现原理**
+
+MVCC是通过在每行记录后面保存两个隐藏的列来实现的。这两个列，一个保存了行的创建时间，一个保存行的过期时间（或删除时间）。这个时间并不是实际的时间值，而是系统版本号（system version number)。每开始一个新的事务，系统版本号都会自动递增，作为当前事务的版本号，用来和查询到的每行记录的版本号进行比较。
+
+MySQL 的 InnoDB 引擎在 Repeatable Read 隔离级别下不会产生幻读，得益于 MVCC 机制
+
+作者：浆水面韭菜花
+链接：https://www.jianshu.com/p/f692d4f8a53e
+来源：简书
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+
+## 表级锁，行级锁，页级锁
+
+- 表级锁：锁开销小，加锁快；不会出现死锁；锁定粒度大，发生锁冲突的概率最高，并发度最低；
+- 行级锁：锁开销大，加锁慢；会出现死锁；锁定粒度最小，发生锁冲突的概率最低，并发度也最高；  
+- 页面锁：锁开销和加锁时间界于表锁和行锁之间；会出现死锁；锁定粒度界于表锁和行锁之间，并发度一般。
+
+参考：[MySQL锁详解](https://www.cnblogs.com/luyucheng/p/6297752.html)
 
 ## 什么时候行锁会变为表锁？
 
 索引失效的时候。
 
 InnoDB 的行锁是加在索引上的，如果索引失效的话，就会升级为表锁。
-
-
 
 - 无锁
 
@@ -185,16 +206,12 @@ InnoDB 的行锁是加在索引上的，如果索引失效的话，就会升级�
   select * from user where id = -1 for update;
   ```
 
-  
-
 - 行锁
 
   ```sql
   select * from user where id = 1 for update;
   select * from user where id = 1 and name = 'lucy' for update;
   ```
-
-  
 
 - 表锁
 
@@ -203,7 +220,20 @@ InnoDB 的行锁是加在索引上的，如果索引失效的话，就会升级�
   select * from user where name = 'lucy' for update;
   ```
 
-  
+## Bin Log，Redo Log，Undo Log
+
+- Bin Log：MySQL 服务层产生的日志，常用来进行数据恢复、数据库复制、同步。MySQL 主从架构，就是采用 slave 同步 master 的binlog 实现的
+
+- Redo Log：记录了数据操作在物理层面的修改，mysql中使用了大量缓存，修改操作时会直接修改内存，而不是立刻修改磁盘，事务进行中时会不断的产生redo log，在事务提交时进行一次flush操作，保存到磁盘中。当数据库或主机失效重启时，会根据redo log进行数据的恢复，如果redo log中有事务提交，则进行事务提交修改数据。
+- Undo Log：除了记录redo log外，当进行数据修改时还会记录undo log，undo log用于数据的撤回操作，它记录了修改的反向操作，比如，插入对应删除，修改对应修改为原来的数据，通过undo log可以实现事务回滚，并且可以根据undo log回溯到某个特定的版本的数据，实现MVCC
+
+
+
+作者：浆水面韭菜花
+链接：https://www.jianshu.com/p/f692d4f8a53e
+来源：简书
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+
 
 # 优化篇
 
@@ -224,6 +254,16 @@ MySQL 常用的两种数据库引擎：
 
 - InnoDB：支持事务、行级锁和外键
 - MyISAM：不支持事务，只支持表级锁
+
+## 开启慢查询日志
+
+参考：[MySQL慢查询（一） - 开启慢查询](https://www.cnblogs.com/luyucheng/p/6265594.html)
+
+
+
+## *Using temporary; Using filesort 优化
+
+
 
 ## 常见的 SQL 优化
 
@@ -307,6 +347,16 @@ SQL 优化的中心思想是查询的时候尽量使用索引，避免全表扫�
    select name from table where id = 100*2  
    ```
 
+   
+
+   如果是这种查询会用到索引吗？
+
+   ```sql
+   select * from table where (a_num + b_num) > 0
+   ```
+
+   
+
 7. 避免在 where 子句中对字段进行函数操作。
 
    如：
@@ -360,7 +410,7 @@ SQL 优化的中心思想是查询的时候尽量使用索引，避免全表扫�
    如果查询语句使用了not in 那么内外表都进行全表扫描，没有用到索引；
 
    而 not exists 的子查询依然能用到表上的索引。
-   
+
    所以无论那个表大，用 not exists 都比 not in 要快。
 
 10. 模糊查询时禁止使用左模糊和全模糊。
@@ -440,6 +490,42 @@ SELECT * FROM table 100 OFFSET 100000
 ```
 select * from table where id >= (select id from table limit 100000,1) limit 100;
 ```
+
+## count(*) 的实现方式
+
+- MyISAM 引擎：将表的总行数存起来，执行 count(*) 的时候直接返回（没有 where 子句的情况下）；
+
+- InnoDB 引擎：需要一行一行地把数据读出来并统计。
+
+  这和 InnoDB 的事务设计有关系，可重复读是它默认的隔离级别，在实现上就是通过 MVCC （多版本并发控制）来实现的。每一行记录都要判断自己是否对当前会话可见，因此对于 count(*) 请求来说，InnoDB 只好把数据一行一行地读出依次判断，可见的行才能够用于计算“基于这个查询”的表的总行数。
+
+## 不同 count 区别和用法
+
+count(*)、count(主键 id)、count(字段) 和 count(1) 的区别和用法？
+
+先说结论，按照效率排序的话，count(字段)<count(主键 id)<count(1)≈count(\*)，所以尽量使用 count(*)。
+
+
+
+参考：[极客时间《MySQL实战45讲》14 | count(*)这么慢，我该怎么办？](https://time.geekbang.org/column/article/72775)
+
+## 如何存储IP地址？
+
+对于 IPv4，它是32位的，只需要4个字节即可存储，正好对应 MySQL 的 unsigned int(10) 数据类型
+
+```sql
+SELECT INET_ATON('192.168.1.1'); #结果为 3232235777
+SELECT INET_NTOA('3232235777'); #结果为 192.168.1.1
+```
+
+对于 IPv6，它是128位的，每16位用分号分割，总共需要16字节来存储，建议使用 char(32) 定长数据类型来存储
+
+```sql
+SELECT HEX(INET6_ATON('ABCD:EF01:2345:6789:ABCD:EF01:2345:6789')); #去掉分号后长度为32位
+SELECT INET6_NTOA(UNHEX('ABCDEF0123456789ABCDEF0123456789')); 
+```
+
+参考：[MySQL如何有效的存储IP地址？](https://mp.weixin.qq.com/s/P_wN_UwYnEPtbCwHTHh_Bg)
 
 # SQL 语句篇
 
@@ -561,4 +647,38 @@ LEFT JOIN (
 ) t3 ON t3.name = r.name 
 GROUP BY r.name 
 ```
+
+# MySQL 8.0 新特性
+
+- 隐藏索引：将索引隐藏起来，查询的时候就不会使用该索引，但是索引还是会维护。隐藏索引的作用是用来表示索引软删除，避免在调试时反复删除索引和重新建立索引，因为在表数据比较大的情况下重新建立索引需要消耗资源。
+
+  ```sql
+  create index idx_col on tbl(col) invisible;
+  alter table tbl alter index idx_col invisible;
+  ```
+
+  
+
+- 降序索引：索引通常是升序的，也可以建立降序的
+
+  ```sql
+  create index idx_col on tbl(col desc);
+  ```
+
+  
+
+- 函数索引：索引可以是函数或者表达式，本质上就是虚拟列+索引
+
+  ```sql
+  create index idx_total on tbl( (col1 + col2) );
+  ```
+
+  此法等同于
+
+  ```
+  alter table tbl add column total generated as (col1 + col2);
+  create index idx_total on tbl( total );
+  ```
+
+  
 
