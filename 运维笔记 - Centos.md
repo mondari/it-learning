@@ -21,7 +21,7 @@
 | 文件系统   | XFS                          | 同左                      |                                                              | ext4                   |                                 |
 | 显示服务器 | X.org                        | Wayland                   |                                                              |                        |                                 |
 | Web 控制台 | 默认无                       | Cockpit                   |                                                              |                        |                                 |
-| 容器管理   | Docker 1.13                  | Podman                    |                                                              |                        |                                 |
+| 容器管理   | Docker 1.13                  | Podman                    | docker.io 19.03                                              | docker.io 19.03        |                                 |
 | 容器编排   | Kubernetes 1.5.2             | -                         |                                                              |                        |                                 |
 | MySQL      | -                            | 8.0                       |                                                              | 8.0                    |                                 |
 | MariaDB    | 5.5                          | 10.3                      |                                                              | 10.3                   |                                 |
@@ -36,6 +36,8 @@
 | Nginx      | -                            | 1.14                      |                                                              | 1.17                   |                                 |
 | httpd      | 2.4.6                        | 2.4.37                    |                                                              |                        |                                 |
 
+
+
 ## 配置 Bash
 
 ### .inputrc
@@ -45,10 +47,19 @@
 $ echo "set completion-ignore-case on">>~/.inputrc
 ```
 
+### 设置命令别名
+
+```bash
+$ vi ~/.bashrc
+alias ll='ls -alFh --color'
+```
+
+ls 命令的 -F 选项可以让目录在后面加 “/”的形式显示，方便区分
+
 ## 常用包
 
 yum groups install Development Tools（内含 gcc, git, cmake, perl）
-net-tools.x86_64（内含 netstat, ifconfig, route）
+net-tools.x86_64（内含 netstat, ifconfig, route，注意，该工具包已经被 iproute 工具包代替）
 yum-cron
 bash-completion
 mlocate.x86_64
@@ -56,7 +67,7 @@ java-1.8.0-openjdk-devel.x86_64（内含 Java 诊断工具）
 epel-release（EPEL仓库有Python3）
 yum install python-pip（默认安装pyhon-pip2）
 pip install --upgrade pip（更新pip）
-[open-vm-tools](https://github.com/vmware/open-vm-tools).x86_64（VMware 虚拟机包）
+open-vm-tools.x86_64（[VMware 虚拟机包](https://github.com/vmware/open-vm-tools)）
 
 ## 配置EPEL镜像
 
@@ -409,11 +420,13 @@ Portainer 是 Docker 的 Web 管理界面。
 
 ```bash
 $ docker volume create portainer_data
-$ docker run -d -p 9000:9000 -p 8000:8000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer:latest
+$ docker run -d -p 9000:9000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer:latest
 
 ```
 
-访问 http://localhost:9000，首次访问会提示设置用户名密码，分别设置为 admin 和 portainer.io。
+注意：端口9000是Portainer用于UI访问的通用端口。端口8000专门由边缘代理用于反向隧道功能。如果不打算使用边缘代理，则不需要公开端口8000
+
+访问 http://localhost:9000，首次访问会提示设置用户名密码，分别设置为 admin 和 portainer。
 
 **开启 IPv4 forward**
 
@@ -783,6 +796,8 @@ net:
 
 ### 通过 docker 安装
 
+安装 elasticsearch
+
 ```bash
 // 安装 elasticsearch
 $ docker network create elasticsearch
@@ -797,13 +812,22 @@ $ docker run --name elasticsearch \
 -e "http.cors.allow-credentials=true" \
 -v elastic-data:/usr/share/elasticsearch/data \
 -d elasticsearch:7.4.1
+```
+
+安装 kibana 和 logstash
+
+```bash
 // 安装 kibana
 $ docker run --name kibana -p 5601:5601 --net elasticsearch -d kibana:7.4.1
 // 安装 logstash
 $ docker run --rm -it -v ~/pipeline/:/usr/share/logstash/pipeline/ --name logstash -d logstash:7.4.2 #方法一，提供 logstash.conf 文件
 $ docker run --rm -it -v ~/settings/:/usr/share/logstash/config/ --name logstash -d logstash:7.4.2 #方法二，提供 logstash.yml 文件
 $ docker run --rm -it -v ~/settings/logstash.yml:/usr/share/logstash/config/ --name logstash -d logstash.yml logstash:7.4.2
+```
 
+安装监控工具
+
+```bash
 // ###安装监控工具###
 // 这个监控工具需要保证ES在同一Docker Network才能使用 “http://elasticsearch:9200” 连接
 $ docker run -p 9800:9800 --net elasticsearch --name elastichd -d containerize/elastichd
@@ -1147,7 +1171,51 @@ services:
 
 参考：https://hub.docker.com/r/wurstmeister/kafka
 
-## *FastDFS
+## FastDFS
+
+建议不要在桥接网络中运行 FastDFS，因为 tracker 服务会返回 storage 服务在桥接网络的 ip，如果 fastdfs 客户端不在该桥接网络，就会无法连接上 storage 服务
+
+### 使用 season/fastdfs 镜像
+
+**启动 tracker 服务**
+
+```bash
+sudo docker run -ti -d --name tracker -v ~/tracker_data:/fastdfs/tracker/data --net=host season/fastdfs tracker
+```
+
+**启动 storage 服务**
+
+```bash
+sudo docker run -ti -d --name storage -v ~/storage_data:/fastdfs/storage/data -v ~/store_path:/fastdfs/store_path --net=host -e TRACKER_SERVER="<Tracker服务的IP地址>:22122" season/fastdfs storage
+```
+
+由于 tracker 服务连接的是 host 网络，所以"<Tracker服务的IP地址>"这里填主机的 IP 地址即可。host 网络不支持使用域名
+
+### 使用 ygqygq2/fastdfs-nginx 镜像
+
+该镜像包含 nginx 服务，方便访问和下载上传的文件
+
+```bash
+sudo docker run -dit --network=host -p 22122:22122 -p 80:80 --name tracker -v /var/fdfs/tracker:/var/fdfs ygqygq2/fastdfs-nginx:latest tracker
+sudo docker run -dit --network=host -p 23000:23000 -p 8080:8080 -p 8888:8888 --name storage0 -e TRACKER_SERVER="<Tracker服务的IP地址>:22122" -v /var/fdfs/storage0:/var/fdfs ygqygq2/fastdfs-nginx:latest storage
+```
+
+端口关系：
+
+22122：tracker 服务的端口
+80：tracker 服务 nginx 端口（负载均衡 storage 的 nginx 服务）
+23000：storage 服务的端口
+8080：storage 容器中 HTTP 文件访问端口（跟Nginx保持一致）
+
+### 配置防火墙
+
+```bash
+sudo firewall-cmd --add-port=22122/tcp --add-port=23000/tcp --add-port=8080/tcp --permanent
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-ports
+```
+
+
 
 参考：https://hub.docker.com/r/season/fastdfs
 
@@ -1278,48 +1346,46 @@ Asia/Shanghai
 
    ```bash
    fdisk /dev/sda
-   > p #打印分区表
-   > d #删除分区（分区也行）
-   > n #新增分区
-   > p #打印分区表
-   > t #修改分区类型为8e(8e表示LVM，默认是不创建LVM分区)
-   > w #写分区表
-   > q #退出
-   partprobe # 或 重启机器
+   > p #1.打印分区表
+   > d #2.删除分区（分区也行）
+   > n #3.新增分区
+   > t #4.修改分区类型为8e(8e表示LVM，默认是不创建LVM分区)
+   > w #5.写分区表
+   > q #6.退出
+   partprobe # 7.或重启机器
    ```
-
    
-
 2. 然后给物理卷PV扩容
 
    ```bash
    pvresize /dev/sda2
-   
-   
    ```
 
 3. 再给逻辑卷LV扩容
 
    ```bash
    lvextend /dev/centos/root /dev/sda2
-   
-   
    ```
 
-4. 最后再给XFS文件系统扩容（Centos 7 的文件系统是 XFS）
+4. 最后给文件系统扩容
 
-   ```bash
-   xfs_growfs /dev/mapper/centos-root 
+   - 如果是 XFS 文件系统（Centos 7 的默认文件系统）
    
+       ```bash
+       xfs_growfs /dev/mapper/centos-root
+       ```
+
+   - 如果是 Ext4 文件系统（Centos 6 的默认文件系统）
+
+       ```bash
+       e2fsck -f /dev/sda2 # 先检查并修复文件系统错误
+       resize2fs /dev/mapper/centos-root # 再扩容
+       # 或执行这个命令
+       resize2fs /dev/sda2
+       # 如果在救援模式下，需要重新挂载根目录为读写模式才能扩容
+       mount -o remount,rw /
+       ```
    
-   ```
-
-   Centos 6 的文件系统是 Ext4FS，使用
-
-   ```bash
-   resize2fs /dev/mapper/centos-root
-   ```
-
    
 
 ### 设置网卡自动启动
@@ -1358,3 +1424,16 @@ Centos 7 默认不安装 `net-tools` 工具包，推荐使用 `ip` 和 `ss` 命�
 
 参考：[What have you done with ifconfig/netstat?](https://wiki.centos.org/FAQ/CentOS7#What_have_you_done_with_ifconfig.2Fnetstat.3F)
 
+### 查看端口占用情况
+
+```bash
+netstat -tunlp | grep 8000
+```
+
+netstat 的选项如下：
+
+- -t --tcp：只显示 tcp
+- -u --udp：只显示 udp
+- -l --listening：只显示监听状态的连接
+- -n --numeric：全部显示数字，不要解析为名称
+- -p --programs：显示 Socket 的程序名称和 PID
