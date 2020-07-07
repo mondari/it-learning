@@ -13,17 +13,20 @@ Ubuntu 18.04 LTS：https://wiki.ubuntu.com/BionicBeaver/ReleaseNotes
 
 ## Bash 配置
 
+### 设置命令别名
+
 ```bash
 cat > ~/.bash_aliases <<EOF
-alias ll='ls -alFh'
+alias ll='ls -alFh --color'
 EOF
 ```
 
-
+ls 命令的 -F 选项可以让目录在后面加 “/”的形式显示，方便区分
 
 ## 常用包
 
 cockpit（Web控制台）
+build-essential
 
 ## 设置静态IP地址
 
@@ -47,7 +50,52 @@ network:
 
 最后 `sudo netplan apply` 使配置生效。
 
+## 防火墙配置
+
+Ubuntu 使用 ufw 来简化防火墙的配置，默认 ufw 是不开启的，需要打开：
+
+```bash
+sudo ufw enable
+```
+
+ufw 的常见使用
+
+```bash
+sudo ufw allow 22 # 开启22端口
+sudo ufw app list # 列出已添加进防火墙的所有服务
+sudo ufw allow OpenSSH #允许 OpenSSH 服务的端口
+sudo ufw app info OpenSSH #查看 OpenSSH 服务允许的端口
+sudo ufw status # ufw 状态
+sudo ufw disable # 关闭 ufw
+```
+
 ## Docker
+
+Ubuntu 下 docker 命令补全不全，谨慎考虑安装
+
+### 安装 docker-ce
+
+```bash
+# step 0: 卸载旧版本
+sudo apt-get remove docker docker-engine docker.io containerd runc
+# step 1: 安装必要的一些系统工具
+sudo apt-get update
+sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+# step 2: 安装GPG证书
+curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo apt-key add -
+# Step 3: 写入软件源信息
+sudo add-apt-repository "deb [arch=amd64] https://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable"
+# Step 4: 更新并安装Docker-CE
+sudo apt-get -y update
+sudo apt-get -y install docker-ce
+
+```
+
+
+
+### 安装 docker.io
+
+docker.io 是 Ubuntu 软件源中自带的包
 
 安装
 
@@ -62,6 +110,8 @@ sudo apt install docker-compose
 $ docker -v
 Docker version 19.03.8, build afacb8b7f0
 ```
+
+参考：https://developer.aliyun.com/mirror/docker-ce?spm=a2c6h.13651102.0.0.3e221b11PpVOLC
 
 ### 设置 Docker Hub 镜像加速器
 
@@ -142,5 +192,7 @@ Ubuntu 官方支持的包版本是 3.6，而当前最新版本是 4.2
 
 版本 3.4
 
-## etcd
+## *etcd
+
+
 
