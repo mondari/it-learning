@@ -650,6 +650,38 @@ GROUP BY r.name
 
 # MySQL 8.0 新特性
 
+参考：[慕课网《玩转MySQL8.0新特性》](https://www.imooc.com/learn/1102)
+
+## 角色
+
+MySQL 8.0 引入了角色功能，其本质上是通过用户来模拟角色的效果。
+
+```sql
+create role 'select_role'; # 创建角色
+select user,host,authentication_string from mysql.user; # 查询用户，这里会发现创建角色其实就是创建用户
+grant select on db.tbl to 'select_role'; # 授予角色权限
+show grants for 'select_role'; # 查询角色权限
+grant 'select_role' to 'u_user'; # 授予用户角色
+show grants for 'u_user' using 'select_role'; # 查询用户权限
+set default role 'select_role' to 'u_user'; # 设置默认使用权限
+set default role all to 'u_user'; # 设置默认使用所有权限
+
+# 查询默认使用角色
+select * from mysql.default_roles;
+select * from mysql.role_edges;
+
+# 重新登录后
+select current_role(); # 查询当前用户当前角色
+set role 'select_role'; # 设置使用的权限
+
+# 撤销角色权限
+revoke select on db.tbl from 'select_role';
+```
+
+
+
+## 索引篇
+
 - 隐藏索引：将索引隐藏起来，查询的时候就不会使用该索引，但是索引还是会维护。隐藏索引的作用是用来表示索引软删除，避免在调试时反复删除索引和重新建立索引，因为在表数据比较大的情况下重新建立索引需要消耗资源。
 
   ```sql
@@ -675,10 +707,174 @@ GROUP BY r.name
 
   此法等同于
 
-  ```
+  ```sql
   alter table tbl add column total generated as (col1 + col2);
   create index idx_total on tbl( total );
   ```
 
   
 
+## 通用表表达式（CTE）
+
+通用表表达式，英文名 Common Table Expression，缩写 CTE，又叫 WITH 子句。
+
+### 非递归 CTE
+
+派生表：
+
+```sql
+select * from (select 1) as dt;
+```
+
+通用表表达式：
+
+```sql
+with cte as (select 1)
+select * from cte;
+# cte 是派生表表名，随便起
+```
+
+上面两种写法结果都是一样的。
+
+### 递归 CTE
+
+最简单的递归 CTE 示例，生成1-5：
+
+```sql
+with recursive cte(n) as
+(
+    select 1
+    union all
+    select n+1 from cte where n<5
+)
+select * from cte;
+# 这里的 cte 是递归派生表的表名，n 为派生表查询字段。
+# union all 前面的 select 1 为递归的初始化语句
+# 后面的为递归语句
+```
+
+上述语句可理解为如下伪语句：
+
+```sql
+select * from
+(
+    with cte(n) as
+    (
+        select 1
+    )
+    select n+1 from cte where n<5
+    # 相当于循环执行非递归CTE 5遍
+)
+
+```
+
+
+
+执行结果如下：
+
+```sql
++------+
+| n    |
++------+
+|    1 |
+|    2 |
+|    3 |
+|    4 |
+|    5 |
++------+
+5 rows in set (0.00 sec)
+
+```
+
+
+
+这里举个员工表的查询为例。manager_id 表示上级 id，为空表示当前员工是最高级
+
+```sql
+create table employees (id int unsigned not null auto_increment primary key, name varchar(50) not null, manager_id int unsigned);
+
+insert into employees(id, name, manager_id) values
+(29, 'Pedro', 198),
+(72, 'Pierre', 29),
+(123, 'Adil', 692),
+(198, 'John', 333),
+(333, 'Yasmina', NULL),
+(692, 'Tarek', 333),
+(4610, 'Sarah', 29);
+```
+
+使用递归来查询上下级关系：
+
+```sql
+WITH recursive employees_path(id, name, path) AS 
+(
+	SELECT id, name, CAST(id AS CHAR(200))
+	FROM employees
+	WHERE manager_id IS NULL
+	UNION ALL
+	SELECT e.id,e.name, CONCAT(ep.path, ',', e.id) AS path
+	FROM employees_path ep
+	JOIN employees e ON e.manager_id = ep.id
+)
+SELECT *
+FROM employees_path
+ORDER BY path;
+# union all 前面的为递归的初始化语句，后面的为递归语句
+# CAST(id AS CHAR(200)) 语句是将 id 字段映射为 path 字段
+```
+
+
+
+### 练习 - SQL 生成斐波那契数列
+
+尝试使用递归CTE生成斐波那契数列（一个数等于前两个数之和）：`0,1,1,2,3,5,8...`
+
+```sql
+WITH recursive cte (id, curr, pre) AS 
+(
+    SELECT 
+      1 AS id,
+      0 AS curr,
+      0 AS pre 
+    UNION ALL 
+    SELECT 
+      id + 1,
+      IF(id < 2, 1, curr + pre),
+      curr 
+    FROM
+      cte 
+    WHERE id < 10
+)
+SELECT id AS n,curr AS f 
+FROM cte ;
+```
+
+递归表结果如下：
+
+```sql
++------+------+------+
+| id   | curr | pre  |
++------+------+------+
+|    1 |    0 |    0 |
+|    2 |    1 |    0 |
+|    3 |    1 |    1 |
+|    4 |    2 |    1 |
+|    5 |    3 |    2 |
+|    6 |    5 |    3 |
+|    7 |    8 |    5 |
+|    8 |   13 |    8 |
+|    9 |   21 |   13 |
+|   10 |   34 |   21 |
++------+------+------+
+10 rows in set (0.00 sec)
+```
+
+
+
+参考
+
+[SQL 生成斐波那契数列](https://zhuanlan.zhihu.com/p/140081748)
+
+## 窗口函数
+
+窗口函数多用于数据统计、报表，跟分组聚合类似
