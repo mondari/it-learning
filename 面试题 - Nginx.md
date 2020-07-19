@@ -1,54 +1,7 @@
 [TOC]
 
-## server_name 匹配顺序
 
-1. 准确匹配
 
-   ```nginx
-   server {
-        listen       80;
-        server_name  domain.com  www.domain.com;
-        ...
-   }
-   ```
-
-   
-
-2. 匹配以通配符 * 开始的 server_name
-
-   ```nginx
-   server {
-        listen       80;
-        server_name  *.domain.com;
-        ...
-   }
-   ```
-
-   
-
-3. 匹配以通配符 * 结束的 server_name
-
-   ```nginx
-   server {
-        listen       80;
-        server_name  www.*;
-        ...
-   }
-   ```
-
-   
-
-4. 匹配正则表达式
-
-   ```nginx
-   server {
-        listen       80;
-        server_name  ~^(?.+)\.domain\.com$;
-        ...
-   }
-   ```
-
-   
 
 ## location 匹配规则
 
@@ -56,16 +9,21 @@
 
 > location [=|~|~*|^~] /uri/ { … }
 
-| 模式                | 含义                                                         |
-| ------------------- | :----------------------------------------------------------- |
-| location = /uri     | = 表示精确匹配，只有完全匹配上才能生效                       |
-| location ^~ /uri    | ^~ 开头对URL路径进行前缀匹配，并且在正则之前。               |
-| location ~ pattern  | 开头表示区分大小写的正则匹配                                 |
-| location ~* pattern | 开头表示不区分大小写的正则匹配                               |
-| location /uri       | 不带任何修饰符，也表示前缀匹配，但是在正则匹配之后           |
-| location /          | 通用匹配，任何未匹配到其它location的请求都会匹配到，相当于switch中的default |
+| 模式                | 含义                                                         | 优先级         |
+| ------------------- | :----------------------------------------------------------- | -------------- |
+| **有修饰符**        |                                                              | 高于无修饰符   |
+| location = /uri     | 精准匹配，只有 URI 完全相同才会执行 location 中的操作        | 最高           |
+| location ^~ /uri    | 前缀匹配                                                     | 仅次于精准匹配 |
+| location ~ pattern  | 区分大小写的正则匹配                                         | 仅次于前缀匹配 |
+| location ~* pattern | 不区分大小写的正则匹配                                       | 仅次于前缀匹配 |
+|                     | 两种正则匹配的优先级相同，按最先匹配原则，优先匹配位置最先、顺序最前的正则匹配 |                |
+| **无修饰符**        |                                                              | 低于有修饰符   |
+| location /uri       | 前缀匹配（按最长匹配原则，优先匹配 URI 最长的前缀匹配）      | 在正则匹配之后 |
+| location /          | 通用匹配（最典型的前缀匹配），任何未匹配到其它 location 的请求都会匹配到，相当于switch 语句中的 default<br />最容易混淆的是 `location = /` 和 `location /` ，肯定是 `location = /` 精准匹配最先匹配 | 最低           |
 
-前缀匹配时，Nginx 不对 url 做编码，因此请求为 `/static/20%/aa`，可以被规则 `^~ /static/ /aa` 匹配到（注意是空格）
+
+
+前缀匹配时，Nginx 不对 url 做编码，因此请求为 `/static/20%/aa`，可以被规则 `^~ /static/ /aa` 匹配到（注意中间是空格）
 
 多个 location 配置的情况下匹配顺序为（参考资料而来，还未实际验证，试试就知道了，不必拘泥，仅供参考）:
 
@@ -76,35 +34,7 @@
 - 最后是交给 `/` 通用匹配
 - 当有匹配成功时候，停止匹配，按当前匹配规则处理请求
 
-*注意：前缀匹配，如果有包含关系时，按最大匹配原则进行匹配。比如在前缀匹配：location /dir01 与 location /dir01/dir02，如有请求 http://localhost/dir01/dir02/file 将最终匹配到 location /dir01/dir02*
-
-### 官方实例：
-
-Let’s illustrate the above by an example:
-
-> ```
-> location = / {
->     [ configuration A ]
-> }
-> 
-> location / {
->     [ configuration B ]
-> }
-> 
-> location /documents/ {
->     [ configuration C ]
-> }
-> 
-> location ^~ /images/ {
->     [ configuration D ]
-> }
-> 
-> location ~* \.(gif|jpg|jpeg)$ {
->     [ configuration E ]
-> }
-> ```
-
-The “`/`” request will match configuration A, the “`/index.html`” request will match configuration B, the “`/documents/document.html`” request will match configuration C, the “`/images/1.gif`” request will match configuration D, and the “`/documents/1.jpg`” request will match configuration E.
+注意：前缀匹配，如果有包含关系时，按最大匹配原则进行匹配。比如在前缀匹配：location /dir01 与 location /dir01/dir02，如有请求 http://localhost/dir01/dir02/file 将最终匹配到 location /dir01/dir02
 
 ### 大神实例：
 
@@ -181,6 +111,75 @@ location / {
 
 1. https://moonbingbing.gitbooks.io/openresty-best-practices/content/ngx/nginx_local_pcre.html
 2. http://nginx.org/en/docs/http/ngx_http_core_module.html#location
+
+## server_name 匹配顺序
+
+1. 准确匹配
+
+   ```nginx
+   server {
+        listen       80;
+        server_name  domain.com  www.domain.com;
+        ...
+   }
+   ```
+
+   
+
+2. 匹配以通配符 * 开始的 server_name
+
+   ```nginx
+   server {
+        listen       80;
+        server_name  *.domain.com;
+        ...
+   }
+   ```
+
+   
+
+3. 匹配以通配符 * 结束的 server_name
+
+   ```nginx
+   server {
+        listen       80;
+        server_name  www.*;
+        ...
+   }
+   ```
+
+   
+
+4. 匹配正则表达式
+
+   ```nginx
+   server {
+        listen       80;
+        server_name  ~^(?.+)\.domain\.com$;
+        ...
+   }
+   ```
+
+## nginx 示例配置
+
+```nginx
+server {
+	listen 80 default_server;
+	listen [::]:80 default_server ipv6only=on;
+    
+	root /path/to/html;
+    
+	index index.html index.htm;
+    
+	server_name localhost;
+    
+	location / {
+		try_files $uri $uri/ =404;
+	}
+}
+```
+
+
 
 ## proxy_pass 反向代理指令 
 
