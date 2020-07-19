@@ -248,6 +248,8 @@ docker-compose -f docker-compose.yml up -d
 
 ### 部署常用服务
 
+docker-compose.yaml
+
 ```yaml
 version: '3'
 services:
@@ -515,7 +517,11 @@ docker run -d --net=cluster --name=ndb2 --ip=192.168.0.4 mysql/mysql-cluster ndb
 docker run -d --net=cluster --name=mysql1 --ip=192.168.0.10 -p=3306:3306 -e MYSQL_ROOT_HOST=% -e MYSQL_ROOT_PASSWORD=toor mysql/mysql-cluster mysqld
 ```
 
+参考：
 
+https://hub.docker.com/r/mysql/mysql-server
+
+https://hub.docker.com/r/mysql/mysql-cluster
 
 ### 通过 yum 安装
 
@@ -640,9 +646,12 @@ $ systemctl enable --now redis.service
 
 ```bash
 // start a redis instance
-$ docker run --name redis -d redis
+$ docker run --name redis -p 6379:6379 -d redis
 // or start with persistent storage
 $ docker run --name redis -p 6379:6379 -d redis redis-server --appendonly yes
+
+// 也可以使用另个镜像
+$ docker run -d -p 6379:6379 --name redis_database -e REDIS_PASSWORD=strongpassword centos/redis-5-centos7
 ```
 
 ### 通过 tar 包安装
@@ -1167,9 +1176,43 @@ services:
 
 参考：https://hub.docker.com/_/zookeeper
 
-## *Kafka
+## Kafka
 
-参考：https://hub.docker.com/r/wurstmeister/kafka
+### 通过 docker-compose 安装
+
+kafka-compose.yml
+
+```yaml
+version: '2'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+  kafka:
+    image: wurstmeister/kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: localhost
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_BROKER_ID: 1
+      KAFKA_CREATE_TOPICS: "stream-in:1:1,stream-out:1:1"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # 与Docker守护进程通信
+      - /etc/localtime:/etc/localtime:ro # 容器时间同步宿主机的时间
+      - /etc/timezone:/etc/timezone:ro # 容器时区同步宿主机的时区
+```
+
+
+
+参考：
+
+1. https://hub.docker.com/r/wurstmeister/kafka
+2. https://kafka.apache.org/quickstart
+3. https://www.jianshu.com/p/ac03f126980e
 
 ## FastDFS
 
@@ -1437,3 +1480,4 @@ netstat 的选项如下：
 - -l --listening：只显示监听状态的连接
 - -n --numeric：全部显示数字，不要解析为名称
 - -p --programs：显示 Socket 的程序名称和 PID
+- 
