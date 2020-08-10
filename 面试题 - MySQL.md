@@ -85,7 +85,25 @@ InnoDB 和 MyISAM 存储引擎的对比：
 
 
 
-## InnoDB Cluster 与 MySQL NDB Cluster
+## InnoDB 数据文件
+
+InnoDB 存储引擎有两种表空间方式：独享表空间和共享表空间
+
+- 独享表空间（默认）：一张表对应一个 .ibd 文件，存放数据和索引
+
+- 共享表空间：所有表公用一个（或多个，自行配置）.ibdata 文件，存放数据和索引
+
+
+
+.frm文件：存储表的结构，这个文件是必有的，不管使用什么存储引擎。
+
+ibdata1 文件：共享表空间数据文件，存储表元数据、Undo 日志等
+
+ib_logfile0、ib_logfile1 文件：Redo 事务日志文件
+
+ibtmp1 文件：临时表空间
+
+ib_buffer_pool 文件：InnoDB 缓冲区
 
 
 
@@ -184,9 +202,9 @@ B树的特征：
 
 ## 联合索引
 
-### *如何存储？
+### 如何存储？
 
-
+一个 B+ 树节点存储多个索引字段。
 
 ### 最左匹配
 
@@ -196,14 +214,14 @@ B树的特征：
 
 ### 覆盖索引|索引覆盖
 
-辅助索引的叶子节点存的是主键值，如果根据辅助索引去查询主键值，则不需要再回表去查询聚集索引了，因为辅助索引已经“**覆盖了**”我们的查询需求，我们称这种查询过程为**索引覆盖**，也叫**覆盖索引**。
+1. 辅助索引的叶子节点存的是主键值，如果根据辅助索引去查询主键值，则不需要再回表去查询聚集索引了，因为辅助索引已经“**覆盖了**”我们的查询需求，我们称这种查询过程为**索引覆盖**，也叫**覆盖索引**。
 
-比如下面 SQL 语句根据名称去查询 ID，假设名称 name 上已经建立了索引，则通过 name 去查 id 不需要再回表去查询聚集索引了
+    比如下面 SQL 语句根据名称去查询 ID，假设名称 name 上已经建立了索引，则通过 name 去查 id 不需要再回表去查询聚集索引了
 
-```sql
-select id from user where name = 'amy';
-```
-
+    ```sql
+    select id from user where name = 'amy';
+    ```
+2. 如果辅助索引是联合索引的话，也可以达到索引覆盖的效果。比如（name,age）这个联合索引，通过 name 字段就可以直接查到 age 的数据，不用回表查主键索引，从而减少了回表的次数。
 
 
 参考：[前缀索引，一种优化索引大小的解决方案](https://www.cnblogs.com/studyzy/p/4310653.html)
@@ -354,32 +372,38 @@ InnoDB 的行锁是加在索引上的，如果索引失效的话，就会升级�
   select * from user where name = 'lucy' for update;
   ```
 
-## Bin Log，Redo Log，Undo Log
+## binlog，Redo Log，Undo Log
 
-- Bin Log：MySQL 服务层产生的日志，常用来进行数据恢复、数据库复制、同步。MySQL 主从架构，就是采用 slave 同步 master 的binlog 实现的
+- binlog：记录对 MySQL 数据库执行的修改操作（不记录查询操作），常用来进行数据恢复、数据库复制、同步。MySQL 的主从架构，就是通过从节点同步主节点的 binlog 来实现的。
 
-- Redo Log：记录了数据操作在物理层面的修改，mysql中使用了大量缓存，修改操作时会直接修改内存，而不是立刻修改磁盘，事务进行中时会不断的产生redo log，在事务提交时进行一次flush操作，保存到磁盘中。当数据库或主机失效重启时，会根据redo log进行数据的恢复，如果redo log中有事务提交，则进行事务提交修改数据。
-- Undo Log：除了记录redo log外，当进行数据修改时还会记录undo log，undo log用于数据的撤回操作，它记录了修改的反向操作，比如，插入对应删除，修改对应修改为原来的数据，通过undo log可以实现事务回滚，并且可以根据undo log回溯到某个特定的版本的数据，实现MVCC
+- Redo Log：记录事务修改后的记录，mysql中使用了大量缓存，修改操作时会直接修改内存，而不是立刻修改磁盘，事务进行中时会不断的产生redo log，在事务提交时进行一次flush操作，保存到磁盘中。当数据库或主机失效重启时，会根据redo log进行数据的恢复，如果redo log中有事务提交，则进行事务提交修改数据。
+
+- Undo Log：记录事务修改前的记录，以便在**事务回滚**时、或**数据库崩溃**时撤销未提交的事务。Undo Log 记录修改的反向操作，比如插入对应删除，更新对应更新为原来的值
+
+  - 实现事务的原子性
+
+  - 实现多版本并发控制 MVCC
+    - 事务A开启事务，执行更新操作，首先会把更新命中的数据保存到 Undo Buffer 中（Undo Buffer的数据会持久化到 Undo Log 中）
+    - 事务B开启事务，执行查询操作，会读取 Undo Buffer 中的数据，进行快照读
 
 
 
-作者：浆水面韭菜花
-链接：https://www.jianshu.com/p/f692d4f8a53e
-来源：简书
-著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+Redo Log 和 Undo Log 的流程图
+
+![image-20200721205142353](面试题 - MySQL.assets/image-20200721205142353.png)
+
+参考：
+
+1. https://www.jianshu.com/p/f692d4f8a53e
 
 
 # 优化篇
 
+## 慢查询日志
 
+参考：
 
-## 开启慢查询日志
-
-参考：[MySQL慢查询（一） - 开启慢查询](https://www.cnblogs.com/luyucheng/p/6265594.html)
-
-
-
-## *Using temporary; Using filesort 优化
+1. [MySQL慢查询（一） - 开启慢查询](https://www.cnblogs.com/luyucheng/p/6265594.html)
 
 
 
@@ -697,6 +721,7 @@ DELETE FROM demo WHERE id NOT IN ( SELECT * FROM ( SELECT MAX(id) FROM demo GROU
    ```sql
    SELECT CEILING(RAND() * 10) # 生成1至N之间的随机数
    SELECT FLOOR(RAND() * 10) # 生成0至N-1之间的随机数
+   ```
 ```
    
    - FLOOR() 函数向下取整
@@ -707,7 +732,7 @@ DELETE FROM demo WHERE id NOT IN ( SELECT * FROM ( SELECT MAX(id) FROM demo GROU
    ```sql
    SELECT ROUND(((MAX_VALUE - MIN_VALUE) * RAND() + MIN_VALUE)) 
    # 生成大于等于MIN_VALUE，小于等于MAX_VALUE的数字
-   ```
+```
 
    
 
