@@ -4,24 +4,28 @@
 
 ## DQL、DML、DDL、DCL的概念与区别
 
-- DQL：数据查询语言(Data Query Language)，主要是 SELECT 查询
+- DQL：数据查询语言(Data Query Language)，主要是 SELECT 子句，FROM 子句，WHERE
+  子句组成的查询块：
+  - SELECT <字段名>
+  - FROM <表或视图名>
+  - WHERE <查询条件>
 - DML：数据操作语言(Data Manipulation Language)，主要有三种形式：
   - 插入：INSERT
   - 更新：UPDATE
   - 删除：DELETE
-- DDL：数据定义语言(Data Definition Language)，主要是创建数据库的各种对象，比如表、视图、索引等
-  - CREATE TABLE
-  - CREATE VIEW
-  - CREATE INDEX
-- DCL：数据控制语言(Data Control Language)，主要是权限授予和回收、事务提交和回滚等
+- DDL：数据定义语言(Data Definition Language)，主要是对数据库的各种对象比如数据库、表、视图、索引等进行创建、删除和修改
+  - CREATE DATABASE|TABLE|VIEW|INDEX
+  - DROP
+  - ALTER
+- DCL：数据控制语言(Data Control Language)，主要是权限的授予和撤销、事务的提交和回滚等
   - GRANT
   - REVOKE
   - COMMIT
   - ROLLBACK
 
-
-
 参考：[DQL、DML、DDL、DCL的概念与区别](https://www.cnblogs.com/fan-yuan/p/7879353.html)
+
+
 
 ## SQL 的执行流程
 
