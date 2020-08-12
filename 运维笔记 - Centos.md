@@ -498,30 +498,22 @@ docker run -d --restart=unless-stopped -p 80:80 -p 443:443 --name=rancher ranche
 
 ### 通过 docker 安装
 
-mysql-server 版（也可以使用 docker hub 官方 mysql 镜像，不过镜像更大）
-
 ```bash
-// 单机MySQL。通过 -v /opt/mysql/data:/var/lib/mysql 选项可指定宿主机数据卷
-docker run -d --name=mysql-server -p=3306:3306 -e MYSQL_ROOT_HOST=% -e MYSQL_ROOT_PASSWORD=toor mysql/mysql-server
-```
-
-
-
-mysql-cluster 版
-
-```shel
-docker network create cluster --subnet=192.168.0.0/16
-docker run -d --net=cluster --name=management1 --ip=192.168.0.2 mysql/mysql-cluster ndb_mgmd
-docker run -d --net=cluster --name=ndb1 --ip=192.168.0.3 mysql/mysql-cluster ndbd
-docker run -d --net=cluster --name=ndb2 --ip=192.168.0.4 mysql/mysql-cluster ndbd
-docker run -d --net=cluster --name=mysql1 --ip=192.168.0.10 -p=3306:3306 -e MYSQL_ROOT_HOST=% -e MYSQL_ROOT_PASSWORD=toor mysql/mysql-cluster mysqld
+// 使用 mysql 镜像（无需配置防火墙端口）
+docker run --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=toor -d mysql:8.0 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+// 使用 mysql-server 镜像（镜像最小）
+docker run -d --name=mysql-server -p=3306:3306 -e MYSQL_ROOT_HOST=% -e MYSQL_ROOT_PASSWORD=toor mysql/mysql-server --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+// 使用 mysql-80-centos7 镜像（能配置的环境变量更多，内置文本编辑器）
+docker run -d --name mysql_database -e MYSQL_ROOT_PASSWORD=toor -e MYSQL_CHARSET=utf8mb4 -e MYSQL_COLLATION=utf8mb4_unicode_ci -p 3306:3306 centos/mysql-80-centos7
 ```
 
 参考：
 
+https://hub.docker.com/_/mysql
+
 https://hub.docker.com/r/mysql/mysql-server
 
-https://hub.docker.com/r/mysql/mysql-cluster
+https://hub.docker.com/r/centos/mysql-80-centos7
 
 ### 通过 yum 安装
 
