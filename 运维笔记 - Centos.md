@@ -554,7 +554,131 @@ Centos 7 默认不带 MySQL，但是有 MariaDB 替代。如果要安装 MySQL�
     
     
 
-#### 安装后配置
+### MySQL 主从同步搭建
+
+在 Docker 中创建两个 MySQL 实例：
+
+```bash
+docker run --name mysql1 -p 33061:3306 -e MYSQL_ROOT_PASSWORD=toor -d mysql:5.7 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+docker run --name mysql2 -p 33062:3306 -e MYSQL_ROOT_PASSWORD=toor -d mysql:5.7 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+```
+
+这两个 MySQL 实例的规划如下：
+
+- mysql1 作为主库，其容器IP地址为：`172.17.0.2:3306`
+- mysql2 作为从库，其容器IP地址为：`172.17.0.3:3306`
+
+#### 配置主数据库
+
+登录主库 MySQL，创建从库账户：
+
+```sql
+CREATE USER canal IDENTIFIED BY 'canal';
+GRANT REPLICATION SLAVE ON *.* TO 'canal'@'%';
+-- GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'canal'@'%';
+FLUSH PRIVILEGES;
+```
+
+主库添加以下配置：
+
+```conf
+[mysqld]
+# 配置集群唯一标识
+server-id=1
+# 配置 binlog 位置（开启 binlog）
+log-bin=/var/lib/mysql/binlog
+# 配置要同步的数据库
+binlog-do-db=canal
+# 配置 binlog 格式
+binlog_format=ROW
+```
+
+由于 mysql 容器没有文本编辑器，所以需要将容器的配置文件复制到宿主机，在宿主机配置完后，再复制回去，最后再重启容器：
+
+```bash
+docker cp mysql1:/etc/mysql/mysql.conf.d/mysqld.conf .
+vi mysqld.conf
+docker cp mysqld.conf mysql1:/etc/mysql/mysql.conf.d/
+docker restart mysql1
+```
+
+重启完后，再次登录主库 MySQL，查看主库状态：
+
+```bash
+mysql> show master status;
++---------------+----------+------------------+------------------+-------------------+
+| File          | Position | Binlog_Do_DB     | Binlog_Ignore_DB | Executed_Gtid_Set |
++---------------+----------+------------------+------------------+-------------------+
+| binlog.000001 |      154 | canal            |                  |                   |
++---------------+----------+------------------+------------------+-------------------+
+1 row in set (0.00 sec)
+```
+
+记录 FIle 和 Position 字段的值，从库的配置需要用到。
+
+
+
+
+#### 配置从数据库
+
+从库添加以下配置：
+
+```conf
+[mysqld]
+# 配置集群唯一标识（不能和主库一样）
+server-id=2
+
+### 以下配置酌情添加 ###
+# 从库只读
+read_only = 1
+```
+
+将配置文件拷贝到从库容器并重启，然后登录从库 MySQL，执行以下命令：
+
+```bash
+mysql> change master to master_host='172.17.0.2',master_port=3306,master_user='canal',master_password='canal',master_log_file='binlog.000001',master_log_pos=154;
+mysql> start slave;
+mysql> show slave status\G;
+*************************** 1. row ***************************
+               Slave_IO_State: Waiting for master to send event
+                  Master_Host: 172.17.0.2
+                  Master_User: canal
+                  Master_Port: 3306
+                Connect_Retry: 60
+              Master_Log_File: binlog.000001
+          Read_Master_Log_Pos: 1132
+               Relay_Log_File: 57fe6c60c76f-relay-bin.000002
+                Relay_Log_Pos: 1295
+        Relay_Master_Log_File: binlog.000001
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: Yes
+......
+```
+
+其中 Slave_IO_Running 和 Slave_SQL_Running 都为 Yes，从库的配置才算成功。如果前者为 No，则有可能是 master_log_file 配置的文件名不对；如果是后者为 No，则有可能是同步时出错，具体问题具体分析和解决。
+
+
+
+后续如果要暂停成为从库，执行以下命令：
+
+```bash
+mysql> stop slave;
+```
+
+如果从库的数据库有脏数据，主库的 binlog 同步到从库有可能会出错，尝试登录主库重置(清空)所有 binlog 日志：
+
+```
+mysql> reset master;
+```
+
+
+
+参考：
+
+1. [借力 Docker ，三分钟搞定 MySQL 主从复制！](https://cloud.tencent.com/developer/article/1533955)
+2. [MySQL的binlog日志](https://www.cnblogs.com/martinzhang/p/3454358.html)
+
+### 安装后配置
 
 配置密码和远程访问权限：
 
