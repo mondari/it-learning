@@ -670,6 +670,108 @@ mysql> reset master;
 1. [借力 Docker ，三分钟搞定 MySQL 主从复制！](https://cloud.tencent.com/developer/article/1533955)
 2. [MySQL的binlog日志](https://www.cnblogs.com/martinzhang/p/3454358.html)
 
+### MySQL PXC 集群搭建
+
+#### percona-xtradb-cluster:8.0
+
+这里以创建3个 PXC 节点（分别为 pxc-node1、pxc-node2、pxc-node3）为例：
+
+```bash
+# 创建一个文件夹
+mkdir -p ~/pxc-docker/config
+# 在新建的文件夹中创建配置文件
+cat > ~/pxc-docker/config/custom.cnf <<EOF
+[mysqld]
+ssl-ca = /cert/ca.pem
+ssl-cert = /cert/server-cert.pem
+ssl-key = /cert/server-key.pem
+
+[client]
+ssl-ca = /cert/ca.pem
+ssl-cert = /cert/client-cert.pem
+ssl-key = /cert/client-key.pem
+
+[sst]
+encrypt = 4
+ssl-ca = /cert/ca.pem
+ssl-cert = /cert/server-cert.pem
+ssl-key = /cert/server-key.pem
+EOF
+
+# 再创建一个存放证书的文件夹
+mkdir -m 777 -p ~/pxc-docker/cert
+# 创建证书
+docker run --name pxc-cert --rm -v ~/pxc-docker/cert:/cert \
+percona/percona-xtradb-cluster:8.0 mysql_ssl_rsa_setup -d /cert
+
+# 创建 docker 网络
+docker network create pxc-network
+
+# 启动第一个节点（注意在官方教程的基础上加了“-v ~/pxc-docker/cert:/cert”参数，不加会报错）
+docker run -d \
+  -e MYSQL_ROOT_PASSWORD=toor \
+  -e CLUSTER_NAME=pxc-cluster \
+  --name=pxc-node1 \
+  --net=pxc-network \
+  -v ~/pxc-docker/cert:/cert \
+  -v ~/pxc-docker/config:/etc/percona-xtradb-cluster.conf.d \
+  -p 33061:3306 \
+  percona/percona-xtradb-cluster:8.0
+#启动其它节点（注意加了“-e CLUSTER_JOIN=pxc-node1”参数）
+docker run -d \
+  -e MYSQL_ROOT_PASSWORD=toor \
+  -e CLUSTER_NAME=pxc-cluster \
+  -e CLUSTER_JOIN=pxc-node1 \
+  --name=pxc-node2 \
+  --net=pxc-network \
+  -v ~/pxc-docker/cert:/cert \
+  -v ~/pxc-docker/config:/etc/percona-xtradb-cluster.conf.d \
+  -p 33062:3306 \
+  percona/percona-xtradb-cluster:8.0  
+docker run -d \
+  -e MYSQL_ROOT_PASSWORD=toor \
+  -e CLUSTER_NAME=pxc-cluster \
+  -e CLUSTER_JOIN=pxc-node1 \
+  --name=pxc-node3 \
+  --net=pxc-network \
+  -v ~/pxc-docker/cert:/cert \
+  -v ~/pxc-docker/config:/etc/percona-xtradb-cluster.conf.d \
+  -p 33063:3306 \
+  percona/percona-xtradb-cluster:8.0  
+```
+
+
+
+#### percona-xtradb-cluster:5.7
+
+这里以创建3个 PXC 节点（分别为 node1、node2、node3）为例：
+
+```bash
+#拉取镜像，注意不能是8.0，因为8.0安装方式变了
+docker pull percona/percona-xtradb-cluster:5.7
+#镜像名称太长，重命名一下
+docker tag percona/percona-xtradb-cluster:5.7 pxc
+#创建子网
+docker network create --subnet=172.20.0.0/24 pxc-network
+#创建数据卷
+docker volume create --name v1
+docker volume create --name v2
+docker volume create --name v3
+#启动第一个节点
+docker run -d -p 33061:3306 -e MYSQL_ROOT_PASSWORD=toor -e CLUSTER_NAME=PXC -e XTRABACKUP_PASSWORD=toor -v v1:/var/lib/mysql --name=node1 --network=pxc-network --ip 172.20.0.2 pxc
+#第一个节点启动完后再启动其它节点（注意参数加了“-e CLUSTER_JOIN=node1”）
+docker run -d -p 33062:3306 -e MYSQL_ROOT_PASSWORD=toor -e CLUSTER_NAME=PXC -e XTRABACKUP_PASSWORD=toor -e CLUSTER_JOIN=node1 -v v2:/var/lib/mysql --name=node2 --network=pxc-network --ip 172.20.0.3 pxc
+docker run -d -p 33063:3306 -e MYSQL_ROOT_PASSWORD=toor -e CLUSTER_NAME=PXC -e XTRABACKUP_PASSWORD=toor -e CLUSTER_JOIN=node1 -v v3:/var/lib/mysql --name=node3 --network=pxc-network --ip 172.20.0.4 pxc
+```
+
+
+
+参考：
+
+1. https://www.cnblogs.com/wanglei957/p/11819547.html
+2. https://www.percona.com/doc/percona-xtradb-cluster/LATEST/install/docker.html#pxc-docker-container-running
+3. https://www.percona.com/doc/percona-xtradb-cluster/5.7/install/docker.html#pxc-docker-container-running
+
 ### 安装后配置
 
 配置密码和远程访问权限：
