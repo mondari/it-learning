@@ -50,6 +50,8 @@ network:
 
 最后 `sudo netplan apply` 使配置生效。
 
+如果没安装 NetworkManager，使用自带的 networkd 也行
+
 ## 防火墙配置
 
 Ubuntu 使用 ufw 来简化防火墙的配置，默认 ufw 是不开启的，需要打开：
