@@ -85,9 +85,15 @@ InnoDB 和 MyISAM 存储引擎的对比：
 
 主从复制后，可以实现读写分离，主库写，从库读，从库读负载均衡，降低数据库的读写压力。
 
-参考：https://github.com/alibaba/canal
+参考：
 
+1. https://github.com/alibaba/canal
 
+2. https://blog.csdn.net/duyusean/article/details/100801116
+
+## *主从复制延迟问题
+
+参考：https://blog.csdn.net/duyusean/article/details/100801116
 
 ## InnoDB 数据文件
 
@@ -108,6 +114,17 @@ ib_logfile0、ib_logfile1 文件：Redo 事务日志文件
 ibtmp1 文件：临时表空间
 
 ib_buffer_pool 文件：InnoDB 缓冲区
+
+
+
+## Timestamp vs Datetime
+
+推荐使用 Timestamp 时间戳，理由是存储空间更小，支持时区，虽然有2038问题，但是到时候再切换为64位存储空间就可以解决。
+
+|           | 存储空间 | 日期范围                                  | 支持时区 |
+| --------- | -------- | ----------------------------------------- | -------- |
+| Timestamp | 4字节    | 1970-01-01 00:00:01 ~ 2038-01-09 03:14:07 | 是       |
+| Datetime  | 8字节    | 1000-01-01 00:00:01 ~ 9999-12-31 23:59:59 | 否       |
 
 
 
