@@ -7,36 +7,36 @@
 - 用户名：root
 - 密码：toor
 
-## Centos vs Ubuntu Server
+## Centos vs Ubuntu Server vs Arch Linux
 
-|            | Centos 7                     | Centos 8                  | Ubuntu Server 2018 LTS                                       | Ubuntu Server 2020 LTS | 备注                            |
-| ---------- | ---------------------------- | ------------------------- | ------------------------------------------------------------ | ---------------------- | ------------------------------- |
-| Kernel     | 3.10                         | 4.18                      | 4.15                                                         | 5.4                    |                                 |
-| 包管理     | yum                          | dnf 替代 yum              |                                                              | apt, snap              |                                 |
-| 包仓库     | Base, Extras, Updates        | BaseOS, AppStream, Extras |                                                              |                        |                                 |
-| 网络管理   | NetworkManager, nmcli, nmtui | 同左                      | [netplan.io](https://netplan.io/) 基于 NetworkManager 和 Systemd-networkd | 同左                   |                                 |
-| 网络工具   | ip, ss                       | 同左                      | ifconfig, netstat                                            |                        |                                 |
-| 网络包过滤 | iptables                     | nftables                  |                                                              |                        | 都是内核的 netfilter 框架的成员 |
-| 防火墙     | firewalld, firewall-cmd      | 同左                      |                                                              | ufw                    |                                 |
-| 文件系统   | XFS                          | 同左                      |                                                              | ext4                   |                                 |
-| 显示服务器 | X.org                        | Wayland                   |                                                              |                        |                                 |
-| Web 控制台 | 默认无                       | Cockpit                   |                                                              |                        |                                 |
-| 容器管理   | Docker 1.13                  | Podman                    | docker.io 19.03                                              | docker.io 19.03        |                                 |
-| 容器编排   | Kubernetes 1.5.2             | -                         |                                                              |                        |                                 |
-| MySQL      | -                            | 8.0                       |                                                              | 8.0                    |                                 |
-| MariaDB    | 5.5                          | 10.3                      |                                                              | 10.3                   |                                 |
-| PostgreSQL | 9.2                          | 10.6                      |                                                              | 12                     |                                 |
-| Redis      | -                            | 5.0                       |                                                              | 5.0                    |                                 |
-| OpenJDK    | 8, 11                        | 8, 11                     | 8, 11                                                        | 8, 11                  |                                 |
-| Maven      | -                            | 3.5                       |                                                              | 3.6.3                  |                                 |
-| Python     | 3.6                          | 3.8                       |                                                              | 3.8                    |                                 |
-| Anaconda   | 21                           | 29                        |                                                              | -                      |                                 |
-| PHP        | 5.4                          | 7.2                       | 7.2                                                          | 7.4                    |                                 |
-| Nodejs     | -                            | 10.19                     |                                                              | 10.19                  |                                 |
-| Nginx      | -                            | 1.14                      |                                                              | 1.17                   |                                 |
-| httpd      | 2.4.6                        | 2.4.37                    |                                                              |                        |                                 |
+|            | Centos 7                     | Centos 8                  | Ubuntu Server 2018 LTS                                       | Ubuntu Server 2020 LTS | Arch Linux 2020.08.01 | 备注                            |
+| ---------- | ---------------------------- | ------------------------- | ------------------------------------------------------------ | ---------------------- | --------------------- | ------------------------------- |
+| Kernel     | 3.10                         | 4.18                      | 4.15                                                         | 5.4                    | 5.7.11                |                                 |
+| 包管理     | yum                          | dnf 替代 yum              |                                                              | apt, snap              |                       |                                 |
+| 包仓库     | Base, Extras, Updates        | BaseOS, AppStream, Extras |                                                              |                        |                       |                                 |
+| 网络管理   | NetworkManager, nmcli, nmtui | 同左                      | [netplan.io](https://netplan.io/) 基于 NetworkManager 和 Systemd-networkd | 同左                   |                       |                                 |
+| 网络工具   | ip, ss                       | 同左                      | ifconfig, netstat                                            |                        |                       |                                 |
+| 网络包过滤 | iptables                     | nftables                  |                                                              |                        |                       | 都是内核的 netfilter 框架的成员 |
+| 防火墙     | firewalld, firewall-cmd      | 同左                      |                                                              | ufw                    |                       |                                 |
+| 文件系统   | XFS                          | 同左                      |                                                              | ext4                   |                       |                                 |
+| 显示服务器 | X.org                        | Wayland                   |                                                              |                        |                       |                                 |
+| Web 控制台 | 默认无                       | Cockpit                   |                                                              |                        |                       |                                 |
+| 容器管理   | Docker 1.13                  | Podman                    | docker.io 19.03                                              | docker.io 19.03        |                       |                                 |
+| 容器编排   | Kubernetes 1.5.2             | -                         |                                                              |                        |                       |                                 |
+| MySQL      | -                            | 8.0                       |                                                              | 8.0                    |                       |                                 |
+| MariaDB    | 5.5                          | 10.3                      |                                                              | 10.3                   |                       |                                 |
+| PostgreSQL | 9.2                          | 10.6                      |                                                              | 12                     |                       |                                 |
+| Redis      | -                            | 5.0                       |                                                              | 5.0                    |                       |                                 |
+| OpenJDK    | 8, 11                        | 8, 11                     | 8, 11                                                        | 8, 11                  |                       |                                 |
+| Maven      | -                            | 3.5                       |                                                              | 3.6.3                  |                       |                                 |
+| Python     | 3.6                          | 3.8                       |                                                              | 3.8                    |                       |                                 |
+| Anaconda   | 21                           | 29                        |                                                              | -                      |                       |                                 |
+| PHP        | 5.4                          | 7.2                       | 7.2                                                          | 7.4                    |                       |                                 |
+| Nodejs     | -                            | 10.19                     |                                                              | 10.19                  |                       |                                 |
+| Nginx      | -                            | 1.14                      |                                                              | 1.17                   |                       |                                 |
+| httpd      | 2.4.6                        | 2.4.37                    |                                                              |                        |                       |                                 |
 
-
+参考：https://www.archlinux.org/releng/releases/
 
 ## 配置 Bash
 
@@ -1532,6 +1532,92 @@ $ docker run -e PARAMS="--spring.datasource.username=root --spring.datasource.pa
 
 ## 踩坑记录
 
+### 查看系统版本
+
+- `uname` 命令查看内核版本（通用）
+
+    在 Centos 8 下执行结果：
+    
+    ```bash
+    [root@localhost ~]# uname -a
+Linux localhost.localdomain 4.18.0-193.14.2.el8_2.x86_64 #1 SMP Sun Jul 26 03:54:29 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+    ```
+
+    其中：
+    
+    - Linux：内核名称。这里表示 Linux 内核名称
+    - localhost.localdomain：本机域名。本机域名是可以通过 `/etc/hostname` 文件或 `hostnamectl` 命令修改
+    - `4.18.0-193.14.2.el8_2.x86_64`：内核发行版本。这里是基于 RedHat 8 的 Linux 内核
+    - `#1 SMP Sun Jul 26 03:54:29 UTC 2020`：内核发行版的发布时间
+    - x86_64：第一个 x86_64 表示机器硬件名
+    - x86_64：第二个 x86_64 表示处理器类型。这里是64位处理器
+    - x86_64：第三个 x86_64 表示硬件平台
+    - GNU/Linux：操作系统名。这里表示 Linux 系统
+
+- `cat /etc/os-release` 命令查看系统发行版（RedHat 系统）
+
+  ```bash
+  [root@localhost ~]# cat /etc/os-release
+  NAME="CentOS Linux"
+  VERSION="8 (Core)"
+  ID="centos"
+  ID_LIKE="rhel fedora"
+  VERSION_ID="8"
+  PLATFORM_ID="platform:el8"
+  PRETTY_NAME="CentOS Linux 8 (Core)"
+  ANSI_COLOR="0;31"
+  CPE_NAME="cpe:/o:centos:centos:8"
+  HOME_URL="https://www.centos.org/"
+  BUG_REPORT_URL="https://bugs.centos.org/"
+  
+  CENTOS_MANTISBT_PROJECT="CentOS-8"
+  CENTOS_MANTISBT_PROJECT_VERSION="8"
+  REDHAT_SUPPORT_PRODUCT="centos"
+  REDHAT_SUPPORT_PRODUCT_VERSION="8"
+  ```
+
+- `cat /etc/issue` 命令查看系统发行版（RedHat 系统没用）
+
+  在 Centos 8 下执行结果
+
+  ```bash
+  [root@localhost ~]# cat /etc/issue
+  \S
+  Kernel \r on an \m
+  ```
+
+  在 Ubuntu 20 下执行结果
+
+  ```bash
+  ubuntu@ubuntu:~$ cat /etc/issue
+  Ubuntu 20.04.1 LTS \n \l
+  ```
+
+- `lsb_release -a` 命令查看系统发行版（Ubuntu 系统）
+
+  ```bash
+  ubuntu@ubuntu:~$ lsb_release -a
+  No LSB modules are available.
+  Distributor ID: Ubuntu
+  Description:    Ubuntu 20.04.1 LTS
+  Release:        20.04
+  Codename:       focal
+  ```
+
+  该数据其实是来自 `/etc/lsb-release` 文件
+
+  ```bash
+  ubuntu@ubuntu:~$ cat /etc/lsb-release
+  DISTRIB_ID=Ubuntu
+  DISTRIB_RELEASE=20.04
+  DISTRIB_CODENAME=focal
+  DISTRIB_DESCRIPTION="Ubuntu 20.04.1 LTS"
+  ```
+
+  
+
+
+
 ### 设置时区
 
 - 使用 `timedatectl set-timezone Asia/Shanghai`
@@ -1660,9 +1746,10 @@ Centos 安装后本地网卡不会自动启动并获取IP地址，需要使用 `
 NetworkManager 异常导致网卡设备处以 unmanaged 状态，且无法恢复为 managed 状态，可以尝试以下操作：
 
 ```bash
-systemctl stop network-manager
+systemctl stop network-manager.service(Ubuntu)
+systemctl stop NetworkManager.service(Centos)
 // 清除 NetworkManager 异常状态
-rm /var/lib/NetworkManager/NetworkManager.state
+rm -f /var/lib/NetworkManager/NetworkManager.state
 systemctl start network-manager
 ```
 
