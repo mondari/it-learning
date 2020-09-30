@@ -1554,7 +1554,7 @@ Linux localhost.localdomain 4.18.0-193.14.2.el8_2.x86_64 #1 SMP Sun Jul 26 03:54
     - x86_64：第三个 x86_64 表示硬件平台
     - GNU/Linux：操作系统名。这里表示 Linux 系统
 
-- `cat /etc/os-release` 命令查看系统发行版（RedHat 系统）
+- `cat /etc/os-release` 命令查看系统发行版（RedHat、Arch 系统）
 
   ```bash
   [root@localhost ~]# cat /etc/os-release
