@@ -72,12 +72,12 @@ open-vm-tools.x86_64（[VMware 虚拟机包](https://github.com/vmware/open-vm-t
 ## 配置EPEL镜像
 
 ```bash
-###备份(如有配置其他epel源)
+// 备份(如有配置其他epel源)
 
 $ mv /etc/yum.repos.d/epel.repo /etc/yum.repos.d/epel.repo.backup
 $ mv /etc/yum.repos.d/epel-testing.repo /etc/yum.repos.d/epel-testing.repo.backup
 
-###下载新repo 到/etc/yum.repos.d/
+// 下载新repo 到/etc/yum.repos.d/
 $ wget -O /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo
 
 ```
@@ -108,39 +108,44 @@ $ yum install neofetch
 
 ## Docker
 
-### 安装 docker-ce
+### 安装 Docker CE
 
 ```bash
 // Uninstall old versions
-$ sudo yum remove docker \
-                  docker-client \
-                  docker-client-latest \
-                  docker-common \
-                  docker-latest \
-                  docker-latest-logrotate \
-                  docker-logrotate \
-                  docker-engine
+sudo yum remove docker \
+    docker-client \
+    docker-client-latest \
+    docker-common \
+    docker-latest \
+    docker-latest-logrotate \
+    docker-logrotate \
+    docker-engine
                   
 // Install required packages                  
-$ sudo yum install -y yum-utils \
+sudo yum install -y yum-utils \
   device-mapper-persistent-data \
   lvm2
   
 // Set up the stable repository.  
 // 这里改用阿里云的 docker-ce 仓库
-$ sudo yum-config-manager \
+sudo yum-config-manager \
     --add-repo \
     http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo  
+
+// Centos 8 还需要执行以下命令替换调 docker-ce.repo 文件中的系统版本，否则无法按照最新版本的 containerd.io
+sudo sed -i 's|centos/7|centos/8|' /etc/yum.repos.d/docker-ce.repo
     
 // Install the latest version of Docker Engine - Community and containerd    
-$ sudo yum install -y docker-ce docker-ce-cli containerd.io
+sudo yum install -y docker-ce docker-ce-cli containerd.io
 
 // 启动服务设为开机启动
-$ sudo systemctl enable --now docker
+sudo systemctl enable --now docker
 
 // Verify
-$ sudo docker run hello-world
+sudo docker run hello-world
 ```
+
+参考：https://docs.docker.com/engine/install/centos/
 
 ### 设置 Docker Hub 镜像加速器
 
@@ -163,16 +168,16 @@ docker info
 
 ### Docker Hub 镜像加速器列表
 
-| 镜像加速器                                                   | 镜像加速器地址                       | 专属加速器[？](#) | 其它加速[？](#)                                              |
-| ------------------------------------------------------------ | ------------------------------------ | ----------------- | ------------------------------------------------------------ |
-| [Docker 中国官方镜像](https://links.jianshu.com/go?to=https%3A%2F%2Fdocker-cn.com%2Fregistry-mirror) | `https://registry.docker-cn.com`     |                   | Docker Hub                                                   |
-| [DaoCloud 镜像站](https://links.jianshu.com/go?to=https%3A%2F%2Fdaocloud.io%2Fmirror) | `http://f1361db2.m.daocloud.io`      | 可登录，系统分配  | Docker Hub                                                   |
-| [Azure 中国镜像](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2FAzure%2Fcontainer-service-for-azure-china%2Fblob%2Fmaster%2Faks%2FREADME.md%2322-container-registry-proxy) | `https://dockerhub.azk8s.cn`         |                   | Docker Hub、GCR、Quay                                        |
-| [科大镜像站](https://links.jianshu.com/go?to=https%3A%2F%2Fmirrors.ustc.edu.cn%2Fhelp%2Fdockerhub.html) | `https://docker.mirrors.ustc.edu.cn` |                   | Docker Hub、[GCR](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2Fustclug%2Fmirrorrequest%2Fissues%2F91)、[Quay](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2Fustclug%2Fmirrorrequest%2Fissues%2F135) |
-| [阿里云](https://links.jianshu.com/go?to=https%3A%2F%2Fcr.console.aliyun.com) | `https://xxx.mirror.aliyuncs.com`    | 需登录，系统分配  | Docker Hub                                                   |
-| [七牛云](https://links.jianshu.com/go?to=https%3A%2F%2Fkirk-enterprise.github.io%2Fhub-docs%2F%23%2Fuser-guide%2Fmirror) | `https://reg-mirror.qiniu.com`       |                   | Docker Hub、GCR、Quay                                        |
-| [网易云](https://links.jianshu.com/go?to=https%3A%2F%2Fc.163yun.com%2Fhub) | `https://hub-mirror.c.163.com`       |                   | Docker Hub                                                   |
-| [腾讯云](https://links.jianshu.com/go?to=https%3A%2F%2Fcloud.tencent.com%2Fdocument%2Fproduct%2F457%2F9113) | `https://mirror.ccs.tencentyun.com`  |                   | Docker Hub                                                   |
+| 镜像加速器                                                   | 镜像加速器地址                       | 专属加速器       | 其它加速                                                     |
+| ------------------------------------------------------------ | ------------------------------------ | ---------------- | ------------------------------------------------------------ |
+| [Docker 中国官方镜像](https://links.jianshu.com/go?to=https%3A%2F%2Fdocker-cn.com%2Fregistry-mirror) | `https://registry.docker-cn.com`     |                  | Docker Hub                                                   |
+| [DaoCloud 镜像站](https://links.jianshu.com/go?to=https%3A%2F%2Fdaocloud.io%2Fmirror) | `http://f1361db2.m.daocloud.io`      | 可登录，系统分配 | Docker Hub                                                   |
+| [Azure 中国镜像](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2FAzure%2Fcontainer-service-for-azure-china%2Fblob%2Fmaster%2Faks%2FREADME.md%2322-container-registry-proxy) | `https://dockerhub.azk8s.cn`         |                  | Docker Hub、GCR、Quay                                        |
+| [科大镜像站](https://links.jianshu.com/go?to=https%3A%2F%2Fmirrors.ustc.edu.cn%2Fhelp%2Fdockerhub.html) | `https://docker.mirrors.ustc.edu.cn` |                  | Docker Hub、[GCR](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2Fustclug%2Fmirrorrequest%2Fissues%2F91)、[Quay](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2Fustclug%2Fmirrorrequest%2Fissues%2F135) |
+| [阿里云](https://links.jianshu.com/go?to=https%3A%2F%2Fcr.console.aliyun.com) | `https://xxx.mirror.aliyuncs.com`    | 需登录，系统分配 | Docker Hub                                                   |
+| [七牛云](https://links.jianshu.com/go?to=https%3A%2F%2Fkirk-enterprise.github.io%2Fhub-docs%2F%23%2Fuser-guide%2Fmirror) | `https://reg-mirror.qiniu.com`       |                  | Docker Hub、GCR、Quay                                        |
+| [网易云](https://links.jianshu.com/go?to=https%3A%2F%2Fc.163yun.com%2Fhub) | `https://hub-mirror.c.163.com`       |                  | Docker Hub                                                   |
+| [腾讯云](https://links.jianshu.com/go?to=https%3A%2F%2Fcloud.tencent.com%2Fdocument%2Fproduct%2F457%2F9113) | `https://mirror.ccs.tencentyun.com`  |                  | Docker Hub                                                   |
 
 参考：[Docker Hub 镜像加速器](https://www.jianshu.com/p/5a911f20d93e)
 
@@ -182,17 +187,17 @@ docker info
 
 ```bash
 [root@docker]# vim /usr/lib/systemd/system/docker.service
-#修改ExecStart这行
+// 修改ExecStart这行
 ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H fd:// --containerd=/run/containerd/containerd.sock
-#重新加载配置文件
+// 重新加载配置文件
 [root@docker]# systemctl daemon-reload
-#重启服务
+// 重启服务
 [root@docker]# systemctl restart docker.service
-#查看端口是否开启
+// 查看端口是否开启
 [root@docker]# netstat -anp|grep 2375
-#curl查看是否生效
+// curl查看是否生效
 [root@docker]# curl http://127.0.0.1:2375/info
-#Windows主机修改环境变量即可用 IDEA 连接
+// Windows主机修改环境变量即可用 IDEA 连接
 DOCKER_HOST=tcp://DOCKER_HOST_IP:2375
 ```
 
@@ -217,22 +222,25 @@ $ docker update --restart always <CONTAINER ID>
 ### 安装 Docker Compose
 
 ```bash
-// 下载可执行文件
-sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-// 下载 docker-compose（这里使用 daocloud 镜像下载）
-sudo curl -L https://get.daocloud.io/docker/compose/releases/download/1.24.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+// 下载 docker-compose
+// 使用 daocloud 镜像下载
+sudo curl -L https://get.daocloud.io/docker/compose/releases/download/1.27.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+// 或使用码云的镜像加快下载速度
+sudo curl -L "https://gitee.com/mirrors/compose/releases/download/1.27.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 
 // 添加执行权限
 sudo chmod +x /usr/local/bin/docker-compose
 // 创建软连接
 sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 // 安装命令补全
-sudo curl -L https://raw.githubusercontent.com/docker/compose/1.24.1/contrib/completion/bash/docker-compose -o /etc/bash_completion.d/docker-compose
+sudo curl -L https://raw.githubusercontent.com/docker/compose/1.27.1/contrib/completion/bash/docker-compose -o /etc/bash_completion.d/docker-compose
 // 验证
 docker-compose --version
 // 使用 docker-compose 启动容器
 docker-compose -f docker-compose.yml up -d
 ```
+
+参考：https://docs.docker.com/compose/install/
 
 ## Docker Compose 
 
@@ -523,8 +531,10 @@ Centos 8 的 AppStream 仓库下有 mysql-server.x86_64 的包
 
 ```bash
 $ yum install mysql-server.x86_64
-$ systemctl enable --now mysqld.service # 启动并设置开机启动
-$ mysql -uroot # 登录
+// 启动并设置开机启动
+$ systemctl enable --now mysqld.service 
+// 登录
+$ mysql -uroot
 ```
 
 #### Centos 7
@@ -540,8 +550,10 @@ Centos 7 默认不带 MySQL，但是有 MariaDB 替代。如果要安装 MySQL�
 4. 安装并登录 MySQL 服务器：
     ```bash
     $ yum install -y mysql-community-server.x86_64
-    $ grep 'temporary password' /var/log/mysqld.log # 临时密码
-    $ mysql -uroot -p #登录
+    // 查看临时密码
+    $ grep 'temporary password' /var/log/mysqld.log 
+    // 登录
+    $ mysql -uroot -p
     ```
     
     
@@ -677,9 +689,9 @@ mysql> reset master;
 这里以创建3个 PXC 节点（分别为 pxc-node1、pxc-node2、pxc-node3）为例：
 
 ```bash
-# 创建一个文件夹
+// 创建一个文件夹
 mkdir -p ~/pxc-docker/config
-# 在新建的文件夹中创建配置文件
+// 在新建的文件夹中创建配置文件
 cat > ~/pxc-docker/config/custom.cnf <<EOF
 [mysqld]
 ssl-ca = /cert/ca.pem
@@ -698,16 +710,16 @@ ssl-cert = /cert/server-cert.pem
 ssl-key = /cert/server-key.pem
 EOF
 
-# 再创建一个存放证书的文件夹
+// 再创建一个存放证书的文件夹
 mkdir -m 777 -p ~/pxc-docker/cert
-# 创建证书
+// 创建证书
 docker run --name pxc-cert --rm -v ~/pxc-docker/cert:/cert \
 percona/percona-xtradb-cluster:8.0 mysql_ssl_rsa_setup -d /cert
 
-# 创建 docker 网络
+// 创建 docker 网络
 docker network create pxc-network
 
-# 启动第一个节点（注意在官方教程的基础上加了“-v ~/pxc-docker/cert:/cert”参数，不加会报错）
+// 启动第一个节点（注意在官方教程的基础上加了“-v ~/pxc-docker/cert:/cert”参数，不加会报错）
 docker run -d \
   -e MYSQL_ROOT_PASSWORD=toor \
   -e CLUSTER_NAME=pxc-cluster \
@@ -717,7 +729,7 @@ docker run -d \
   -v ~/pxc-docker/config:/etc/percona-xtradb-cluster.conf.d \
   -p 33061:3306 \
   percona/percona-xtradb-cluster:8.0
-#启动其它节点（注意加了“-e CLUSTER_JOIN=pxc-node1”参数）
+// 启动其它节点（注意加了“-e CLUSTER_JOIN=pxc-node1”参数）
 docker run -d \
   -e MYSQL_ROOT_PASSWORD=toor \
   -e CLUSTER_NAME=pxc-cluster \
@@ -747,19 +759,19 @@ docker run -d \
 这里以创建3个 PXC 节点（分别为 node1、node2、node3）为例：
 
 ```bash
-#拉取镜像，注意不能是8.0，因为8.0安装方式变了
+// 拉取镜像，注意不能是8.0，因为8.0安装方式变了
 docker pull percona/percona-xtradb-cluster:5.7
-#镜像名称太长，重命名一下
+// 镜像名称太长，重命名一下
 docker tag percona/percona-xtradb-cluster:5.7 pxc
-#创建子网
+// 创建子网
 docker network create --subnet=172.20.0.0/24 pxc-network
-#创建数据卷
+// 创建数据卷
 docker volume create --name v1
 docker volume create --name v2
 docker volume create --name v3
-#启动第一个节点
+// 启动第一个节点
 docker run -d -p 33061:3306 -e MYSQL_ROOT_PASSWORD=toor -e CLUSTER_NAME=PXC -e XTRABACKUP_PASSWORD=toor -v v1:/var/lib/mysql --name=node1 --network=pxc-network --ip 172.20.0.2 pxc
-#第一个节点启动完后再启动其它节点（注意参数加了“-e CLUSTER_JOIN=node1”）
+// 第一个节点启动完后再启动其它节点（注意参数加了“-e CLUSTER_JOIN=node1”）
 docker run -d -p 33062:3306 -e MYSQL_ROOT_PASSWORD=toor -e CLUSTER_NAME=PXC -e XTRABACKUP_PASSWORD=toor -e CLUSTER_JOIN=node1 -v v2:/var/lib/mysql --name=node2 --network=pxc-network --ip 172.20.0.3 pxc
 docker run -d -p 33063:3306 -e MYSQL_ROOT_PASSWORD=toor -e CLUSTER_NAME=PXC -e XTRABACKUP_PASSWORD=toor -e CLUSTER_JOIN=node1 -v v3:/var/lib/mysql --name=node3 --network=pxc-network --ip 172.20.0.4 pxc
 ```
@@ -807,16 +819,16 @@ mysql> drop user 'some_user@%'
 
 ```bash
 $ vim /etc/my.cnf
-# 在[mysqld]后加上如下语句
-# skip-grant-tables
+// 在[mysqld]后加上如下语句
+skip-grant-tables
 $ systemctl restart mysqld
 $ mysql -uroot
 mysql> use mysql;
 mysql> update user set authentication_string='' where user='root';
 mysql> quit;
 $ vim /etc/my.cnf
-# 删除刚才添加的语句
-# skip-grant-tables
+// 删除刚才添加的语句
+skip-grant-tables
 $ systemctl restart mysqld
 $ mysql -uroot
 mysql> ALTER USER 'root'@'%' IDENTIFIED BY 'pass4wOrd!';
@@ -926,43 +938,43 @@ docker build -t rabbitmq:3.8.2-management .
 ### 通过 yum 安装
 
 ```bash
-# import the new PackageCloud key that will be used starting December 1st, 2018 (GMT)
+// import the new PackageCloud key that will be used starting December 1st, 2018 (GMT)
 $ rpm --import https://packagecloud.io/rabbitmq/rabbitmq-server/gpgkey
 
-# import the old PackageCloud key that will be discontinued on December 1st, 2018 (GMT)
+// import the old PackageCloud key that will be discontinued on December 1st, 2018 (GMT)
 $ rpm --import https://packagecloud.io/gpg.key
 
-# install erlang repository
+// install erlang repository
 $ curl -s https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | sudo bash
 
-# install rabbitmq repository
+// install rabbitmq repository
 $ curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | sudo bash
 
 $ yum install erlang.x86_64
 $ yum install rabbitmq-server.noarch
 
-# enable rabbitmq_management
+// enable rabbitmq_management
 $ rabbitmq-plugins enable rabbitmq_management
 
-# autostart rabbitmq when system start
+// autostart rabbitmq when system start
 $ chkconfig rabbitmq-server on
 
-# As an administrator, start and stop the server as usual:
+// As an administrator, start and stop the server as usual:
 $ /sbin/service rabbitmq-server start
 $ /sbin/service rabbitmq-server stop
 
-# download the example config file from website https://github.com/rabbitmq/rabbitmq-server/blob/master/docs/rabbitmq.conf.example
-# and write it to file /etc/rabbitmq/rabbitmq.conf
-# uncomment the line "loopback_users.guest = false" so you can use the guest user to login from anywhere on the network
-# start the server and then visit http://HOST_IP:15672/
-# the credential is below
-# username:guest
-# password:guest
+// download the example config file from website https://github.com/rabbitmq/rabbitmq-server/blob/master/docs/rabbitmq.conf.example
+// and write it to file /etc/rabbitmq/rabbitmq.conf
+// uncomment the line "loopback_users.guest = false" so you can use the guest user to login from anywhere on the network
+// start the server and then visit http://HOST_IP:15672/
+// the credential is below
+// username:guest
+// password:guest
 
-# display application environment
+// display application environment
 $ rabbitmqctl environment
 
-# system service logs can be inspected using
+// system service logs can be inspected using
 $ journalctl --system | grep rabbitmq
 
 
@@ -1008,7 +1020,7 @@ gpgkey=https://www.mongodb.org/static/pgp/server-4.0.asc
 $ yum install -y mongodb-org
 
 $ systemctl enable --now mongod.service
-# or
+// or
 $ chkconfig mongod on
 $ service mongod start
 $ service mongod stop
@@ -1047,8 +1059,9 @@ $ docker run --name elasticsearch \
 // 安装 kibana
 $ docker run --name kibana -p 5601:5601 --net elasticsearch -d kibana:7.4.1
 // 安装 logstash
-$ docker run --rm -it -v ~/pipeline/:/usr/share/logstash/pipeline/ --name logstash -d logstash:7.4.2 #方法一，提供 logstash.conf 文件
-$ docker run --rm -it -v ~/settings/:/usr/share/logstash/config/ --name logstash -d logstash:7.4.2 #方法二，提供 logstash.yml 文件
+$ docker run --rm -it -v ~/pipeline/:/usr/share/logstash/pipeline/ --name logstash -d logstash:7.4.2 
+// 方法一，提供 logstash.conf 文件
+$ docker run --rm -it -v ~/settings/:/usr/share/logstash/config/ --name logstash -d logstash:7.4.2 // 方法二，提供 logstash.yml 文件
 $ docker run --rm -it -v ~/settings/logstash.yml:/usr/share/logstash/config/ --name logstash -d logstash.yml logstash:7.4.2
 ```
 
@@ -1303,8 +1316,10 @@ https://docs.docker.com/registry/deploying/
 
 ### 通过 docker 安装
 
+单机嵌入式数据库模式：
+
 ```bash
-$ docker run --name nacos-standalone -e MODE=standalone -p 8848:8848 -d nacos/nacos-server:latest
+$ docker run --name nacos-standalone -e MODE=standalone -e PREFER_HOST_MODE=hostname -p 8848:8848 -d nacos/nacos-server:latest
 ```
 
 或
@@ -1315,9 +1330,25 @@ $ cd nacos-docker
 $ docker-compose -f example/standalone-derby.yaml up -d
 ```
 
-访问 http://127.0.0.1:8848/nacos/ 
+### 测试
 
-用户名和密码：nacos
+命令行执行以下命令：
+
+```bash
+// 服务注册
+curl -X POST 'http://127.0.0.1:8848/nacos/v1/ns/instance?serviceName=nacos.naming.serviceName&ip=20.18.7.10&port=8080'
+
+// 服务发现
+curl -X GET 'http://127.0.0.1:8848/nacos/v1/ns/instance/list?serviceName=nacos.naming.serviceName'
+
+// 发布配置
+curl -X POST "http://127.0.0.1:8848/nacos/v1/cs/configs?dataId=nacos.cfg.dataId&group=test&content=HelloWorld"
+
+// 获取配置
+curl -X GET "http://127.0.0.1:8848/nacos/v1/cs/configs?dataId=nacos.cfg.dataId&group=test"
+```
+
+浏览器访问 http://127.0.0.1:8848/nacos/，用户名和密码：nacos
 
 参考：https://github.com/nacos-group/nacos-docker/blob/master/README_ZH.md
 
@@ -1330,6 +1361,18 @@ $ docker run --name seata-server -p 8091:8091 seataio/seata-server:latest -d
 ```
 
 参考：https://hub.docker.com/r/seataio/seata-server
+
+## Consul
+
+### 通过 docker 安装
+
+
+
+参考：
+
+[Docker 部署 Consul，多数据中心](https://www.jianshu.com/p/df3ef9a4f456)
+
+[Docker中创建Consul集群](https://www.jianshu.com/p/067154800683)
 
 ## Zipkin
 
@@ -1725,11 +1768,13 @@ Asia/Shanghai
    - 如果是 Ext4 文件系统（Centos 6 的默认文件系统）
 
        ```bash
-       e2fsck -f /dev/sda2 # 先检查并修复文件系统错误
-       resize2fs /dev/mapper/centos-root # 再扩容
-       # 或执行这个命令
+       // 先检查并修复文件系统错误
+       e2fsck -f /dev/sda2 
+       // 再扩容
+       resize2fs /dev/mapper/centos-root 
+       // 或执行这个命令
        resize2fs /dev/sda2
-       # 如果在救援模式下，需要重新挂载根目录为读写模式才能扩容
+       // 如果在救援模式下，需要重新挂载根目录为读写模式才能扩容
        mount -o remount,rw /
        ```
    
@@ -1780,8 +1825,9 @@ netstat -tunlp | grep 8000
 
 netstat 的选项如下：
 
-- -t --tcp：只显示 tcp
-- -u --udp：只显示 udp
+- -t --tcp：只显示 TCP
+- -u --udp：只显示 UDP
+- -a --all：显示所有，即 TCP 和 UDP
 - -l --listening：只显示监听状态的连接
 - -n --numeric：全部显示数字，不要解析为名称
 - -p --programs：显示 Socket 的程序名称和 PID
