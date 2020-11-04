@@ -2,8 +2,18 @@
 
 
 
+# Nginx
 
-## location 匹配规则
+## 安装
+
+Nginx 支持源码包编译安装或包管理安装两种方式，具体参考一下链接
+
+参考：
+
+1. https://nginx.org/en/docs/install.html
+2. https://nginx.org/en/docs/configure.html
+
+## location 匹配顺序
 
 ### 语法规则
 
@@ -114,6 +124,8 @@ location / {
 
 ## server_name 匹配顺序
 
+注意：server_name 可以配置为域名，也可以配置为 IP。如果配置为域名，需要到系统本地 hosts 中配置 IP
+
 1. 准确匹配
 
    ```nginx
@@ -160,41 +172,248 @@ location / {
    }
    ```
 
-## nginx 示例配置
+参考：http://nginx.org/en/docs/http/server_names.html
+
+## 指令和变量
+
+参考：
+
+http://nginx.org/en/docs/dirindex.html
+
+http://nginx.org/en/docs/varindex.html
+
+## 正向代理
 
 ```nginx
 server {
-	listen 80 default_server;
-	listen [::]:80 default_server ipv6only=on;
+    #正向代理不能使用 server_name
     
-	root /path/to/html;
-    
-	index index.html index.htm;
-    
-	server_name localhost;
-    
-	location / {
-		try_files $uri $uri/ =404;
-	}
+	#处理HTTP转发
+    resolver 114.114.114.114; #指定DNS服务器IP地址
+    listen 80;
+    location / {
+        proxy_pass http://$host$request_uri; #设定代理服务器的协议和地址
+        proxy_set_header HOST $host;
+        proxy_buffers 256 4k;
+        proxy_max_temp_file_size 0k;
+        proxy_connect_timeout 30;
+        proxy_send_timeout 60;
+        proxy_read_timeout 60;
+        proxy_next_upstream error timeout invalid_header http_502;
+    }
+}
+server {
+    #处理HTTPS转发
+    resolver 114.114.114.114; #指定DNS服务器IP地址
+    listen 443;
+    location / {
+        proxy_pass https://$host$request_uri; #设定代理服务器的协议和地址
+        proxy_buffers 256 4k;
+        proxy_max_temp_file_size 0k;
+        proxy_connect_timeout 30;
+        proxy_send_timeout 60;
+        proxy_read_timeout 60;
+        proxy_next_upstream error timeout invalid_header http_502;
+    }
+}
+```
+
+参考：[nginx正向代理配置详解](https://cloud.tencent.com/developer/article/1521322)
+
+## 反向代理与负载均衡
+
+```nginx
+http {
+    #定义负载均衡服务器（默认使用轮询策略）
+    upstream backend {
+        server 127.0.0.1:8070;
+        server 127.0.0.1:8080;
+        server 127.0.0.1:8090;
+    }
+
+    #定义虚拟服务器，监听80端口，并将80端口的所有流量传递给上游upstream
+    #注意upstream名称要和proxy_pass的名称匹配。
+    server {
+        listen 80;
+        location / {
+            #反向代理指令
+            proxy_pass http://backend;
+        }
+    }
 }
 ```
 
 
 
-## proxy_pass 反向代理指令 
-
-## 负载均衡的策略
+## 负载均衡策略
 
 Nginx 负载均衡是通过 upstream 模块来实现的，内置了三种负载策略。
 
-- 轮循（默认） 
+- 轮循（round-robin）（默认） 
 
 Nginx 根据请求次数，将每个请求均匀分配到每台服务器。如果设置了权重的话，会按照权重均匀分配给每台服务器。
 
-- 最少连接
+- 最少连接（least-connected）
 
 Nginx 会统计哪些服务器的连接数最少，然后将请求优先分配给连接数最少的服务器。
 
-- IP Hash 
+- IP Hash
 
 第一次请求时，Nginx 会将客户端IP地址的哈希值绑定集群中的某台服务器，后续该客户端的所有请求都会转发给集群中绑定的那台服务器去处理。
+
+参考：https://nginx.org/en/docs/http/load_balancing.html
+
+## WebSocket 转发配置
+
+```nginx
+location /chat/ {
+    proxy_pass http://backend;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+}
+```
+
+参考：https://nginx.org/en/docs/http/websocket.html
+
+## *HTTPS
+
+## *80端口转443端口
+
+## nginx-rtmp-module
+
+下载地址：https://gitee.com/mirrors/nginx-rtmp-module
+
+安装方式：
+
+```bash
+yum install -y pcre-devel.x86_64 openssl-devel.x86_64
+./configure --add-module=/root/nginx-rtmp-module --prefix=/usr/local/nginx --with-debug
+make & make install
+```
+
+**直播服务器配置**
+
+```nginx
+rtmp {
+    server {
+        listen 1935;
+
+        application live {
+            live on;
+        }
+    }
+}
+```
+
+推流和拉流：
+
+```bash
+ffmpeg -i video.mp4 -r 25 -b 4M -f flv rtmp://{{server}}:1935/live/5
+// 执行完上面的命令后，VLC播放器打开 rtmp://{{server}}:1935/live/5
+```
+
+**HLS配置**
+
+```nginx
+rtmp {
+    server {
+        listen 1935;
+
+        application hls {
+            live on;
+            hls on;
+            hls_path /var/hls;
+        }
+    }
+}
+http {
+    server {
+        listen      8080;
+
+        location /hls {
+            # Serve HLS fragments
+            types {
+                application/vnd.apple.mpegurl m3u8;
+                video/mp2t ts;
+            }
+            root /var;
+            add_header Cache-Control no-cache;
+        }
+    }
+}
+```
+
+推流和拉流：
+
+```bash
+// 推流格式必须是 H264/AAC 编码
+ffmpeg -i video.mp4 -vcodec libx264 -acodec aac -f flv rtmp://{{server}}:1935/hls/5
+// 执行完上面的命令后，VLC播放器打开 http://{{server}}:8080/hls/5.m3u8
+```
+
+***视频录制配置**
+
+```nginx
+rtmp {
+    server {
+        listen 1935;
+        
+        application record {
+
+            live on;
+
+            # 录制不了，提示权限不够
+            # 推流会自动开启录制
+            record all;
+            record_path /tmp/rec;
+            record_unique on;
+        }
+    }
+}
+```
+
+**视频点播配置**
+
+```nginx
+rtmp {
+    server {
+        listen 1935;
+
+        # 视频点播（Video On Demand）
+        # VLC播放器打开 rtmp://{{server}}:1935/vod/{{video.mp4}}
+        application vod {
+            play /tmp/vod;
+        }
+    }
+}
+```
+
+**视频中继**
+
+```nginx
+rtmp {
+    server {
+        listen 1935;
+
+        # 视频中继
+        # VLC播放器打开 rtmp://{{server}}:1935/tv
+        application tv {
+            live on;
+
+            # Pull all streams from remote machine
+            # and play locally
+            # 这里使用《CCTV-1综合》的RTMP流来测试
+            pull rtmp://58.200.131.2:1935/livetv/cctv1;
+        }
+    }
+}
+```
+
+
+
+参考：https://github.com/arut/nginx-rtmp-module
+
+# *OpenResty
+
+# *Kong
