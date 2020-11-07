@@ -1355,17 +1355,121 @@ curl -X GET "localhost:9200/_cat/nodes?v&pretty"
 
 参考：https://www.elastic.co/guide/en/elasticsearch/reference/7.4/docker.html
 
+## GitLab
+
+gitlab-ce 的镜像大概 1GB 左右，而 Gogs 为 100MB 左右，占用的CPU资源也比 Gogs 高。
+
+### 通过 docker 安装
+
+```bash
+sudo docker run --detach \
+  --hostname gitlab.example.com \
+  --publish 443:443 --publish 80:80 --publish 8022:22 \
+  --name gitlab \
+  --restart always \
+  --volume /data/gitlab/config:/etc/gitlab \
+  --volume /data/gitlab/logs:/var/log/gitlab \
+  --volume /data/gitlab/data:/var/opt/gitlab \
+  gitlab/gitlab-ce:latest
+```
+
+只能通过上面配置的 hostname 来访问 gitlab，即通过 http://gitlab.example.com 来访问，所以需要本地配置好 hosts。
+
+首次登录会提示修改密码，这里修改为 gitlabpass，默认用户名为 root。
+
+### 通过 docker-compose 安装
+
+deploy-gitlab.yml
+
+```bash
+version: '3.1'
+
+services:
+  web:
+    image: 'gitlab/gitlab-ce:latest'
+    container_name: gitlab
+    restart: always
+    hostname: 'gitlab.example.com'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://gitlab.example.com'
+        gitlab_rails['gitlab_shell_ssh_port'] = 8022
+        # Add any other gitlab.rb configuration here, each on its own line
+    ports:
+      - '80:80'
+      - '443:443'
+      - '8022:22'
+    volumes:
+      - '/data/gitlab/config:/etc/gitlab'
+      - '/data/gitlab/logs:/var/log/gitlab'
+      - '/data/gitlab/data:/var/opt/gitlab'
+
+```
+
+
+
+参考：https://docs.gitlab.com/omnibus/docker/#set-up-the-volumes-location
+
 ## Gogs
+
+### 硬件要求
+
+至少双核CPU、512MB内存。Gogs 要求安装 MySQL、PostgreSQL、SQLite3、MSSQL 或 TiDB。
 
 ### 通过 docker 安装
 
 ```
-$ docker pull gogs/gogs
-$ mkdir -p /var/gogs
-$ docker run -d --rm --name=gogs -p 10022:22 -p 10080:3000 -v /var/gogs:/data gogs/gogs
-$ docker start gogs
-
+mkdir -p /var/gogs
+docker run -d --rm --name=gogs -p 10022:22 -p 10080:3000 -v /var/gogs:/data gogs/gogs
+// 浏览器打开 Gogs 的 Web 页面，一定要设置好域名，不要设置为 localhost，会影响 git clone
+// 建议设置域名为 gogs.example.com，应用URL设置为 http://gogs.example.com:10080/
+// 具体配置也可以到容器里更改
 ```
+
+参考：
+
+https://github.com/gogs/gogs
+
+https://github.com/gogs/gogs/tree/main/docker
+
+## Gitea
+
+### 通过 docker-compose 安装
+
+deploy-gitea.yml
+
+```bash
+version: '2'
+services:
+  web:
+    image: gitea/gitea:1.12.4
+    volumes:
+      - /data/gitea:/data
+    ports:
+      - "3000:3000"
+      - "8022:22"
+    depends_on:
+      - db
+    restart: always
+  db:
+    image: mariadb:10
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=gitea
+      - MYSQL_DATABASE=gitea
+      - MYSQL_USER=gitea
+      - MYSQL_PASSWORD=gitea
+    volumes:
+      - /data/gitea-db/:/var/lib/mysql
+```
+
+安装后的配置跟 gogs 一样。系统界面也跟 gogs 相似，应该是基于 gogs。
+
+参考：
+
+https://hub.docker.com/r/gitea/gitea
+
+https://docs.gitea.io/en-us/install-with-docker/
 
 ## Jenkins
 
