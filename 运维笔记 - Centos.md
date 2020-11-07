@@ -252,7 +252,7 @@ docker-compose -f docker-compose.yml up -d
 - 端口映射
 - 用户名和密码
 - 数据卷映射：数据、日志、配置
-- 允许外网访问
+- 网络
 
 ### 部署常用服务
 
@@ -900,6 +900,59 @@ $ systemctl enable --now mariadb
 安装后配置同 MySQL
 
 ## PostgreSQL
+
+### 通过 docker-compose 安装
+
+deploy-postgres.yml
+
+```bash
+# Use postgres/example user/password credentials
+version: '3.1'
+
+services:
+  db:
+    image: postgres:9.6
+    container_name: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+volumes:
+  postgres-data:
+```
+
+参考：
+
+https://hub.docker.com/_/postgres
+
+https://hub.docker.com/_/adminer
+
+### 通过 docker 安装
+
+```bash
+// 安装 Postgres
+docker run -d --name postgres \
+    -p 5432:5432 \
+    -e "POSTGRES_USER=postgres" \
+    -e "POSTGRES_PASSWORD=postgres" \
+    -e "POSTGRES_DB=postgres" \
+    -v /data/postgres:/var/lib/postgresql/data \
+    postgres:9.6
+```
+
+参考：https://hub.docker.com/_/postgres
 
 ### 通过 yum 安装
 
