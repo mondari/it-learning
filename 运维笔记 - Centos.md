@@ -312,51 +312,6 @@ volumes:
   portainer_data:
 ```
 
-### 部署 MongoDB
-
-mongo.yaml
-
-```yaml
-version: '3'
-services:
-  mongo:
-    image: mongo:4.2
-    container_name: mongo
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: mongo
-      MONGO_INITDB_ROOT_PASSWORD: mongo
-    volumes:
-      - /var/lib/mongo:/data/db #数据目录挂载（启动前需要清空已有目录或使用旧密码，否则启动或登陆失败）
-    ports:
-      - 27017:27017
-  mongo-express:
-    image: mongo-express:0.49
-    container_name: mongo-express
-    restart: always
-    ports:
-      - 8081:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: mongo
-      ME_CONFIG_MONGODB_ADMINPASSWORD: mongo
-    depends_on:
-      - mongo
-  # nginx:
-  #   image: nginx:1.17
-  #   container_name: nginx
-  #   restart: always
-  #   ports:
-  #   - 8080:80
-  #   # - 443:443
-  #   volumes:
-  #   - /usr/share/nginx/html:/usr/share/nginx/html #静态资源根目录挂载
-  #   - /var/log/nginx:/var/log/nginx #日志目录挂载
-  #   - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf #配置目录挂载
-
-```
-
-
-
 ### 部署 ELK
 
 elk.yaml
@@ -488,6 +443,100 @@ Cockpit 是 Linux 的 Web 控制台。Centos 8 在安装时可以选择安装该
    ```
    
 4. 访问  https://ip-address:9090 
+
+## Kubernetes
+
+### 安装 Minikube
+
+minikube 能在macOS、Linux和Windows上快速建立一个本地Kubernetes集群，帮助开发者开发 Kubernetes 应用。
+
+```bash
+// 安装仓库（这里使用阿里的镜像）
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF
+
+// SELinux运行模式切换为宽容模式
+setenforce 0
+
+// 安装相关服务
+yum install -y kubelet kubeadm kubectl
+
+// 设置开机启动并启动 kubelet 服务
+systemctl enable --now kubelet
+
+// 安装 minikube（使用阿里镜像）
+curl -Lo minikube https://kubernetes.oss-cn-hangzhou.aliyuncs.com/minikube/releases/v1.13.0/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
+
+// 安装 kubectl 和 minikube 命令补全
+echo "source <(kubectl completion bash)" >> ~/.bashrc
+echo "source <(minikube completion bash)" >> ~/.bashrc
+
+// 启动 minikube 本地集群
+minikube start
+// 查看 minikube 的状态
+minikube status
+```
+
+启动 minikube 时输出的信息如下：
+
+```bash
+[root@localhost ~]# minikube start --driver=none \
+--registry-mirror=https://registry.docker-cn.com \
+--iso-url=https://kubernetes.oss-cn-hangzhou.aliyuncs.com/minikube/iso/minikube-v1.5.0.iso \
+--image-mirror-country='cn'
+
+minikube start --driver=none
+* minikube v1.13.0 on Centos 7.8.2003
+* Using the none driver based on user configuration
+* Starting control plane node minikube in cluster minikube
+* Running on localhost (CPUs=2, Memory=3770MB, Disk=37874MB) ...
+* OS release is CentOS Linux 7 (Core)
+* Preparing Kubernetes v1.19.0 on Docker 19.03.13 ...
+    > kubectl.sha256: 65 B / 65 B [--------------------------] 100.00% ? p/s 0s
+    > kubelet.sha256: 65 B / 65 B [--------------------------] 100.00% ? p/s 0s
+    > kubeadm.sha256: 65 B / 65 B [--------------------------] 100.00% ? p/s 0s
+    > kubectl: 41.01 MiB / 41.01 MiB [---------------] 100.00% 2.22 MiB p/s 19s
+    > kubeadm: 37.30 MiB / 37.30 MiB [---------------] 100.00% 1.62 MiB p/s 23s
+    > kubelet: 104.88 MiB / 104.88 MiB [-------------] 100.00% 3.14 MiB p/s 34s
+* Configuring local host environment ...
+*
+! The 'none' driver is designed for experts who need to integrate with an existing VM
+* Most users should use the newer 'docker' driver instead, which does not require root!
+* For more information, see: https://minikube.sigs.k8s.io/docs/reference/drivers/none/
+*
+! kubectl and minikube configuration will be stored in /root
+! To use kubectl or minikube commands as your own user, you may need to relocate them. For example, to overwrite your own settings, run:
+*
+  - sudo mv /root/.kube /root/.minikube $HOME
+  - sudo chown -R $USER $HOME/.kube $HOME/.minikube
+*
+* This can also be done automatically by setting the env var CHANGE_MINIKUBE_NONE_USER=true
+* Verifying Kubernetes components...
+* Enabled addons: default-storageclass, storage-provisioner
+* Done! kubectl is now configured to use "minikube" by default
+
+```
+
+
+
+参考：
+
+https://mirrors.huaweicloud.com/
+
+[Kubernetes 镜像](https://developer.aliyun.com/mirror/kubernetes?spm=a2c6h.13651102.0.0.3e221b11zwdZGz)
+
+https://github.com/AliyunContainerService/minikube
+
+[Minikube - Kubernetes本地实验环境](https://developer.aliyun.com/article/221687)
+
+[15分钟在笔记本上搭建 Kubernetes + Istio开发环境](https://developer.aliyun.com/article/672675)
 
 ## Rancher
 
@@ -884,7 +933,7 @@ $ docker run --name redis -p 6379:6379 -d redis redis-server --appendonly yes
 $ docker run -d -p 6379:6379 --name redis_database -e REDIS_PASSWORD=strongpassword centos/redis-5-centos7
 ```
 
-### 通过 tar 包安装
+### 通过源码包安装
 
 Centos 7 不带 Redis，只能通过源码包编译
 
@@ -1002,9 +1051,59 @@ $ journalctl --system | grep rabbitmq
 $ sudo docker run --name mongo -d \
 -p 27017:27017 \
 -e MONGO_INITDB_ROOT_USERNAME=mongo -e MONGO_INITDB_ROOT_PASSWORD=mongo \
--v /var/lib/mongo:/data/db \
-mongo:4.2
+-v /data/mongo:/data/db \
+mongo:latest
 ```
+
+### 通过 docker-compose 安装
+
+deploy-mongo.yml
+
+```yaml
+# Use mongo/mongo as user/password credentials
+version: '3.1'
+
+services:
+  mongo:
+    image: mongo
+    container_name: mongo
+    restart: always
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo
+      MONGO_INITDB_ROOT_PASSWORD: mongo
+    networks:
+      - mongo-net
+    volumes:
+      - mongo-data:/data/db
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: mongo
+      ME_CONFIG_MONGODB_ADMINPASSWORD: mongo
+      ME_CONFIG_BASICAUTH_USERNAME: mongo #开启 Basic 登录
+      ME_CONFIG_BASICAUTH_PASSWORD: mongo
+    depends_on:
+      - mongo
+    networks:
+      - mongo-net
+
+networks:
+  mongo-net:
+volumes:
+  mongo-data:
+```
+
+参考：
+
+https://hub.docker.com/_/mongo
+
+https://hub.docker.com/_/mongo-express
 
 ### 通过 yum 安装
 
@@ -1312,6 +1411,222 @@ https://docs.docker.com/registry/deploying/
 
 
 
+## Nginx
+
+
+### 通过 yum 安装
+
+参考：https://nginx.org/en/linux_packages.html
+
+### 通过源码包安装
+
+```bash
+// 安装必要的依赖
+yum install -y pcre-devel.x86_64 openssl-devel.x86_64
+// 配置
+./configure --prefix=/usr/local/nginx --with-debug
+// 编译和安装
+make & make install
+```
+
+参考：https://nginx.org/en/docs/configure.html
+
+### 通过 docker-compose 安装
+
+deploy-nginx.yml
+
+```yaml
+nginx:
+  image: nginx:1.17
+  container_name: nginx
+  restart: always
+  ports:
+  - 8080:80
+  - 443:443
+  volumes:
+  - /data/nginx/html:/usr/share/nginx/html #静态资源根目录挂载
+  - /data/nginx/log:/var/log/nginx #日志目录挂载
+  - /data/nginx/conf/nginx.conf:/etc/nginx/nginx.conf #配置目录挂载
+```
+
+## OpenResty
+
+### 通过 yum 安装
+
+```bash
+# add the yum repo:
+wget https://openresty.org/package/centos/openresty.repo
+sudo mv openresty.repo /etc/yum.repos.d/
+
+# update the yum index:
+sudo yum check-update
+
+# 安装 openresty
+sudo yum install -y openresty
+# 安装命令行工具resty，包管理工具opm
+sudo yum install -y openresty-resty openresty-opm 
+# 安装 restydoc
+sudo yum install -y openresty-doc
+```
+
+OpenResty 的包源地址：https://opm.openresty.org/
+
+参考：
+
+https://openresty.org/cn/linux-packages.html
+
+https://github.com/openresty/opm
+
+### 通过源码包安装
+
+安装前的准备
+
+```bash
+yum install pcre-devel openssl-devel gcc curl
+```
+
+编译安装
+
+```bash
+# 解压
+tar -xzvf openresty-{VERSION}.tar.gz
+# 配置
+./configure --prefix=/usr/local/openresty
+# 编译安装
+make && make install
+
+# 多核 make 加 -j 选项，如下
+make -j && make install
+```
+
+参考：https://openresty.org/cn/installation.html
+
+## Kong
+
+Kong 是一个基于 OpenResty 的 API 网关，支持 Postgres 和 Cassandra 数据库。
+
+### 通过 docker 安装
+
+```bash
+// 安装 Postgres
+docker run -d --name kong-database \
+    -p 5432:5432 \
+    -e "POSTGRES_USER=kong" \
+    -e "POSTGRES_PASSWORD=kong" \
+    -e "POSTGRES_DB=kong" \
+    -v /data/postgres:/var/lib/postgresql/data \
+    postgres:9.6
+
+// 初始化数据库
+docker run --rm \
+    --link kong-database:kong-database \
+    -e "KONG_DATABASE=postgres" \
+    -e "KONG_PG_HOST=kong-database" \
+    -e "KONG_PG_USER=kong" \
+    -e "KONG_PG_PASSWORD=kong" \
+    -e "KONG_CASSANDRA_CONTACT_POINTS=kong-database" \
+    kong kong migrations bootstrap
+    
+// 安装 Kong
+docker run -d --name kong \
+    --link kong-database:kong-database \
+    -e "KONG_DATABASE=postgres" \
+    -e "KONG_PG_HOST=kong-database" \
+    -e "KONG_PG_USER=kong" \
+    -e "KONG_PG_PASSWORD=kong" \
+    -e "KONG_CASSANDRA_CONTACT_POINTS=kong-database" \
+    -e "KONG_PROXY_ACCESS_LOG=/dev/stdout" \
+    -e "KONG_ADMIN_ACCESS_LOG=/dev/stdout" \
+    -e "KONG_PROXY_ERROR_LOG=/dev/stderr" \
+    -e "KONG_ADMIN_ERROR_LOG=/dev/stderr" \
+    -e "KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl" \
+    -p 8000:8000 \
+    -p 8443:8443 \
+    -p 8001:8001 \
+    -p 8444:8444 \
+    kong
+```
+
+如果更改了 Kong 的配置，可以使用以下命令重新加载 Kong
+
+```bash
+$ docker exec -it kong kong reload
+```
+
+测试
+
+```bash
+# 创建服务
+curl -i -X POST \
+--url http://localhost:8001/services/ \
+--data 'name=baidu' \
+--data 'url=https://www.baidu.com'
+
+# 创建路由
+curl -i -X POST \
+--url http://localhost:8001/services/baidu/routes \
+--data 'name=baidu' \
+--data 'paths[]=/v1/baidu'
+
+# 访问测试，确认路由规则
+curl -i -X GET \
+    --url http://localhost:8000/v1/baidu
+
+# 关联插件到路由对象实例baidu
+curl -i -X POST \
+    --url http://localhost:8001/routes/baidu/plugins \
+    --data "name=key-auth" \
+    --data "config.key_names=apikey" 
+
+# 创建消费者
+curl -d "username=customer" http://localhost:8001/consumers/
+
+# 创建消费者密钥
+curl -X POST http://localhost:8001/consumers/customer/key-auth -d ''
+
+# 查看并获得密钥
+curl http://localhost:8001/consumers/customer/key-auth
+
+# 消费者使用密钥访问
+curl -i -X GET \
+    --url http://localhost:8000/v1/baidu \
+    --header "apikey: 5b2fCdjk2FcPhp5aVN45umjhml2kzPgE"	
+```
+
+
+
+安装 Konga
+
+```bash
+// 初始化数据库（其中 172.17.0.3 为 postgres 数据库的 IP 地址）
+docker run --rm pantsel/konga:latest \
+-c prepare -a postgres -u postgres://kong:kong@172.17.0.3:5432/konga
+
+// 安装 Konga
+docker run -d --name konga -p 1337:1337 \
+--link kong-database \
+--link kong \
+-e "TOKEN_SECRET=somerandomstring" \
+-e "DB_ADAPTER=postgres" \
+-e "DB_HOST=kong-database" \
+-e "DB_USER=kong" \
+-e "DB_PASSWORD=kong" \
+-e "DB_DATABASE=konga" \
+-e "NODE_ENV=production" \
+pantsel/konga
+
+// 浏览器打开 konga 的 Web 页面，然后注册并登录账号，用户名和密码为limondar，
+// 接着创建 Kong 的连接，Kong 的管理地址为：http://kong:8001
+```
+
+参考：
+
+https://hub.docker.com/_/kong
+
+https://hub.docker.com/r/pantsel/konga
+
+https://github.com/pantsel/konga
+
 ## Nacos
 
 ### 通过 docker 安装
@@ -1365,6 +1680,10 @@ $ docker run --name seata-server -p 8091:8091 seataio/seata-server:latest -d
 ## Consul
 
 ### 通过 docker 安装
+
+```bash
+
+```
 
 
 
@@ -1574,6 +1893,8 @@ $ docker run -e PARAMS="--spring.datasource.username=root --spring.datasource.pa
 
 
 ## 踩坑记录
+
+### *查看系统硬件配置
 
 ### 查看系统版本
 
