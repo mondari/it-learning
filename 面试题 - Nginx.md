@@ -4,15 +4,6 @@
 
 # Nginx
 
-## 安装
-
-Nginx 支持源码包编译安装或包管理安装两种方式，具体参考一下链接
-
-参考：
-
-1. https://nginx.org/en/docs/install.html
-2. https://nginx.org/en/docs/configure.html
-
 ## location 匹配顺序
 
 ### 语法规则
