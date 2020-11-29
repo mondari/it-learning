@@ -7,6 +7,10 @@
 - 用户名：root
 - 密码：toor
 
+## 发行文档
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/
+
 ## Centos vs Ubuntu Server vs Arch Linux
 
 |            | Centos 7                     | Centos 8                  | Ubuntu Server 2018 LTS                                       | Ubuntu Server 2020 LTS | Arch Linux 2020.08.01 | 备注                            |
@@ -1522,7 +1526,9 @@ cat /var/lib/docker/volumes/nexus-data/_data/admin.password
 
 参考：https://hub.docker.com/r/sonatype/nexus3
 
+## SonarQube
 
+通过
 
 ## Docker Registry
 
@@ -1785,6 +1791,21 @@ https://hub.docker.com/r/pantsel/konga
 https://github.com/pantsel/konga
 
 ## Nacos
+
+### 通过源码包安装
+
+```bash
+git clone https://github.com/alibaba/nacos.git
+cd nacos/
+mvn -Prelease-nacos -Dmaven.test.skip=true clean install -U  
+ls -al distribution/target/
+
+// change the $version to your actual path
+cd distribution/target/nacos-server-$version/nacos/bin
+sh startup.sh -m standalone
+```
+
+参考：https://nacos.io/zh-cn/docs/quick-start.html
 
 ### 通过 docker 安装
 
