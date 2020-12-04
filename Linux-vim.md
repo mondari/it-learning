@@ -48,7 +48,7 @@
 
 ## 移动、滚动、跳转
 
-**motion, scroll , go**
+**motion, scroll , jump**
 
 `h` 左移 `j` 下移 `k` 上移 `l` 右移
 `(` 和 `)` 句子间移动
@@ -77,6 +77,9 @@
 
 
 
+滚动时光标是不会移动的：
+`<c-e>` 向下滚动一行
+`<c-y>` 向上滚动一行
 `<c-u>` 向下滚动小半屏
 `<c-d>` 向上滚动小半屏
 `<c-f>` 或 `PgDn` 向下翻页
@@ -98,6 +101,15 @@
 `T{char}` 
 
 `;` 和 `,` 搜索该行上面操作的下一个和上一个
+
+### 标记跳转
+
+**mark**
+
+`m[a-zA-Z]` 标记当前位置，然后任意位置按
+``[a-zA-Z]` 跳转到标记位置
+`'[a-zA-z]` 跳转到标记位置的行首
+
 
 ### vim-easymotion 瞬移大法
 
@@ -233,7 +245,7 @@ https://github.com/tpope/vim-surround
 `v` 可视化选择模式
 
 `V` 可视化行选择模式
-`<c-v>` 可视化列选择模式
+`<c-v>` 或 `<c-q>` 可视化列选择模式
 
 
 
@@ -368,7 +380,23 @@ https://github.com/brooth/far.vim
 
 `:ver` 显示vim版本和参数
 
+## 没啥用的命令
 
+`<c-e>` 
+`<c-y>` 
+`<c-f>` 
+`<c-b>` 
+`<c-a>` 
+`<c-c>` 
+`<c-m>` 
+`<c-n>` 
+`<c-h>` `<c-j>` `<c-k>` `<c-l>` 映射为窗口跳转
+`<c-p>` CtrlP 插件在用
+`<c-c>` 
+`<c-s>` 
+`<c-t>` 
+
+`t` 跳转
 
 ## 帮助
 
@@ -397,9 +425,9 @@ https://github.com/brooth/far.vim
 
 使用教程
 
-1. 编辑 ~/.vimrc 文件
-
-2. 示例文件：
+1. 首先安装 vim-plug
+2. 编辑 ~/.vimrc 文件
+3. 示例文件：
 ```vimscipt
 " 这只是个实例文件
 " Specify a directory for plugins
@@ -593,11 +621,11 @@ https://github.com/ctrlpvim/ctrlp.vim
 `:b n` 或 `:buffer N` 打开缓冲区中序号为N的文件
 `:help :ls` 查看缓冲区相关的帮助文档
 
-
 ## 多窗口
 
-`:new` 打开一个新的 vim 视窗
-`<c-w>` 打开一个新的 vim 视窗（同上，但是容易和系统的快捷键冲突）
+**window**
+
+`<c-w,c-n>` 或 `:new` 打开一个新的 vim 视窗（同上，但是容易和系统的快捷键冲突）
 
 `:sp 文件名` 水平分屏来编辑文件
 `:vs 文件名` 垂直分屏来编辑文件
@@ -709,6 +737,7 @@ https://github.com/Yggdroot/indentLine
 我的配置文件（在 $VIMRUNTIME/vimrc_example.vim 的基础上增加配置）：
 
 ```
+source $VIMRUNTIME/vimrc_example.vim
 """""""""""""""""""""
 "   PluginInstall   "
 """""""""""""""""""""
@@ -732,6 +761,8 @@ call plug#end()
 """"""""""""""""""""""
 "      Settings      "
 """"""""""""""""""""""
+colorscheme elflord
+set encoding=gbk	"防止中文乱码
 set number			"显示行号
 set shiftwidth=4	"默认自动缩进是8，这里改为4
 set ignorecase		"查找时忽略大小写
