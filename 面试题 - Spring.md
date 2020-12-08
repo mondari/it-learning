@@ -25,81 +25,12 @@ Spring AOP 基于动态代理，动态代理有两种实现方式，如果代理
 
 ## 动态代理的实现方式
 
-动态代理的优点是在不改变原有类的基础上增强其功能。
+动态代理的优点是在不改变目标类的基础上增强其功能。
 
 动态代理有两种实现方式，一种是 JDK 动态代理，一种是 CGlib 动态代理。
 
-- JDK 动态代理：基于反射机制实现，只有实现了接口的业务类才能生成代理对象。新版本也开始结合ASM机制。
-- CGlib 动态代理：基于ASM机制实现，通过生成业务类的子类来创建代理对象。
-
-## JDK 动态代理
-
-有空将其挪到一个项目中去
-
-```java
-public class App {
-    public static void main(String[] args) {
-        // 被代理对象（需要实现某个接口）
-        RealSubject realSubject = new RealSubject();
-
-        // JDK动态代理
-        Subject proxyObject = (Subject) Proxy.newProxyInstance(App.class.getClassLoader(), new Class[]{Subject.class}, new ProxyInvocationHandler(realSubject));
-        proxyObject.action();
-    }
-}
-
-```
-
-
-
-```java
-/**
- * JDK动态代理 - 需要实现 InvocationHandler接口
- */
-public class ProxyInvocationHandler implements InvocationHandler {
-
-    Subject subject;
-
-    public ProxyInvocationHandler(Subject subject) {
-        this.subject = subject;
-    }
-
-    @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        System.out.println("before dynamic proxy");
-        subject.action();
-        System.out.println("after dynamic proxy");
-        return null;
-    }
-}
-```
-
-接口：
-
-```java
-/**
- * 代理类要实现该接口
- */
-public interface Subject {
-
-    void action();
-
-}
-
-```
-
-实现了某个接口的代理类
-
-```java
-public class RealSubject implements Subject {
-
-    @Override
-    public void action() {
-        System.out.println("这是代理类");
-    }
-}
-```
-
+- JDK 动态代理：基于反射机制实现。只要目标对象实现了某个接口，就能生成目标对象的代理对象。新版本也开始结合 ASM 字节码操纵机制来实现动态代理。
+- CGlib 动态代理：基于 ASM 字节码操纵机制实现，通过生成目标类的子类来生成代理对象。
 
 
 ## *IOC 容器如何实现？
