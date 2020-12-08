@@ -608,23 +608,23 @@ private static List<String> randomStringArray(int size) {
 
 ## JSP 与 Servlet 的区别
 
-1. JSP 编译后就是 Servlet
+1. JSP 经 ApplicationServer 编译后就是 Servlet
 2. JSP 负责处理页面显示，Servlet 负责处理业务逻辑
 3. Servlet 中没有内置对象，必须通过 HttpServletRequest 对象，HttpServletResponse 对象以及 HttpServlet 对象得到 JSP 中的内置对象。
 
 ## JSP 九大内置对象
 
-| 内置对象    | 类型                | 作用                                  |
-| ----------- | ------------------- | ------------------------------------- |
-| request     | HttpServletRequest  |                                       |
-| response    | HttpServletResponse |                                       |
-| session     | HttpSession         |                                       |
-| application | ServletContext      |                                       |
-| pageContext | PageContext         | 获取其他八个内置对象                  |
-| config      | ServletConfig       | 获取服务器的配置信息                  |
-| page        | Object(this)        | 代表JSP页面本身，即JSP转换后的Servlet |
-| out         | JspWriter           | 在浏览器中打印信息                    |
-| exception   | Throwable           |                                       |
+| 内置对象    | 类型                | 作用                                                    |
+| ----------- | ------------------- | ------------------------------------------------------- |
+| request     | HttpServletRequest  | HTTP请求                                                |
+| response    | HttpServletResponse | HTTP响应                                                |
+| session     | HttpSession         | HTTP会话                                                |
+| application | ServletContext      | 多个Servlet可以通过ServletContext对象来实现数据间的共享 |
+| pageContext | PageContext         | 获取其他八个内置对象                                    |
+| config      | ServletConfig       | 获取服务器的配置信息                                    |
+| page        | Object(this)        | 代表JSP页面本身                                         |
+| out         | JspWriter           | 在浏览器中打印信息                                      |
+| exception   | Throwable           | 异常                                                    |
 
 ## cookie 和 session 的区别及使用场景
 
