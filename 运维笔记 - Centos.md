@@ -62,7 +62,7 @@ ls 命令的 -F 选项可以让目录在后面加 “/”的形式显示，方�
 
 ## 常用包
 
-yum groups install Development Tools（内含 gcc, git, cmake, perl）
+yum groups install Development\ Tools（内含 gcc, git, cmake, perl）
 net-tools.x86_64（内含 netstat, ifconfig, route，注意，该工具包已经被 iproute 工具包代替）
 yum-cron
 bash-completion
@@ -2158,7 +2158,22 @@ Linux localhost.localdomain 4.18.0-193.14.2.el8_2.x86_64 #1 SMP Sun Jul 26 03:54
 
   
 
+### 环境变量设置
 
+相关命令：
+
+- `export` 命令显示当前系统定义的所有环境变量
+- `echo $PATH` 命令输出当前的 `PATH` 环境变量的值
+- `export PATH=$PATH:$HOME/bin` 命令设置环境变量 `PATH`
+
+相关文件：
+
+- /etc/profile 和 /etc/profile.d/：系统级环境变量和启动程序定义
+- /etc/bashrc、/etc/bash.bashrc：系统级函数和别名定义
+- ~/.bash_profile、~/.profile：用户级环境变量和启动程序定义
+- ~/.bashrc：用户级函数和别名定义
+
+参考：[Linux环境变量配置全攻略](https://www.cnblogs.com/youyoui/p/10680329.html)
 
 ### 设置时区
 
