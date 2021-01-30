@@ -11,34 +11,34 @@
 
 https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/
 
-## Centos vs Ubuntu Server vs Arch Linux
+## Linux 发行版对比
 
-|            | Centos 7                     | Centos 8                  | Ubuntu Server 2018 LTS                                       | Ubuntu Server 2020 LTS | Arch Linux 2020.08.01 | 备注                            |
-| ---------- | ---------------------------- | ------------------------- | ------------------------------------------------------------ | ---------------------- | --------------------- | ------------------------------- |
-| Kernel     | 3.10                         | 4.18                      | 4.15                                                         | 5.4                    | 5.7.11                |                                 |
-| 包管理     | yum                          | dnf 替代 yum              |                                                              | apt, snap              |                       |                                 |
-| 包仓库     | Base, Extras, Updates        | BaseOS, AppStream, Extras |                                                              |                        |                       |                                 |
-| 网络管理   | NetworkManager, nmcli, nmtui | 同左                      | [netplan.io](https://netplan.io/) 基于 NetworkManager 和 Systemd-networkd | 同左                   |                       |                                 |
-| 网络工具   | ip, ss                       | 同左                      | ifconfig, netstat                                            |                        |                       |                                 |
-| 网络包过滤 | iptables                     | nftables                  |                                                              |                        |                       | 都是内核的 netfilter 框架的成员 |
-| 防火墙     | firewalld, firewall-cmd      | 同左                      |                                                              | ufw                    |                       |                                 |
-| 文件系统   | XFS                          | 同左                      |                                                              | ext4                   |                       |                                 |
-| 显示服务器 | X.org                        | Wayland                   |                                                              |                        |                       |                                 |
-| Web 控制台 | 默认无                       | Cockpit                   |                                                              |                        |                       |                                 |
-| 容器管理   | Docker 1.13                  | Podman                    | docker.io 19.03                                              | docker.io 19.03        |                       |                                 |
-| 容器编排   | Kubernetes 1.5.2             | -                         |                                                              |                        |                       |                                 |
-| MySQL      | -                            | 8.0                       |                                                              | 8.0                    |                       |                                 |
-| MariaDB    | 5.5                          | 10.3                      |                                                              | 10.3                   |                       |                                 |
-| PostgreSQL | 9.2                          | 10.6                      |                                                              | 12                     |                       |                                 |
-| Redis      | -                            | 5.0                       |                                                              | 5.0                    |                       |                                 |
-| OpenJDK    | 8, 11                        | 8, 11                     | 8, 11                                                        | 8, 11                  |                       |                                 |
-| Maven      | -                            | 3.5                       |                                                              | 3.6.3                  |                       |                                 |
-| Python     | 3.6                          | 3.8                       |                                                              | 3.8                    |                       |                                 |
-| Anaconda   | 21                           | 29                        |                                                              | -                      |                       |                                 |
-| PHP        | 5.4                          | 7.2                       | 7.2                                                          | 7.4                    |                       |                                 |
-| Nodejs     | -                            | 10.19                     |                                                              | 10.19                  |                       |                                 |
-| Nginx      | -                            | 1.14                      |                                                              | 1.17                   |                       |                                 |
-| httpd      | 2.4.6                        | 2.4.37                    |                                                              |                        |                       |                                 |
+|            | Centos 7                         | Centos 8                                    | Ubuntu Server 2018 LTS                                       | Ubuntu Server 2020 LTS | Arch Linux 2020.08.01 | 备注                            |
+| ---------- | -------------------------------- | ------------------------------------------- | ------------------------------------------------------------ | ---------------------- | --------------------- | ------------------------------- |
+| 内核       | 3.10                             | 4.18                                        | 4.15                                                         | 5.4                    | 5.7.11                |                                 |
+| 包管理     | yum                              | dnf 替代 yum                                |                                                              | apt, snap              |                       |                                 |
+| 包仓库     | Base, Extras, Updates            | BaseOS, AppStream, Extras                   |                                                              |                        |                       |                                 |
+| 网络管理器 | NetworkManager, nmcli, nmtui     | 同左                                        | [netplan.io](https://netplan.io/) 基于 NetworkManager 和 Systemd-networkd | 同左                   |                       |                                 |
+| 网络工具包 | ip, ss                           | 同左                                        | ifconfig, netstat                                            |                        |                       |                                 |
+| 网络包过滤 | iptables                         | nftables                                    |                                                              |                        |                       | 都是内核的 netfilter 框架的成员 |
+| 防火墙     | firewalld, firewall-cmd          | 同左                                        |                                                              | ufw                    |                       |                                 |
+| 文件系统   | XFS                              | XFS                                         |                                                              | ext4                   |                       |                                 |
+| 显示服务器 | [X.org](https://www.x.org/wiki/) | [Wayland](https://wayland.freedesktop.org/) |                                                              |                        |                       |                                 |
+| Web 控制台 | 默认无                           | Cockpit                                     |                                                              |                        |                       |                                 |
+| 容器管理   | Docker 1.13                      | Podman                                      | docker.io 19.03                                              | docker.io 19.03        |                       |                                 |
+| 容器编排   | Kubernetes 1.5.2                 | -                                           |                                                              |                        |                       |                                 |
+| MySQL      | -                                | 8.0                                         |                                                              | 8.0                    |                       |                                 |
+| MariaDB    | 5.5                              | 10.3                                        |                                                              | 10.3                   |                       |                                 |
+| PostgreSQL | 9.2                              | 10.6                                        |                                                              | 12                     |                       |                                 |
+| Redis      | -                                | 5.0                                         |                                                              | 5.0                    |                       |                                 |
+| OpenJDK    | 8, 11                            | 8, 11                                       | 8, 11                                                        | 8, 11                  |                       |                                 |
+| Maven      | -                                | 3.5                                         |                                                              | 3.6.3                  |                       |                                 |
+| Python     | 3.6                              | 3.8                                         |                                                              | 3.8                    |                       |                                 |
+| Anaconda   | 21                               | 29                                          |                                                              | -                      |                       |                                 |
+| PHP        | 5.4                              | 7.2                                         | 7.2                                                          | 7.4                    |                       |                                 |
+| Nodejs     | -                                | 10.19                                       |                                                              | 10.19                  |                       |                                 |
+| Nginx      | -                                | 1.14                                        |                                                              | 1.17                   |                       |                                 |
+| httpd      | 2.4.6                            | 2.4.37                                      |                                                              |                        |                       |                                 |
 
 参考：https://www.archlinux.org/releng/releases/
 
@@ -72,6 +72,7 @@ epel-release（EPEL仓库有Python3）
 yum install python-pip（默认安装pyhon-pip2）
 pip install --upgrade pip（更新pip）
 open-vm-tools.x86_64（[VMware 虚拟机包](https://github.com/vmware/open-vm-tools)）
+psmisc（内含 pstree）
 
 ## 配置EPEL镜像
 
@@ -136,7 +137,7 @@ sudo yum-config-manager \
     --add-repo \
     http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo  
 
-// Centos 8 还需要执行以下命令替换调 docker-ce.repo 文件中的系统版本，否则无法按照最新版本的 containerd.io
+// Centos 8 还需要执行以下命令替换调 docker-ce.repo 文件中的系统版本，否则无法安装最新版本的 containerd.io
 sudo sed -i 's|centos/7|centos/8|' /etc/yum.repos.d/docker-ce.repo
     
 // Install the latest version of Docker Engine - Community and containerd    
@@ -446,16 +447,16 @@ Cockpit 是 Linux 的 Web 控制台。Centos 8 在安装时可以选择安装该
    $ firewall-cmd --reload
    ```
    
-4. 访问  https://ip-address:9090 
+4. 访问  https://ip-address:9090，用户名和密码就是系统用户的账号和密码
 
 ## Kubernetes
 
-### 安装 Minikube
+### 安装前步骤
 
-minikube 能在macOS、Linux和Windows上快速建立一个本地Kubernetes集群，帮助开发者开发 Kubernetes 应用。
+安装 Minikube 和 Kubernetes 前先执行这一步。
 
 ```bash
-// 安装仓库（这里使用阿里的镜像）
+# 安装仓库（这里使用阿里的镜像）
 cat <<EOF > /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
@@ -466,35 +467,51 @@ repo_gpgcheck=1
 gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
 EOF
 
-// SELinux运行模式切换为宽容模式
+# SELinux运行模式切换为宽容模式
 setenforce 0
+# 关闭 SELinux（可选）
+sed -i "s/SELINUX=enforcing/SELINUX=disabled/g" /etc/selinux/config
 
-// 安装相关服务
-yum install -y kubelet kubeadm kubectl
+# 安装相关服务
+yum install -y kubelet kubectl kubeadm 
 
-// 设置开机启动并启动 kubelet 服务
-systemctl enable --now kubelet
+# 设置开机启动并启动 kubelet 服务
+systemctl enable kubelet && systemctl start kubelet
 
-// 安装 minikube（使用阿里镜像）
-curl -Lo minikube https://kubernetes.oss-cn-hangzhou.aliyuncs.com/minikube/releases/v1.13.0/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
-
-// 安装 kubectl 和 minikube 命令补全
+# 安装 kubectl、kubeadm 命令补全
 echo "source <(kubectl completion bash)" >> ~/.bashrc
-echo "source <(minikube completion bash)" >> ~/.bashrc
-
-// 启动 minikube 本地集群
-minikube start
-// 查看 minikube 的状态
-minikube status
+echo "source <(kubeadm completion bash)" >> ~/.bashrc
 ```
 
-启动 minikube 时输出的信息如下：
+如果此时执行 `systemctl status kubelet` 命令，将得到 kubelet 启动失败的错误提示，请忽略此错误，因为必须完成后续步骤中 `kubeadm init` 的操作，kubelet 才能正常启动
+
+### 安装 Minikube
+
+minikube 能在macOS、Linux和Windows上快速建立一个本地Kubernetes集群，帮助开发者开发 Kubernetes 应用。
 
 ```bash
-[root@localhost ~]# minikube start --driver=none \
---registry-mirror=https://registry.docker-cn.com \
---iso-url=https://kubernetes.oss-cn-hangzhou.aliyuncs.com/minikube/iso/minikube-v1.5.0.iso \
---image-mirror-country='cn'
+# 安装 minikube（使用阿里镜像）
+curl -Lo minikube https://kubernetes.oss-cn-hangzhou.aliyuncs.com/minikube/releases/v1.16.0/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
+
+# 安装 minikube 命令补全
+echo "source <(minikube completion bash)" >> ~/.bashrc
+
+// 启动 minikube 集群
+minikube start
+// 查看 minikube 集群状态
+minikube status
+// 停止 minikube 集群
+minikube stop
+// 删除 minikube 集群
+minikube delete
+// 升级 minikube 版本前需要执行以下命令
+minikube delete && rm -rf ~/.minikube
+```
+
+`minikube start --driver=none` 执行结果如下：
+
+```bash
+[root@localhost ~]# minikube start --driver=none
 
 minikube start --driver=none
 * minikube v1.13.0 on Centos 7.8.2003
@@ -503,12 +520,6 @@ minikube start --driver=none
 * Running on localhost (CPUs=2, Memory=3770MB, Disk=37874MB) ...
 * OS release is CentOS Linux 7 (Core)
 * Preparing Kubernetes v1.19.0 on Docker 19.03.13 ...
-    > kubectl.sha256: 65 B / 65 B [--------------------------] 100.00% ? p/s 0s
-    > kubelet.sha256: 65 B / 65 B [--------------------------] 100.00% ? p/s 0s
-    > kubeadm.sha256: 65 B / 65 B [--------------------------] 100.00% ? p/s 0s
-    > kubectl: 41.01 MiB / 41.01 MiB [---------------] 100.00% 2.22 MiB p/s 19s
-    > kubeadm: 37.30 MiB / 37.30 MiB [---------------] 100.00% 1.62 MiB p/s 23s
-    > kubelet: 104.88 MiB / 104.88 MiB [-------------] 100.00% 3.14 MiB p/s 34s
 * Configuring local host environment ...
 *
 ! The 'none' driver is designed for experts who need to integrate with an existing VM
@@ -528,19 +539,267 @@ minikube start --driver=none
 
 ```
 
-
-
 参考：
-
-https://mirrors.huaweicloud.com/
-
-[Kubernetes 镜像](https://developer.aliyun.com/mirror/kubernetes?spm=a2c6h.13651102.0.0.3e221b11zwdZGz)
 
 https://github.com/AliyunContainerService/minikube
 
 [Minikube - Kubernetes本地实验环境](https://developer.aliyun.com/article/221687)
 
 [15分钟在笔记本上搭建 Kubernetes + Istio开发环境](https://developer.aliyun.com/article/672675)
+
+
+
+https://mirrors.huaweicloud.com/
+
+https://developer.aliyun.com/mirror/kubernetes?spm=a2c6h.13651102.0.0.3e221b11zwdZGz
+
+### 安装 Kubernetes
+
+这里以安装 Kubernetes v1.20.0 版本为例。如无特别说明，以下配置 master 和 worker 节点均需配置
+
+#### 配置要求
+
+```bash
+# 查看CPU核心数（核心数不少于2）
+lscpu
+# 查看内存（至少2GB）
+free -h
+# 查看系统发行版（要求 CentOS 7.8 或 CentOS Stream 8）
+cat /etc/redhat-release
+
+# K8s 节点之中不可以有重复的主机名、MAC 地址或 product_uuid。
+# 查看主机名
+hostname
+# 查看 MAC 地址
+ip link 或 ifconfig -a
+# 查看 product_uuid
+sudo cat /sys/class/dmi/id/product_uuid
+```
+
+#### 设置主机名
+
+所有节点的主机名不允许相同，也不允许为 localhost
+
+```bash
+# 设置主机名
+hostnamectl set-hostname centos-vm
+# 查看主机名
+hostnamectl
+# 设置域名解析
+echo "127.0.0.1   $(hostname)" >> /etc/hosts
+```
+
+
+#### 禁用交换分区
+
+```bash
+# 关闭所有的 Swap
+swapoff -a
+# 注释掉 Swap 行
+cp /etc/fstab /etc/fstab_bak
+cat /etc/fstab_bak |grep -v swap > /etc/fstab
+```
+
+#### 配置防火墙
+
+```bash
+firewall-cmd --add-port=6443/tcp --add-port=2379-2380/tcp --add-port=10250-10252/tcp --add-port=443/tcp --add-port=4443/tcp --permanent
+firewall-cmd --reload
+```
+
+防火墙需要开启的端口参考：https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#check-required-ports
+
+#### 配置 containerd
+
+```bash
+cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
+overlay
+br_netfilter
+EOF
+
+sudo modprobe overlay
+sudo modprobe br_netfilter
+
+# Setup required sysctl params, these persist across reboots.
+cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.ipv4.ip_forward                 = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+EOF
+
+# Apply sysctl params without reboot
+sudo sysctl --system
+
+
+## Configure containerd
+sudo mkdir -p /etc/containerd
+containerd config default | sudo tee /etc/containerd/config.toml
+
+sed -i "s#k8s.gcr.io#registry.aliyuncs.com/k8sxio#g"  /etc/containerd/config.toml
+sed -i '/containerd.runtimes.runc.options/a\ \ \ \ \ \ \ \ \ \ \ \ SystemdCgroup = true' /etc/containerd/config.toml
+sed -i "s#https://registry-1.docker.io#https://registry.cn-hangzhou.aliyuncs.com#g"  /etc/containerd/config.toml
+
+# Restart containerd
+sudo systemctl restart containerd
+```
+
+参考：
+
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#letting-iptables-see-bridged-traffic
+
+https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd
+
+https://github.com/kubernetes/website/blob/master/content/zh/docs/setup/production-environment/container-runtimes.md
+
+https://kuboard.cn/install/install-k8s.html#%E5%AE%89%E8%A3%85containerd-kubelet-kubeadm-kubectl
+
+#### 配置 apiserver 环境变量
+
+所有的节点上配置以下环境变量和 apiserver 的域名
+
+```bash
+export MASTER_IP=192.168.17.134
+export APISERVER_NAME=apiserver.demo
+echo "${MASTER_IP}    ${APISERVER_NAME}" >> /etc/hosts
+```
+
+- **APISERVER_NAME** 不能是 master 的 hostname
+- **APISERVER_NAME** 必须全为小写字母、数字、小数点，不能包含减号
+- **POD_SUBNET** 所使用的网段不能与 ***master节点/worker节点*** 所在的网段重叠。该字段的取值为一个 [CIDR](https://kuboard.cn/glossary/cidr.html) 值，如果您对 CIDR 这个概念还不熟悉，请仍然执行 export POD_SUBNET=10.100.0.1/16 命令，不做修改
+
+#### 开始安装
+
+**初始化 master 节点**
+
+```bash
+export POD_SUBNET=10.100.0.1/16
+curl -sSL https://kuboard.cn/install-script/v1.20.x/init_master.sh | sh -s 1.20.1
+```
+
+这里是使用 Kuboard 的脚本来安装，参考：[使用kubeadm安装kubernetes_v1.20.x](https://kuboard.cn/install/install-k8s.html#%E5%88%9D%E5%A7%8B%E5%8C%96-master-%E8%8A%82%E7%82%B9)
+
+**检查 master 初始化结果**
+
+```bash
+# 只在 master 节点执行
+
+# 执行如下命令，等待 3-10 分钟，直到所有的容器组处于 Running 状态
+watch kubectl get pod -n kube-system -o wide
+
+# 查看 master 节点初始化结果
+kubectl get nodes -o wide
+```
+
+**master 节点生成 token**
+
+```bash
+[root@centos-vm ~]# kubeadm token create --print-join-command
+kubeadm join apiserver.demo:6443 --token rtji8k.i5zdrr1xs0tolckg     --discovery-token-ca-cert-hash sha256:befa1a2369ffdb2be73b857ec2964d8c63d9ac50efa49c140ae84e206a949723
+```
+
+然后在 worker 节点执行上面输出的命令
+
+**检查 worker 初始化结果**
+
+```bash
+// 在 master 节点执行
+[root@centos-vm ~]# kubectl get nodes
+NAME        STATUS   ROLES                  AGE   VERSION
+c8          Ready    <none>                 8d    v1.20.2
+centos-vm   Ready    control-plane,master   9d    v1.20.2
+```
+
+#### 重新安装
+
+如果想重新安装，执行以下命令
+
+```bash
+kubeadm reset -f
+rm -rf /etc/cni/net.d/ $HOME/.kube/config
+```
+
+参考：https://kubernetes.io/zh/docs/reference/setup-tools/kubeadm/kubeadm-reset/
+
+#### 查看版本
+
+```bash
+[root@centos-vm ~]# kubectl version
+Client Version: version.Info{Major:"1", Minor:"20", GitVersion:"v1.20.2", GitCommit:"faecb196815e248d3ecfb03c680a4507229c2a56", GitTreeState:"clean", BuildDate:"2021-01-13T13:28:09Z", GoVersion:"go1.15.5", Compiler:"gc", Platform:"linux/amd64"}
+Server Version: version.Info{Major:"1", Minor:"20", GitVersion:"v1.20.1", GitCommit:"c4d752765b3bbac2237bf87cf0b1c2e307844666", GitTreeState:"clean", BuildDate:"2020-12-18T12:00:47Z", GoVersion:"go1.15.5", Compiler:"gc", Platform:"linux/amd64"}
+```
+
+- **Client Version**  表示的是 kubectl 的版本，如上所示是 v1.20.2；
+- **Server Version** 表示的是 Kubernetes 的版本，如上所示是 v1.20.1。
+
+#### Master 默认不能部署 Pod
+
+执行以下命令查看 Master 的污点（下面的 `centos-vm` 是 Master 的名称）：
+
+```bash
+[root@centos-vm ~]# kubectl describe nodes centos-vm |grep -i taint
+Taints:             node-role.kubernetes.io/master:NoSchedule
+```
+
+上面的 **NoSchedule** 污点导致了 Master 不能运行 Pod。
+
+
+
+执行以下命令消除 Master 的污点，让所有节点都能调度 Pod：
+
+```bash
+kubectl taint nodes --all node-role.kubernetes.io/master-
+```
+
+
+
+如果想要让 Master 恢复不能部署 Pod，执行以下命令（下面的 `centos-vm` 是 Master 的名称）：
+
+```bash
+kubectl taint nodes centos-vm node-role.kubernetes.io/master=true:NoSchedule
+```
+
+
+
+参考：
+
+1. https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#%E6%8E%A7%E5%88%B6%E5%B9%B3%E9%9D%A2%E8%8A%82%E7%82%B9%E9%9A%94%E7%A6%BB
+2. https://docker_practice.gitee.io/zh-cn/kubernetes/setup/kubeadm.html#master-%E8%8A%82%E7%82%B9%E9%BB%98%E8%AE%A4%E4%B8%8D%E8%83%BD%E8%BF%90%E8%A1%8C-pod
+
+
+
+#### 参考
+
+https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+
+https://kuboard.cn/install/install-k8s.html
+
+https://docker_practice.gitee.io/zh-cn/kubernetes/setup/kubeadm.html
+
+### 安装 metrics-server
+
+metrics-server 是 Kubernetes 中的一个重要组件，但是却不是内置组件。Kubernetes 许多特性都依赖于 metrics server。
+
+安装了 metrics-server 后，就可以通过 `kubectl top nodes` / `kubectl top pods` 指令，查看节点/容器组的资源利用率。执行结果如下：
+
+```bash
+[root@centos-vm ~]# kubectl top nodes
+NAME        CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+c8          107m         5%     723Mi           19%
+centos-vm   440m         22%    1424Mi          38%
+
+[root@centos-vm ~]# kubectl top pods -n kube-system
+NAME                                CPU(cores)   MEMORY(bytes)
+coredns-68b9d7b887-fn2cq            4m           12Mi
+coredns-68b9d7b887-nsh8d            4m           12Mi
+etcd-centos-vm                      39m          64Mi
+kube-apiserver-centos-vm            128m         411Mi
+kube-controller-manager-centos-vm   22m          53Mi
+kube-proxy-mpx47                    1m           18Mi
+kube-proxy-plggp                    1m           23Mi
+kube-scheduler-centos-vm            4m           22Mi
+kuboard-74c645f5df-zcq5c            0m           8Mi
+metrics-server-7dbf6c4558-4wbdx     1m           14Mi
+```
 
 ## Rancher
 
@@ -549,7 +808,7 @@ Rancher 开源的企业级 Kubernetes 管理平台。
 ### 通过 docker 安装
 
 ```bash
-docker run -d --restart=unless-stopped -p 80:80 -p 443:443 --name=rancher rancher/rancher
+sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80 -p 443:443 -v /var/lib/rancher/:/var/lib/rancher/ rancher/rancher:stable
 ```
 
 用户名默认为 admin，安装后会提示设置密码，这里设置为 admin
