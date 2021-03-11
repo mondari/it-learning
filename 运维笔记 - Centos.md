@@ -191,19 +191,20 @@ docker info
 ### 开启远程访问
 
 ```bash
-[root@docker]# vim /usr/lib/systemd/system/docker.service
-// 修改ExecStart这行
-ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H fd:// --containerd=/run/containerd/containerd.sock
-// 重新加载配置文件
-[root@docker]# systemctl daemon-reload
-// 重启服务
-[root@docker]# systemctl restart docker.service
-// 查看端口是否开启
-[root@docker]# netstat -anp|grep 2375
-// curl查看是否生效
-[root@docker]# curl http://127.0.0.1:2375/info
-// Windows主机修改环境变量即可用 IDEA 连接
-DOCKER_HOST=tcp://DOCKER_HOST_IP:2375
+# 开启远程访问
+sed -i "s#-H#-H tcp://0.0.0.0:2375 -H#g" /usr/lib/systemd/system/docker.service
+# 重新加载配置文件
+systemctl daemon-reload
+# 重启服务
+systemctl restart docker.service
+# 查看端口是否开启
+netstat -anp|grep 2375
+# curl查看是否生效（docker info 命令就是读取该接口）
+curl http://127.0.0.1:2375/info
+# 开启防火墙端口
+firewall-cmd --add-port=2375/tcp --permanent && firewall-cmd --reload
+# Windows主机修改环境变量即可用 IDEA 连接
+# DOCKER_HOST=tcp://REMOTE_DOCKER_IP:2375
 ```
 
 ### 设置容器开机自启
@@ -396,7 +397,7 @@ $ docker run -d -p 9000:9000 --name portainer --restart always -v /var/run/docke
 
 注意：端口9000是Portainer用于UI访问的通用端口。端口8000专门由边缘代理用于反向隧道功能。如果不打算使用边缘代理，则不需要公开端口8000
 
-访问 http://localhost:9000，首次访问会提示设置用户名密码，分别设置为 admin 和 portainer。
+访问 http://localhost:9000，首次访问会提示设置用户名和密码（至少8位），分别设置为 admin 和 portainer。
 
 **开启 IPv4 forward**
 
