@@ -64,6 +64,7 @@ ls 命令的 -F 选项可以让目录在后面加 “/”的形式显示，方�
 
 yum groups install Development\ Tools（内含 gcc, git, cmake, perl）
 net-tools.x86_64（内含 netstat, ifconfig, route，注意，该工具包已经被 iproute 工具包代替）
+bridge-utils（内含 brctl 网桥管理工具）
 yum-cron
 bash-completion
 mlocate.x86_64
@@ -390,9 +391,11 @@ volumes:
 Portainer 是 Docker 的 Web 管理界面。
 
 ```bash
-$ docker volume create portainer_data
-$ docker run -d -p 9000:9000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer:latest
-
+docker volume create portainer_data
+# 旧版本
+docker run -dp 9000:9000 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer:latest
+# 新版本
+docker run -dp 9000:9000 --name=portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce
 ```
 
 注意：端口9000是Portainer用于UI访问的通用端口。端口8000专门由边缘代理用于反向隧道功能。如果不打算使用边缘代理，则不需要公开端口8000
