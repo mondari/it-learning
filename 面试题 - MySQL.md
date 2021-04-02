@@ -105,7 +105,7 @@ InnoDB 存储引擎有两种表空间方式：独享表空间和共享表空间
 
 
 
-.frm文件：存储表的结构，这个文件是必有的，不管使用什么存储引擎。
+.frm文件：存储表的结构，这个文件是必有的，不管使用什么存储引擎（MySQL 8 后这个文件没有了）。
 
 ibdata1 文件：共享表空间数据文件，存储表元数据、Undo 日志等
 
@@ -680,6 +680,55 @@ SELECT INET6_NTOA(UNHEX('ABCDEF0123456789ABCDEF0123456789'));
 参考：[MySQL如何有效的存储IP地址？](https://mp.weixin.qq.com/s/P_wN_UwYnEPtbCwHTHh_Bg)
 
 # SQL 语句篇
+
+## 流程控制语句
+
+### 条件语句
+
+
+
+### 循环语句
+
+while：
+
+```sql
+DELIMITER //
+CREATE PROCEDURE dowhile(times INT)
+BEGIN
+    SET @i = 0;
+    WHILE @i < times
+        DO
+            SET @i = @i + 1;
+        END WHILE;
+END;
+//
+DELIMITER ;
+
+CALL dowhile(10);
+SELECT @i;
+```
+
+repeat：
+
+```sql
+DELIMITER //
+CREATE PROCEDURE dorepeat(times INT)
+BEGIN
+    SET @i = 0;
+    REPEAT
+        SET @i = @i + 1;
+    UNTIL @i >= times END REPEAT;
+END
+//
+DELIMITER ;
+
+CALL dorepeat(10);
+SELECT @i;
+```
+
+### 选择语句
+
+
 
 ## SQL 删除重复数据只保留一条
 

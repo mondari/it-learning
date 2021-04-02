@@ -17,15 +17,16 @@ allprojects {
         def ORIGIN_GOOGLE_ANDROID_URL = 'https://dl.google.com/dl/android/maven2'
         def ORIGIN_GRADLE_PLUGIN_URL = 'https://plugins.gradle.org/m2'
         def ORIGIN_GRADLE_LIB_URL = 'https://repo.gradle.org/gradle/list/libs-releases'
-        def ORIGIN_SPRING_URL = 'https://repo.spring.io/libs-milestone'
-        def ORIGIN_SPRING_RELEASE_URL = 'https://repo.spring.io/release'
-        def ORIGIN_SPRING_PLUGIN_URL = 'https://repo.spring.io/plugins-release'
         def ORIGIN_GRAILS_CORE_URL = 'https://repo.grails.org/grails/core'
         def ORIGIN_APACHE_SNAPSHOTS_URL = 'https://repository.apache.org/snapshots'
         def ORIGIN_JBOSS_URL = 'https://repository.jboss.org/nexus/content/repositories/public'
-        def ORIGIN_SPRING_FRAMEWORK_URL = 'https://repo.spring.io/libs-spring-framework-build'
+        def ORIGIN_SPRING_RELEASE_URL = 'https://repo.spring.io/release'
+        def ORIGIN_SPRING_PLUGIN_URL = 'https://repo.spring.io/plugins-release'
         def ORIGIN_SPRING_MILESTONE_URL = 'https://repo.spring.io/milestone'
         def ORIGIN_SPRING_SNAPSHOT_URL = 'https://repo.spring.io/snapshot'
+        def ORIGIN_SPRING_LIBS_RELEASE_URL = 'https://repo.spring.io/libs-release'
+        def ORIGIN_SPRING_LIBS_MILESTONE_URL = 'https://repo.spring.io/libs-milestone'
+        def ORIGIN_SPRING_LIBS_FRAMEWORK_BUILD_URL = 'https://repo.spring.io/libs-spring-framework-build'
         all { ArtifactRepository repo ->
             if (repo instanceof MavenArtifactRepository) {
                 def url = repo.url.toString()
@@ -41,7 +42,7 @@ allprojects {
                 } else if (url.startsWith(ORIGIN_GRADLE_PLUGIN_URL)) {
                     project.logger.lifecycle "Repository ${repo.url} replaced by $MIRROR_GRADLE_PLUGIN_URL."
                     remove repo
-                } else if (url.startsWith(ORIGIN_SPRING_URL) || url.startsWith(ORIGIN_SPRING_RELEASE_URL)) {
+                } else if (url.startsWith(ORIGIN_SPRING_LIBS_MILESTONE_URL) || url.startsWith(ORIGIN_SPRING_RELEASE_URL)) {
                     project.logger.lifecycle "Repository ${repo.url} replaced by $MIRROR_SPRING_URL."
                     remove repo
                 } else if (url.startsWith(ORIGIN_SPRING_PLUGIN_URL)) {

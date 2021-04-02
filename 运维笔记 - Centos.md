@@ -22,6 +22,7 @@ https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/
 | 网络工具包 | ip, ss                           | 同左                                        | ifconfig, netstat                                            |                        |                       |                                 |
 | 网络包过滤 | iptables                         | nftables                                    |                                                              |                        |                       | 都是内核的 netfilter 框架的成员 |
 | 防火墙     | firewalld, firewall-cmd          | 同左                                        |                                                              | ufw                    |                       |                                 |
+| 域名解析   |                                  | systemd-resolved                            |                                                              |                        |                       |                                 |
 | 文件系统   | XFS                              | XFS                                         |                                                              | ext4                   |                       |                                 |
 | 显示服务器 | [X.org](https://www.x.org/wiki/) | [Wayland](https://wayland.freedesktop.org/) |                                                              |                        |                       |                                 |
 | Web 控制台 | 默认无                           | Cockpit                                     |                                                              |                        |                       |                                 |
@@ -226,6 +227,26 @@ $ docker update --restart always <CONTAINER ID>
 
 - always - 无论退出状态是如何，都重启容器；
 
+### 开启 IPv4 forward 以访问外网
+
+如果不开启 IPv4 forward，Docker 容器将无法访问外网，会提示“WARNING: IPv4 forwarding is disabled. Networking will not work”。
+
+```bash
+// 开启
+$ vim /etc/sysctl.conf:
+net.ipv4.ip_forward = 1
+// 重新加载
+$ sysctl -p /etc/sysctl.conf
+// 或者通过以下命令开启 IPv4 转发
+$ sysctl -w net.ipv4.ip_forward=1
+// 检查
+$ sysctl net.ipv4.ip_forward
+net.ipv4.ip_forward = 1
+// 或者通过以下命令检查
+$ cat /proc/sys/net/ipv4/ip_forward
+1
+```
+
 ### 安装 Docker Compose
 
 ```bash
@@ -396,29 +417,12 @@ docker volume create portainer_data
 docker run -dp 9000:9000 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer:latest
 # 新版本
 docker run -dp 9000:9000 --name=portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce
+# 另外还需要确保 IPv4 转发开启
 ```
 
 注意：端口9000是Portainer用于UI访问的通用端口。端口8000专门由边缘代理用于反向隧道功能。如果不打算使用边缘代理，则不需要公开端口8000
 
 访问 http://localhost:9000，首次访问会提示设置用户名和密码（至少8位），分别设置为 admin 和 portainer。
-
-**开启 IPv4 forward**
-
-如果不开启 IPv4 forward，Portainer 容器无法通过外网访问，会提示“WARNING: IPv4 forwarding is disabled. Networking will not work”。
-
-```bash
-// 开启
-$ vim /etc/sysctl.conf:
-net.ipv4.ip_forward = 1
-// 重新加载
-$ sysctl -p /etc/sysctl.conf
-// 检查
-$ sysctl net.ipv4.ip_forward
-net.ipv4.ip_forward = 1
-// 或者通过以下命令检查
-$ cat /proc/sys/net/ipv4/ip_forward
-1
-```
 
 
 
@@ -823,12 +827,14 @@ sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80
 ### 通过 docker 安装
 
 ```bash
+// 创建存储卷
+docker volume create mysql-data
 // 使用 mysql 镜像（无需配置防火墙端口）
-docker run --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=toor -d mysql:8.0 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-// 使用 mysql-server 镜像（镜像最小）
-docker run -d --name=mysql-server -p=3306:3306 -e MYSQL_ROOT_HOST=% -e MYSQL_ROOT_PASSWORD=toor mysql/mysql-server --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+docker run --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=toor -v mysql-data -d mysql:8.0 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+// 使用 mysql-server 镜像（镜像最小，但没有 mysqlbinlog 工具）
+docker run -d --name=mysql-server -p 3306:3306 -e MYSQL_ROOT_HOST=% -e MYSQL_ROOT_PASSWORD=toor -v mysql-data mysql/mysql-server --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 // 使用 mysql-80-centos7 镜像（能配置的环境变量更多，内置文本编辑器）
-docker run -d --name mysql_database -e MYSQL_ROOT_PASSWORD=toor -e MYSQL_CHARSET=utf8mb4 -e MYSQL_COLLATION=utf8mb4_unicode_ci -p 3306:3306 centos/mysql-80-centos7
+docker run -d --name mysql_database -e MYSQL_ROOT_PASSWORD=toor -e MYSQL_CHARSET=utf8mb4 -e MYSQL_COLLATION=utf8mb4_unicode_ci -v mysql-data -p 3306:3306 centos/mysql-80-centos7
 ```
 
 参考：
@@ -2588,7 +2594,7 @@ firewall-cmd --query-port=80/tcp
 firewall-cmd --list-port
 ```
 
-### 为什么 Centos7 会不带 ipconfig 和 netstat 命令？
+### 为什么 Centos7 不带 ipconfig 和 netstat 命令？
 
 Centos 7 默认不安装 `net-tools` 工具包，推荐使用 `ip` 和 `ss` 命令替代。
 

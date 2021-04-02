@@ -429,44 +429,89 @@ StringBuider：线程不安全，可变，初始容量为16，容量不够会自
 
 StringBuffer：线程安全，其它同 StringBuilder
 
-## 什么是不可变类，如何创建不可变类？
+## 不可变类
 
-**什么是不可变类？**
+参考： [effective-java-3rd-chinese - 17.最小化可变性](https://gitee.com/mondari/effective-java-3rd-chinese/blob/master/docs/notes/17.%20%E6%9C%80%E5%B0%8F%E5%8C%96%E5%8F%AF%E5%8F%98%E6%80%A7.md)
 
-不可变类是指创建出来的对象其内部状态不能发生改变的类，任何改变都会创建一个新的对象赋予原来的引用变量。不可变类创建出来的对象叫做不可变对象。不可变类有 String、Integer 及其它包装类。
+### 什么是不可变类和不可变对象？不可变类有哪些？
 
-**如何创建不可变类？**
+不可变类是指创建出来的对象其内部状态不能发生改变的类，任何改变都要创建一个新的对象赋予其引用变量。不可变类创建出来的对象叫做不可变对象。不可变类有 `String` 类、基本数据类型包装类以及 `BigInteger` 类和 `BigDecimal` 类。
 
-1. 类声明为 final， 使其不能被继承。
-2. 类的所有成员变量声明为 final ，防止对象的内部状态发生改变。
-3. 没有 set 方法，只有 get 方法。
+### 如何创建不可变类？
+
+1. 确保类不被继承。通常将类声明为 final，防止子类破坏父类的不可变行为。
+2. 确保类中所有方法不改变对象内部状态。如果要提供 setter 等修改方法，则新建一个对象返回。
+3. 将类中所有字段声明为 private。从而防止直接获取对象内部属性并修改。
+4. 将类中所有字段声明为 final。从而防止对象的内部状态发生改变。
+
+不可变类示例如下：
 
 ```java
-final class ImmutableClass {
+// 类声明为 final
+public final class ImmutableClass {
+    // 内部变量声明为 private 和 final
+    private final int value;
 
- private final String name;
-
-    public ImmutableClass(String name) {
-        this.name = name;
+    public ImmutableClass(int value) {
+        this.value = value;
     }
 
-    public String getName() {
-        return name;
+    public int getValue() {
+        return value;
     }
 
+    // 如果要提供 setter 等修改方法，则新建一个对象返回。
+    public ImmutableClass setValue(int value) {
+        return new ImmutableClass(value);
+    }
+
+    public static void main(String[] args) {
+        ImmutableClass a = new ImmutableClass(5);
+        ImmutableClass b = a;
+        System.out.println(a.setValue(10).getValue());// 打印 10
+        System.out.println(b.getValue());// 打印 5
+    }
 }
 ```
 
 
-## String 为什么是不可变类
+
+不可变对象并不是真正的不可变，还是能够通过反射来修改其值。不可变类和不可变对象的初衷是为了方便大家编写代码，减少编码时出错的概率。
+
+```java
+public class Test {
+    public static void main(String[] args) throws Exception {
+        String s = "Hello World";
+        System.out.println("s = " + s);
+ 
+        Field valueFieldOfString = String.class.getDeclaredField("value");
+        valueFieldOfString.setAccessible(true);
+ 
+        char[] value = (char[]) valueFieldOfString.get(s);
+        value[5] = '_';
+        System.out.println("s = " + s);
+    }
+}
+```
+
+控制台输出：
+
+```
+s = Hello World
+s = Hello_World
+```
+
+
+
+参考：https://www.cnblogs.com/dolphin0520/p/10693891.html
+
+### String 为什么是不可变
 
 一是为了提高性能，实现字符串常量池。字符串是频繁使用的数据类型，将字符串字面量缓存到字符串常量池中，当要使用的时候从中直接获取，无需频繁创建，有利于提高性能。
 
 二是为了线程安全，保障多线程场景下数据不会发生篡改。
 
 三是为了能够缓存字符串的哈希值，保证了字符串哈希值的不变性。
-
-## *为什么其它包装类是不可变类？
 
 ## Java 生成随机字符串数组
 
@@ -626,21 +671,27 @@ private static List<String> randomStringArray(int size) {
 | out         | JspWriter           | 在浏览器中打印信息                                      |
 | exception   | Throwable           | 异常                                                    |
 
-## cookie 和 session 的区别及使用场景
+## Cookie
 
-- cookie 存放在客户端浏览器上，而 session 存放在服务器上。
+Expires 属性（有效期）：如果没设置该值，则默认 Cookie 在关闭浏览器时失效。
 
-- cookie 不安全
+Domain 属性（作用域）：
 
-- cookie 有大小和数量的限制，而 session 的大小取决于服务器的内存
+Path 属性：
 
-  PS：一个浏览器能创建的 Cookie 数量最多为 300 个，并且每个不能超过 4KB，每个 Web 站点能设置的 Cookie 总数不能超过 20 个
+HttpOnly 属性：用于防止客户端脚本通过 document.cookie 属性访问 Cookie，有助于保护 Cookie 不被跨站脚本攻击窃取或篡改。
 
-一般建议把登录信息等重要信息存放在 session，其它信息存放在 cookie
+Secure 属性：指定是否使用[HTTPS](https://baike.baidu.com/item/HTTPS/285356)安全协议发送 Cookie。使用HTTPS安全协议，可以保护 Cookie 在浏览器和Web服务器间的传输过程中不被窃取和篡改。
 
-## Token 的使用场景
+SameSite 属性：
 
-Token 是身份验证的一种方式，我们通常叫它：令牌。Token 一般用在授权、登录、注册场景中。
+参考：https://baike.baidu.com/item/cookie/1119
+
+## Session
+
+## Token
+
+Token 又叫令牌，一般在登录、认证的场景下使用。
 
 Token 使用步骤如下：
 
@@ -653,7 +704,52 @@ Token 使用步骤如下：
    - 存在，说明当前用户登录成功过，处于已登录状态
    - 不存在，说明没有登录成功过，或者是登录失效，需要重新登录
 
-   
+## Cookie、Session、Token的区别
+
+Cookie、Session 和 Token 都是保持会话的方式，三者有一定的区别。
+
+
+
+Cookie 和 Session 的区别：
+
+- Cookie 是保存在浏览器上，而 Session 是保存在服务器上
+
+- Cookie 有大小和数量限制；而 Session 理论上没有限制，实际上取决于服务器的内存大小
+
+  一个 Cookie 的大小 4KB 左右（4095~4097字节之间），不同浏览器对 Cookie 数量的限制不同，以 IE 6 为例，每个站点能设置的 Cookie 总数不能超过 20 个。
+
+
+
+Session 和 Token 的区别：
+
+- Session 是基于 Cookie，需要借助 Cookie 来保存 SessionId。由于基于 Cookie，所以有 CSRF 攻击的风险
+- Token 和 Session 原理差不多，但是 Token 可以保存在 Cookie、Local Storage 和 SessionStorage 中。并且 Token 是在请求头中手动携带，避免了 CSRF 攻击的风险。
+
+参考：
+
+https://www.jianshu.com/p/b4a9569823dd
+
+https://www.cnblogs.com/belongs-to-qinghua/articles/11353228.html
+
+
+
+## 跨域、CORS、CSRF
+
+跨域是一种浏览器同源安全策略，即浏览器单方面限制脚本的跨域访问。发生跨域时，请求是可以正常发起，后端也能正常处理，但在返回的时候会被浏览器拦截掉，导致响应不可用。能论证这一点的著名案例就是CSRF跨站攻击，因为即使发生跨域，仍然能够发起 CSRF 攻击，只要后端服务器能正常处理 CSRF 攻击的请求就达到了攻击的目的，响应可不可用没有关系。
+
+
+
+CORS（Cross-Origin Resource Sharing，跨源资源共享）是处理跨域的一种方式。其它处理跨域的方式有 JSONP、Nginx转发处理等
+
+
+
+CSRF的全称是（Cross Site Request Forgery），即为跨站请求伪造，是一种利用浏览器在请求时会自动携带登录态的 Cookie 而发起的安全攻击。
+
+
+
+参考：
+
+《Spring Security 实战》“第8章 跨域与CORS”、“第9章 跨域请求伪造的防护”
 
 ## 如何防止表单重复提交
 

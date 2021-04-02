@@ -235,6 +235,80 @@ View 视图：根据 ModelAndView 中的 Model 渲染视图
 
 ![img](assets/clipboard.png)
 
+# Security 篇
+
+官方文档：https://docs.spring.io/spring-security/site/docs/current/reference/html5
+
+Security 相关的异常状态码：
+
+- 401错误：认证失败。表示没有这个用户，或密码错误。
+- 403错误：授权失败。表示认证通过但授权失败，即用户没有相应权限。
+
+
+
+源码入口-配置：springSecurityFilterChain Bean 的配置。位于 WebSecurityConfiguration 类中，其实就是配置 FilterChainProxy。FilterChainProxy 持有多个 SecurityFilterChain，而 SecurityFilterChain 持有多个 Security 过滤器。多个 SecurityFilterChain 也有先后顺序，比如如果配置了 OAuth2，则默认先后顺序为：授权服务器的 > 资源服务器 > WebSecurity（默认最低）
+
+源码入口-认证流程：FilterChainProxy-> SecurityFilterChain-> Security Filters-> AuthenticationManager-> ProviderManager-> AuthenticationProvider
+
+源码入口-授权流程：FilterSecurityInterceptor-> AccessDecisionManager-> AccessDecisionVoter
+
+源码入口-认证流程-表单登录认证：**UsernamePasswordAuthenticationFilter**-> AuthenticationManager-> ProviderManager-> AuthenticationProvider-> **AbstractUserDetailsAuthenticationProvider**-> **DaoAuthenticationProvider**-> **UserDetailsService**-> **UserDetails**
+
+源码入口-认证流程-HTTP基本认证：BasicAuthenticationFilter->
+
+
+
+DaoAuthenticationProvider 主要有以下两个功能：
+
+1. 获取用户信息：通过 UserDetailsService 接口获取用户信息，该接口可以自定义实现。
+2. 验证密码是否正确
+
+
+
+## OAuth2
+
+配置入口：
+
+源码入口-OAuth2-授权码登录：访问 /oauth2/authorization/{registrationId}-> **OAuth2AuthorizationRequestRedirectFilter**-> 重定向授权URL-> 用户点击授权-> 回调 redirectUrl-> **OAuth2LoginAuthenticationFilter**-> AuthenticationManager-> ProviderManager-> AuthenticationProvider-> **OAuth2LoginAuthenticationProvider**
+
+源码入口-OAuth2-资源服务器：OAuth2AuthenticationProcessingFilter-> OAuth2AuthenticationManager-> ResourceServerTokenServices。ResourceServerTokenServices 常见实现类如下：
+
+- DefaultTokenServices：资源服务器和授权服务器在同一个服务中。如果访问令牌是JWT类型，也是这个实现类
+- RemoteTokenServices：资源服务器独立于授权服务器，且使用 security.oauth2.resource.token-info-uri 配置
+- UserInfoTokenServices：资源服务器独立于授权服务器，且使用 security.oauth2.resource.user-info-uri 配置
+
+源码入口-OAuth2-授权服务器：
+
+- AuthorizationEndpoint：授权码模式请求授权码
+  - GET /oauth/authorize 端点：接收授权码请求
+  - POST /oauth/authorize 端点：用户批准授权后进入该端点
+- TokenEndpoint：请求访问令牌
+  - /oauth/token 端点：如果开启了表单客户端认证，客户端模式会先走 ClientCredentialsTokenEndpointFilter，再走这里
+- CheckTokenEndpoint：检查访问令牌有效性
+  - /oauth/check_token 端点
+
+- WhitelabelApprovalEndpoint：显示用户批准页
+  - /oauth/confirm_access 端点
+- WhitelabelErrorEndpoint：显示错误页
+  - /oauth/error 端点
+- TokenKeyEndpoint：访问令牌是 JWT 格式的话，会走这里
+  - /oauth/token_key 端点
+
+
+
+OAuth2AuthorizationRequestRedirectFilter 主要有以下两个功能：
+
+1. 通过 OAuth2AuthorizationRequestResolver 解析授权请求
+2. 保存授权请求到 AuthorizationRequestRepository
+3. 重定向至用户授权地址
+
+OAuth2LoginAuthenticationProvider 主要有以下两个功能：
+
+1. 通过授权码交换访问令牌：通过 OAuth2AccessTokenResponseClient 接口请求 tokenUri，默认实现类是 DefaultAuthorizationCodeTokenResponseClient，也可自定义实现 OAuth2AccessTokenResponseClient 接口。
+2. 通过访问令牌请求用户信息：通过 OAuth2UserService 接口请求 userInfoUri，默认实现类是 DefaultOAuth2UserService，返回结果是 OAuth2User 接口类。OAuth2UserService 和 OAuth2User 均可自定义实现。
+
+
+
 
 
 # Boot 篇

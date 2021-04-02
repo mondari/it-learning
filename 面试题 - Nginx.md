@@ -4,6 +4,17 @@
 
 # Nginx
 
+## Nginx 能做什么
+
+- 反向代理（核心指令 proxy_pass）
+- 负载均衡（核心指令 upstream）
+- HTTP 服务器
+- 正向代理
+
+## *架构
+
+参考：http://www.aosabook.org/en/nginx.html
+
 ## location 匹配顺序
 
 ### 语法规则
@@ -115,7 +126,7 @@ location / {
 
 ## server_name 匹配顺序
 
-注意：server_name 可以配置为域名，也可以配置为 IP。如果配置为域名，需要到系统本地 hosts 中配置 IP
+注意：server_name 可以配置为域名，也可以配置为 IP。如果配置为域名，需要到系统本地 hosts 中配置 IP。如果代理的服务器与 Nginx 同一台服务器，则设为 localhost。
 
 1. 准确匹配
 
@@ -184,13 +195,6 @@ server {
     listen 80;
     location / {
         proxy_pass http://$host$request_uri; #设定代理服务器的协议和地址
-        proxy_set_header HOST $host;
-        proxy_buffers 256 4k;
-        proxy_max_temp_file_size 0k;
-        proxy_connect_timeout 30;
-        proxy_send_timeout 60;
-        proxy_read_timeout 60;
-        proxy_next_upstream error timeout invalid_header http_502;
     }
 }
 server {
@@ -199,12 +203,6 @@ server {
     listen 443;
     location / {
         proxy_pass https://$host$request_uri; #设定代理服务器的协议和地址
-        proxy_buffers 256 4k;
-        proxy_max_temp_file_size 0k;
-        proxy_connect_timeout 30;
-        proxy_send_timeout 60;
-        proxy_read_timeout 60;
-        proxy_next_upstream error timeout invalid_header http_502;
     }
 }
 ```
@@ -212,6 +210,10 @@ server {
 参考：[nginx正向代理配置详解](https://cloud.tencent.com/developer/article/1521322)
 
 ## 反向代理与负载均衡
+
+### HTTP 反向代理和负载均衡
+
+Nginx HTTP 反向代理使用的模块是 ngx_http_proxy_module，核心指令是 proxy_pass；负载均衡使用的模块是 ngx_http_upstream_module，核心指令是 upstream。示例如下：
 
 ```nginx
 http {
@@ -229,14 +231,37 @@ http {
         location / {
             #反向代理指令
             proxy_pass http://backend;
+            #一般会加下面的指令设置HTTP请求头，也可以不加
+            proxy_set_header Host      $host:$server_port;
+            proxy_set_header X-Real-IP $remote_addr;
         }
     }
 }
 ```
 
+参考：
+
+https://nginx.org/en/docs/http/load_balancing.html
+
+https://nginx.org/en/docs/http/ngx_http_proxy_module.html
+
+https://nginx.org/en/docs/http/ngx_http_upstream_module.html
+
+### TCP、UDP反向代理和负载均衡
+
+Nginx 自 1.9.0 版本起支持 TCP 反向代理和负载均衡，自 1.9.13 版本起支持 UDP 反向代理和负载均衡。
+
+与 HTTP 不同，TCP 和 UDP 反向代理使用的模块是 ngx_stream_proxy_module，负载均衡使用的模块是 ngx_stream_upstream_module。
 
 
-## 负载均衡策略
+
+参考：
+
+https://nginx.org/en/docs/stream/ngx_stream_proxy_module.html
+
+https://nginx.org/en/docs/stream/ngx_stream_upstream_module.html
+
+### 负载均衡策略
 
 Nginx 负载均衡是通过 upstream 模块来实现的，内置了三种负载策略。
 
@@ -254,7 +279,7 @@ Nginx 会统计哪些服务器的连接数最少，然后将请求优先分配�
 
 参考：https://nginx.org/en/docs/http/load_balancing.html
 
-## WebSocket 转发配置
+## WebSocket 代理
 
 ```nginx
 location /chat/ {
@@ -267,9 +292,52 @@ location /chat/ {
 
 参考：https://nginx.org/en/docs/http/websocket.html
 
-## *HTTPS
+## 配置 HTTPS 服务器
 
-## *80端口转443端口
+```nginx
+server {
+    listen              80;
+    #必须定义一个ssl监听端口
+    listen              443 ssl;
+    server_name         www.example.com;
+    #指定ssl证书位置
+    ssl_certificate     www.example.com.crt;
+    #指定ssl证书私钥
+    ssl_certificate_key www.example.com.key;
+}
+```
+
+
+
+参考：https://nginx.org/en/docs/http/configuring_https_servers.html
+
+## 80端口重定向到443端口
+
+80 端口重定向到 443 端口，也就是 http 访问自动跳转到 https。
+
+```nginx
+#以下为核心配置
+server {
+    listen 80;
+    server_name www.example.com;
+    rewrite ^(.*)$ https://${server_name}$1 permanent; 
+}
+#以上为核心配置
+
+server {
+    listen 443;
+    server_name www.example.com;
+    root /home/wwwroot;
+    ssl on;
+    ssl_certificate /etc/nginx/certs/server.crt;
+    ssl_certificate_key /etc/nginx/certs/server.key;
+    ....
+}
+```
+
+
+
+参考：https://blog.csdn.net/m0_37886429/article/details/72271983
 
 ## nginx-rtmp-module
 

@@ -1,5 +1,47 @@
 [TOC]
 
+## *MyBatis 整体架构
+
+1. 基础支持层
+2. 核心处理层
+3. 接口层
+
+参考：《MyBatis 技术内幕》
+
+## *MyBatis 核心组件
+
+参考：《MyBatis 3源码深度解析》
+
+## *MyBatis 初始化流程
+
+1. 解析主配置文件（mybatis-config-xml）
+
+   使用 XMLConfigBuilder 解析主配置文件，生成 Configuration 对象
+
+2. 解析映射配置文件中的配置（<cache-ref|cache|parameterMap|resultMap|sql>标签）
+
+   根据主配置文件中的 `<mappers>` 标签，找到对应的 mapper 映射配置文件，使用 XMLMapperBuilder 解析映射配置文件
+
+3. 解析映射配置文件中的 CRUD 标签（<select|update|insert|delete>标签）
+
+   使用 XMLStatementBuilder 解析映射配置文件中的 CRUD 标签，生成 MappedStatement 对象
+
+4. 解析 Mapper 接口
+
+   根据 Mapper 映射配置文件的命名空间，找到对应的 Mapper 接口，注册到 MapperRegistry 对象中。MapperRegistry 对象保存了 Mapper 接口 的 Class 对象，与 MapperProxyFactory 对象的对应关系。
+
+参考：《MyBatis 技术内幕》
+
+## *Mapper 接口方法执行过程
+
+1. MyBatis 启动时会为每个 Mapper 接口绑定一个 MapperProxyFactory 对象，
+
+
+
+MyBatis中Mapper的配置分为两部分，分别为Mapper接口和Mapper SQL配置。MyBatis通过动态代理的方式创建Mapper接口的代理对象，MapperProxy类中定义了Mapper方法执行时的拦截逻辑，通过MapperProxyFactory创建代理实例，MyBatis启动时，会将MapperProxyFactory注册到Configuration对象中。另外，MyBatis通过MappedStatement类描述Mapper SQL配置信息，框架启动时，会解析Mapper SQL配置，将所有的MappedStatement对象注册到Configuration对象中。通过Mapper代理对象调用Mapper接口中定义的方法时，会执行MapperProxy类中的拦截逻辑，将Mapper方法的调用转换为调用SqlSession提供的API方法。在SqlSession的API方法中通过Mapper的Id找到对应的MappedStatement对象，获取对应的SQL信息，通过StatementHandler操作JDBC的Statement对象完成与数据库的交互，然后通过ResultSetHandler处理结果集，将结果返回给调用者
+
+参考：《MyBatis 3源码深度解析》
+
 ## 缓存机制
 
 MyBatis 支持两级缓存，分别如下：

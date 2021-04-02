@@ -63,6 +63,7 @@
 
 `0` 或 `Home` 行首
 `$` 或 `End` 行末
+`^` 移动到行首非空字符
 `gg` 或 `<c-Home>` 文档首行 
 `G` - `<c-End>` 文档结尾
 `{count}G` 跳到第n行 
@@ -769,6 +770,8 @@ set ignorecase		"查找时忽略大小写
 set autoindent		"自动缩进
 set pastetoggle=<F2>	"按F2进入粘贴模式
 "set foldmethod=indent	"设置折叠方式
+set lines=40		"设置GVim窗口高度
+set columns=120		"设置GVim窗口宽度
 
 """"""""""""""""""""""
 "      Mappings      "
