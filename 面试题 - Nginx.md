@@ -42,11 +42,11 @@
 - 首先精确匹配 `=`
 - 其次前缀匹配 `^~`
 - 其次是按配置文件中顺序的正则匹配
-- 然后匹配不带任何修饰的前缀匹配。
+- 然后匹配不带任何修饰的前缀匹配
 - 最后是交给 `/` 通用匹配
 - 当有匹配成功时候，停止匹配，按当前匹配规则处理请求
 
-注意：前缀匹配，如果有包含关系时，按最大匹配原则进行匹配。比如在前缀匹配：location /dir01 与 location /dir01/dir02，如有请求 http://localhost/dir01/dir02/file 将最终匹配到 location /dir01/dir02
+注意：前缀匹配时，如果有包含关系时，按最大匹配原则进行匹配。比如在前缀匹配：location /dir01 与 location /dir01/dir02，如有请求 http://localhost/dir01/dir02/file 将最终匹配到 location /dir01/dir02
 
 ### 大神实例：
 
@@ -126,7 +126,9 @@ location / {
 
 ## server_name 匹配顺序
 
-注意：server_name 可以配置为域名，也可以配置为 IP。如果配置为域名，需要到系统本地 hosts 中配置 IP。如果代理的服务器与 Nginx 同一台服务器，则设为 localhost。
+server_name 指令是用来设置虚拟服务器的域名或 IP 地址。如果配置为域名，需要到系统本地 hosts 中配置 IP 地址。如果反向代理的负载是本地服务的话，可以直接用 localhost 或 127.0.0.1。
+
+server_name 的匹配顺序如下：
 
 1. 准确匹配
 
@@ -186,28 +188,58 @@ http://nginx.org/en/docs/varindex.html
 
 ## 正向代理
 
+默认 Nginx 不支持 HTTP 的 CONNECT 方法，所以不支持 HTTPS 正向代理，只支持 HTTP 正向代理。
+
 ```nginx
 server {
     #正向代理不能使用 server_name
+
+    #指定DNS服务器IP地址
+    resolver 114.114.114.114; 
     
-	#处理HTTP转发
-    resolver 114.114.114.114; #指定DNS服务器IP地址
+    #设置代理端口，不一定是80
     listen 80;
+    
     location / {
         proxy_pass http://$host$request_uri; #设定代理服务器的协议和地址
     }
 }
-server {
-    #处理HTTPS转发
-    resolver 114.114.114.114; #指定DNS服务器IP地址
-    listen 443;
-    location / {
-        proxy_pass https://$host$request_uri; #设定代理服务器的协议和地址
-    }
-}
+
 ```
 
-参考：[nginx正向代理配置详解](https://cloud.tencent.com/developer/article/1521322)
+如果想要 HTTPS 正向代理，需要添加 [ngx_http_proxy_connect_module](https://github.com/chobits/ngx_http_proxy_connect_module) 模块（需要编译）。
+
+```nginx
+server {
+     listen  443;
+
+     # dns resolver used by forward proxying
+     resolver  114.114.114.114;
+
+     # forward proxy for CONNECT request
+     proxy_connect;
+     proxy_connect_allow            443;
+     proxy_connect_connect_timeout  10s;
+     proxy_connect_read_timeout     10s;
+     proxy_connect_send_timeout     10s;
+
+     # forward proxy for non-CONNECT request
+     location / {
+         proxy_pass http://$host;
+         proxy_set_header Host $host;
+     }
+ }
+```
+
+注意，HTTP/2 中已经不支持 CONNECT 方法，所以只支持 HTTP/1.x 的 HTTPS 正向代理。
+
+参考：
+
+[nginx正向代理配置详解](https://cloud.tencent.com/developer/article/1521322)
+
+https://zhuanlan.zhihu.com/p/70459013
+
+http://tengine.taobao.org/document/proxy_connect.html
 
 ## 反向代理与负载均衡
 
@@ -299,11 +331,12 @@ server {
     listen              80;
     #必须定义一个ssl监听端口
     listen              443 ssl;
-    server_name         www.example.com;
-    #指定ssl证书位置
-    ssl_certificate     www.example.com.crt;
-    #指定ssl证书私钥
-    ssl_certificate_key www.example.com.key;
+    server_name         localhost;
+    #必须指定ssl证书位置
+    ssl_certificate     cert.pem;
+    #必须指定ssl证书私钥
+    ssl_certificate_key cert.key;
+    ....
 }
 ```
 

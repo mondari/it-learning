@@ -284,22 +284,11 @@ docker-compose -f docker-compose.yml up -d
 
 ### 部署常用服务
 
-docker-compose.yaml
+创建文件 docker-compose.yaml：
 
 ```yaml
 version: '3'
 services:
-  portainer:
-    image: portainer/portainer
-    container_name: portainer
-    command: -H unix:///var/run/docker.sock
-    restart: always
-    ports:
-      - 9000:9000
-      - 8000:8000
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
   mysql:
     image: mysql/mysql-server:8.0
     container_name: mysql
@@ -311,8 +300,6 @@ services:
       MYSQL_ROOT_HOST: '%'
     volumes:
       - /var/lib/mysql:/var/lib/mysql #数据目录挂载
-      - /var/log/mysql:/var/log/mysql #日志目录挂载
-      - /etc/mysql/conf.d:/etc/mysql/conf.d #配置目录挂载
   redis:
     image: redis:5.0
     container_name: redis
@@ -327,7 +314,6 @@ services:
     container_name: rabbitmq
     volumes:
       - /var/lib/rabbitmq:/var/lib/rabbitmq #数据目录挂载
-      - /var/log/rabbitmq:/var/log/rabbitmq #日志目录挂载
     environment:
       RABBITMQ_DEFAULT_USER: rabbitmq  #默认 guest
       RABBITMQ_DEFAULT_PASS: rabbitmq  #默认 guest
@@ -336,8 +322,14 @@ services:
       - 5672:5672
       - 15672:15672
     restart: always
-volumes:
-  portainer_data:
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    ports:
+    - 80:80
+    - 443:443
+
 ```
 
 ### 部署 ELK
@@ -417,7 +409,7 @@ docker volume create portainer_data
 docker run -dp 9000:9000 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer:latest
 # 新版本
 docker run -dp 9000:9000 --name=portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce
-# 另外还需要确保 IPv4 转发开启
+# 另外还需要确保开启 IPv4 转发
 ```
 
 注意：端口9000是Portainer用于UI访问的通用端口。端口8000专门由边缘代理用于反向隧道功能。如果不打算使用边缘代理，则不需要公开端口8000
@@ -1865,7 +1857,7 @@ make & make install
 
 ### 通过 docker-compose 安装
 
-deploy-nginx.yml
+创建文件 deploy-nginx.yml
 
 ```yaml
 nginx:
@@ -1878,8 +1870,40 @@ nginx:
   volumes:
   - /data/nginx/html:/usr/share/nginx/html #静态资源根目录挂载
   - /data/nginx/log:/var/log/nginx #日志目录挂载
-  - /data/nginx/conf/nginx.conf:/etc/nginx/nginx.conf #配置目录挂载
+  - /data/nginx/nginx.conf:/etc/nginx/nginx.conf #配置目录挂载（需要先创建配置文件）
 ```
+
+### Dockerfile 构建 Tengine 镜像
+
+默认 Nginx 和 Tengine 未编译 ngx_http_proxy_connect_module 模块，不支持 HTTPS 正向代理，所以这里手动编译一个 Tengine 镜像。
+
+```dockerfile
+FROM alpine:3.12
+
+ENV TENGINE_VERSION=2.3.2
+
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories && apk update && apk add --no-cache --virtual .build-deps gcc libc-dev make linux-headers gd-dev geoip-dev curl && apk add --no-cache --virtual .nginx-deps pcre-dev openssl-dev zlib-dev libxslt-dev && curl -L "http://tengine.taobao.org/download/tengine-$TENGINE_VERSION.tar.gz" -o tengine.tar.gz && mkdir -p /usr/src && tar -xzC /usr/src -f tengine.tar.gz && rm tengine.tar.gz && cd /usr/src/tengine-$TENGINE_VERSION && ./configure --add-module=./modules/ngx_http_proxy_connect_module && make -j$(getconf _NPROCESSORS_ONLN) && make install && ln -s /usr/local/nginx/sbin/nginx /usr/bin/nginx && apk del .build-deps && ln -sf /dev/stdout /usr/local/nginx/logs/access.log && ln -sf /dev/stderr /usr/local/nginx/logs/error.log
+
+EXPOSE 443 80
+
+STOPSIGNAL SIGQUIT
+
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+构建镜像：
+
+```
+docker build -t tengine .
+```
+
+
+
+参考：
+
+https://hub.docker.com/layers/axizdkr/tengine/latest/images/sha256-379c26e6d4d45760853c6af9fdc3a59e37436383b8e3b6e844340e41b9c477bf?context=explore
+
+https://github.com/nginxinc/docker-nginx/blob/master/mainline/alpine/Dockerfile
 
 ## OpenResty
 
@@ -1932,6 +1956,12 @@ make -j && make install
 ```
 
 参考：https://openresty.org/cn/installation.html
+
+### 通过 docker 安装
+
+```bash
+docker run -dp 80:80 --name openresty openresty/openresty:alpine
+```
 
 ## Kong
 
