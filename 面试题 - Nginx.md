@@ -287,6 +287,20 @@ Nginx 自 1.9.0 版本起支持 TCP 反向代理和负载均衡，自 1.9.13 版
 
 
 
+通过 63790 端口来 TCP 反向代理 Redis 的 6379 端口示例：
+
+```nginx
+stream {
+  server {
+    listen 63790;
+    #请将下面的redis替换为实际的redis服务IP地址
+    proxy_pass redis:6379;
+  }
+}
+```
+
+
+
 参考：
 
 https://nginx.org/en/docs/stream/ngx_stream_proxy_module.html
@@ -371,6 +385,12 @@ server {
 
 
 参考：https://blog.csdn.net/m0_37886429/article/details/72271983
+
+## 日志格式
+
+推荐使用 JSON 日志格式，清晰明了，也方便日志采集分析
+
+参考：https://github.com/openresty/docker-openresty/blob/master/nginx.conf
 
 ## nginx-rtmp-module
 

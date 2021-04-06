@@ -323,7 +323,7 @@ services:
       - 15672:15672
     restart: always
   nginx:
-    image: nginx:latest
+    image: openresty/openresty:alpine
     container_name: nginx
     restart: always
     ports:
@@ -2614,15 +2614,43 @@ systemctl start network-manager
 ### 防火墙开放端口
 
 ```bash
-// 开放端口
+# 开放端口
 firewall-cmd --add-port=80/tcp --zone=public --permanent
-// 重新加载配置
+# 重新加载配置
 firewall-cmd --reload
-// 查询是否开放
+# 查询是否开放
 firewall-cmd --query-port=80/tcp
-// 查询所有开放端口
+# 查询所有开放端口
 firewall-cmd --list-port
 ```
+
+### 防火墙端口映射
+
+使用 firewall-cmd 配置：
+
+```bash
+#添加端口映射（其中将本地6379端口映射到172.17.0.2容器的6379端口）
+firewall-cmd --add-forward-port=port=6379:proto=tcp:toport=6379:toaddr=172.17.0.2
+#删除端口映射
+firewall-cmd --remove-forward-port=port=6379:proto=tcp:toport=6379:toaddr=172.17.0.2
+```
+
+使用 iptables 配置：
+
+```bash
+# 允许流量进入容器（该规则链在 FORWARD 规则链中）
+iptables -A DOCKER -p tcp -d 172.17.0.2 --dport 6379 -j ACCEPT
+# 添加DNAT，外部网络才能访问容器（该规则链在 PREROUTING 规则链中）
+iptables -t nat -A DOCKER -p tcp --dport 6379 -j DNAT --to-destination 172.17.0.2:6379
+# 添加MASQUERADE，容器才能访问外部网络
+iptables -t nat -A POSTROUTING -p tcp -s 172.17.0.2 -d 172.17.0.2 --dport 6379 -j MASQUERADE
+# 删除上面的配置
+iptables -D DOCKER <number>
+iptables -t nat -D DOCKER <number>
+iptables -t nat -D POSTROUTING <number>
+```
+
+
 
 ### 为什么 Centos7 不带 ipconfig 和 netstat 命令？
 
