@@ -43,6 +43,12 @@ https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/
 
 参考：https://www.archlinux.org/releng/releases/
 
+## Centos Stream 安装源
+
+在用 Centos Stream CD 来安装 Centos Stream 时，需要指定安装源才能继续安装，否则只能使用 DVD 来安装。
+
+推荐使用阿里的安装源：http://mirrors.aliyun.com/centos/8-stream/BaseOS/x86_64/os/
+
 ## 配置 Bash
 
 ### .inputrc
@@ -75,6 +81,16 @@ yum install python-pip（默认安装pyhon-pip2）
 pip install --upgrade pip（更新pip）
 open-vm-tools.x86_64（[VMware 虚拟机包](https://github.com/vmware/open-vm-tools)）
 psmisc（内含 pstree）
+
+## 设置静态IP地址
+
+```bash
+nmcli connection modify ens33 ipv4.addresses 192.168.17.136/24
+nmcli connection modify ens33 ipv4.gateway 192.168.17.2
+nmcli connection modify ens33 ipv4.dns 114.114.114.114
+nmcli connection modify ens33 ipv4.method manual
+nmcli connection up ens33
+```
 
 ## 配置EPEL镜像
 
@@ -117,8 +133,10 @@ $ yum install neofetch
 
 ### 安装 Docker CE
 
+#### Centos
+
 ```bash
-// Uninstall old versions
+# Uninstall old versions
 sudo yum remove docker \
     docker-client \
     docker-client-latest \
@@ -128,31 +146,67 @@ sudo yum remove docker \
     docker-logrotate \
     docker-engine
                   
-// Install required packages                  
-sudo yum install -y yum-utils \
-  device-mapper-persistent-data \
-  lvm2
+# Install required packages                  
+sudo yum install -y yum-utils
   
-// Set up the stable repository.  
-// 这里改用阿里云的 docker-ce 仓库
+# Set up the stable repository.  
+# 这里改用阿里云的 docker-ce.repo 文件
 sudo yum-config-manager \
     --add-repo \
-    http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo  
-
-// Centos 8 还需要执行以下命令替换调 docker-ce.repo 文件中的系统版本，否则无法安装最新版本的 containerd.io
-sudo sed -i 's|centos/7|centos/8|' /etc/yum.repos.d/docker-ce.repo
+    http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+# 并将仓库地址替换
+sudo sed -i 's+download.docker.com+mirrors.tuna.tsinghua.edu.cn/docker-ce+' /etc/yum.repos.d/docker-ce.repo
     
-// Install the latest version of Docker Engine - Community and containerd    
+# Install the latest version of Docker Engine - Community and containerd    
 sudo yum install -y docker-ce docker-ce-cli containerd.io
 
-// 启动服务设为开机启动
+# 启动服务设为开机启动
 sudo systemctl enable --now docker
 
-// Verify
+# Verify
 sudo docker run hello-world
 ```
 
 参考：https://docs.docker.com/engine/install/centos/
+
+#### Fedora
+
+```bash
+# Uninstall old versions
+sudo dnf remove docker \
+    docker-client \
+    docker-client-latest \
+    docker-common \
+    docker-latest \
+    docker-latest-logrotate \
+    docker-logrotate \
+    docker-selinux \
+    docker-engine-selinux \
+    docker-engine
+                  
+# Install required packages                  
+sudo dnf -y install dnf-plugins-core
+  
+# Set up the stable repository.  
+# 这里改用阿里云的 docker-ce.repo 文件
+sudo dnf config-manager \
+    --add-repo \
+    http://mirrors.aliyun.com/docker-ce/linux/fedora/docker-ce.repo
+    
+# 并将仓库地址替换
+sudo sed -i 's+download.docker.com+mirrors.tuna.tsinghua.edu.cn/docker-ce+' /etc/yum.repos.d/docker-ce.repo
+
+# Install the latest version of Docker Engine - Community and containerd    
+sudo dnf install docker-ce docker-ce-cli containerd.io
+
+# 启动服务设为开机启动
+sudo systemctl enable --now docker
+
+# Verify（请先设置 Docker Hub 镜像加速器）
+sudo docker run hello-world
+```
+
+参考：https://docs.docker.com/engine/install/fedora/
 
 ### 设置 Docker Hub 镜像加速器
 
@@ -169,7 +223,7 @@ sudo tee /etc/docker/daemon.json <<-'EOF'
 EOF
 sudo systemctl daemon-reload
 sudo systemctl restart docker
-// 验证
+# 验证
 docker info
 ```
 
@@ -227,9 +281,11 @@ $ docker update --restart always <CONTAINER ID>
 
 - always - 无论退出状态是如何，都重启容器；
 
-### 开启 IPv4 forward 以访问外网
+### 开启 IPv4 转发以访问外网
 
-如果不开启 IPv4 forward，Docker 容器将无法访问外网，会提示“WARNING: IPv4 forwarding is disabled. Networking will not work”。
+一般 Docker 安装后会自动开启 IPv4 转发功能，无需手动开启。
+
+如果不开启 IPv4 转发，Docker 容器将无法访问外网，会提示 “WARNING: IPv4 forwarding is disabled. Networking will not work”。
 
 ```bash
 // 开启
@@ -281,56 +337,6 @@ docker-compose -f docker-compose.yml up -d
 - 用户名和密码
 - 数据卷映射：数据、日志、配置
 - 网络
-
-### 部署常用服务
-
-创建文件 docker-compose.yaml：
-
-```yaml
-version: '3'
-services:
-  mysql:
-    image: mysql/mysql-server:8.0
-    container_name: mysql
-    restart: always
-    ports:
-      - 3306:3306
-    environment:
-      MYSQL_ROOT_PASSWORD: toor
-      MYSQL_ROOT_HOST: '%'
-    volumes:
-      - /var/lib/mysql:/var/lib/mysql #数据目录挂载
-  redis:
-    image: redis:5.0
-    container_name: redis
-    command: redis-server --appendonly yes
-    restart: always
-    ports:
-      - 6379:6379
-    volumes:
-      - /var/lib/redis:/data #数据目录挂载
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    volumes:
-      - /var/lib/rabbitmq:/var/lib/rabbitmq #数据目录挂载
-    environment:
-      RABBITMQ_DEFAULT_USER: rabbitmq  #默认 guest
-      RABBITMQ_DEFAULT_PASS: rabbitmq  #默认 guest
-      # RABBITMQ_DEFAULT_VHOST: rabbitmq
-    ports:
-      - 5672:5672
-      - 15672:15672
-    restart: always
-  nginx:
-    image: openresty/openresty:alpine
-    container_name: nginx
-    restart: always
-    ports:
-    - 80:80
-    - 443:443
-
-```
 
 ### 部署 ELK
 
@@ -428,26 +434,19 @@ docker run -dp 9000:9000 --name=portainer --restart=always -v /var/run/docker.so
 
 Cockpit 是 Linux 的 Web 控制台。Centos 8 在安装时可以选择安装该服务。
 
-1. 安装 cockpit:
+```bash
+# 安装 cockpit:
+yum install cockpit
 
-   ```bash
-   $ yum install cockpit
-   ```
+# 启动 cockpit 服务:
+systemctl enable --now cockpit.socket
 
-2. 启动 cockpit 服务:
+# 打开防火墙:
+firewall-cmd --permanent --zone=public --add-service=cockpit
+firewall-cmd --reload
+```
 
-   ```bash
-   $ systemctl enable --now cockpit.socket
-   ```
-
-3. 打开防火墙:
-
-   ```bash
-   $ firewall-cmd --permanent --zone=public --add-service=cockpit
-   $ firewall-cmd --reload
-   ```
-   
-4. 访问  https://ip-address:9090，用户名和密码就是系统用户的账号和密码
+访问  https://ip-address:9090，用户名和密码就是系统用户的账号和密码
 
 ## Kubernetes
 
@@ -1243,12 +1242,12 @@ $ systemctl enable --now redis.service
 
 ```bash
 // start a redis instance
-$ docker run --name redis -p 6379:6379 -d redis
+$ docker run --name redis -p 6379:6379 -v redis-data -d redis:6-alpine
 // or start with persistent storage
-$ docker run --name redis -p 6379:6379 -d redis redis-server --appendonly yes
+$ docker run --name redis -p 6379:6379 -v redis-data -d redis:6-alpine redis-server --appendonly yes
 
 // 也可以使用另个镜像
-$ docker run -d -p 6379:6379 --name redis_database -e REDIS_PASSWORD=strongpassword centos/redis-5-centos7
+$ docker run -d -p 6379:6379 -v redis-data --name redis_database -e REDIS_PASSWORD=strongpassword centos/redis-5-centos7
 ```
 
 ### 通过源码包安装
@@ -1281,8 +1280,7 @@ bind 0.0.0.0
 $ sudo docker run -d --name rabbitmq \
 -p 5672:5672 -p 15672:15672 \
 -e RABBITMQ_DEFAULT_USER=rabbitmq -e RABBITMQ_DEFAULT_PASS=rabbitmq \
--v /var/lib/rabbitmq:/var/lib/rabbitmq -v /var/log/rabbitmq:/var/log/rabbitmq \
-rabbitmq:3-management
+-v rabbitmq-data rabbitmq:3-management-alpine
 
 ```
 
@@ -1619,6 +1617,18 @@ curl -X GET "localhost:9200/_cat/nodes?v&pretty"
 
 
 参考：https://www.elastic.co/guide/en/elasticsearch/reference/7.4/docker.html
+
+## InfluxDB
+
+### 通过 docker 安装
+
+```bash
+docker run --name influxdb -p 8086:8086 influxdb:2.0.4
+```
+
+启动后第一次访问 [localhost:8086](http://localhost:8086/)，会提示设置**Username**、**Password**、**Organization Name**、**Bucket Name**，这里统一设置为 influxdb。
+
+参考：https://docs.influxdata.com/influxdb/v2.0/get-started
 
 ## GitLab
 
@@ -2117,9 +2127,10 @@ $ docker run --name nacos-standalone -e MODE=standalone -e PREFER_HOST_MODE=host
 或
 
 ```bash
-$ git clone https://github.com/nacos-group/nacos-docker.git
-$ cd nacos-docker
-$ docker-compose -f example/standalone-derby.yaml up -d
+git clone https://github.com/nacos-group/nacos-docker.git
+cd nacos-docker
+export NACOS_VERSION=latest
+docker-compose -f example/standalone-derby.yaml up -d
 ```
 
 ### 测试
@@ -2127,22 +2138,34 @@ $ docker-compose -f example/standalone-derby.yaml up -d
 命令行执行以下命令：
 
 ```bash
-// 服务注册
+# 服务注册
 curl -X POST 'http://127.0.0.1:8848/nacos/v1/ns/instance?serviceName=nacos.naming.serviceName&ip=20.18.7.10&port=8080'
 
-// 服务发现
+# 服务发现
 curl -X GET 'http://127.0.0.1:8848/nacos/v1/ns/instance/list?serviceName=nacos.naming.serviceName'
 
-// 发布配置
+# 发布配置
 curl -X POST "http://127.0.0.1:8848/nacos/v1/cs/configs?dataId=nacos.cfg.dataId&group=test&content=HelloWorld"
 
-// 获取配置
+# 获取配置
 curl -X GET "http://127.0.0.1:8848/nacos/v1/cs/configs?dataId=nacos.cfg.dataId&group=test"
 ```
 
-浏览器访问 http://127.0.0.1:8848/nacos/，用户名和密码：nacos
 
-参考：https://github.com/nacos-group/nacos-docker/blob/master/README_ZH.md
+
+Nacos 控制台地址：http://127.0.0.1:8848/nacos/，默认用户名和密码为：nacos/nacos
+
+Prometheus 地址：http://127.0.0.1:9090/graph
+
+Grafana 地址：http://127.0.0.1:3000，默认用户名和密码为：admin/admin
+
+
+
+参考：
+
+https://github.com/nacos-group/nacos-docker/blob/master/README_ZH.md
+
+https://nacos.io/zh-cn/docs/monitor-guide.html
 
 ## Seata
 

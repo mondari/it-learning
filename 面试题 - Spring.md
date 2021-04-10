@@ -233,7 +233,7 @@ View 视图：根据 ModelAndView 中的 Model 渲染视图
 
 流程图如下：
 
-![img](assets/clipboard.png)
+![clipboard](面试题 - Spring.assets/clipboard.png)
 
 # Security 篇
 
