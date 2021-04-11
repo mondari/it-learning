@@ -1476,14 +1476,22 @@ $ docker run --name kibana -p 5601:5601 --net elasticsearch -d kibana:7.4.1
 // 安装 logstash
 $ docker run --rm -it -v ~/pipeline/:/usr/share/logstash/pipeline/ --name logstash -d logstash:7.4.2 
 // 方法一，提供 logstash.conf 文件
-$ docker run --rm -it -v ~/settings/:/usr/share/logstash/config/ --name logstash -d logstash:7.4.2 // 方法二，提供 logstash.yml 文件
+$ docker run --rm -it -v ~/settings/:/usr/share/logstash/config/ --name logstash -d logstash:7.4.2 
+// 方法二，提供 logstash.yml 文件
 $ docker run --rm -it -v ~/settings/logstash.yml:/usr/share/logstash/config/ --name logstash -d logstash.yml logstash:7.4.2
 ```
 
-安装监控工具
+
+
+参考：
+
+https://hub.docker.com/_/elasticsearch
+
+https://hub.docker.com/_/kibana
+
+### 监控工具
 
 ```bash
-// ###安装监控工具###
 // 这个监控工具需要保证ES在同一Docker Network才能使用 “http://elasticsearch:9200” 连接
 $ docker run -p 9800:9800 --net elasticsearch --name elastichd -d containerize/elastichd
 // 这两款监控工具只能通过 http://centos-vm://9200 打开（centos-vm是ES服务在宿主机的域名，即虚拟机在宿主机的域名，因为ES服务部署在虚拟机上）
@@ -1493,10 +1501,6 @@ $ docker run -p 1358:1358 --net elasticsearch --name dejavu -d appbaseio/dejavu
 
 参考：
 
-https://hub.docker.com/_/elasticsearch
-
-https://hub.docker.com/_/kibana
-
 https://hub.docker.com/r/mobz/elasticsearch-head
 
 https://github.com/360EntSecGroup-Skylar/ElasticHD 
@@ -1505,7 +1509,7 @@ https://hub.docker.com/r/appbaseio/dejavu
 
 
 
-logstash.conf 配置文件
+### logstash.conf 配置文件示例
 
 ```conf
 input {
