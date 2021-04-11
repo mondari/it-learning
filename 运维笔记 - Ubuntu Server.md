@@ -190,6 +190,155 @@ sudo rabbitmqctl delete_vhost <vhost>
 
 Ubuntu 官方支持的包版本是 3.6，而当前最新版本是 4.2
 
+## Fluentd
+
+### 提高文件描述符数量上限
+
+```bash
+# 查询文件描述符数量上限
+ulimit -n
+# 设置成 65535
+cat > /etc/security/limits.d/fluentd.conf <<EOF
+root soft nofile 65536
+root hard nofile 65536
+* soft nofile 65536
+* hard nofile 65536
+EOF
+# 重启系统
+```
+
+### 配置内核参数
+
+```bash
+# 配置 Elasticsearch 所需内核参数
+echo "vm.max_map_count = 262144" > /etc/sysctl.d/99-elasticsearch.conf
+# 重新加载内核参数
+sudo sysctl --system
+# 查看是否生效
+sudo sysctl --values vm.max_map_count
+
+# 配置 Fluentd 所需内核参数
+cat > /etc/sysctl.d/99-fluentd.conf <<EOF
+net.core.somaxconn = 1024
+net.core.netdev_max_backlog = 5000
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+net.ipv4.tcp_wmem = 4096 12582912 16777216
+net.ipv4.tcp_rmem = 4096 12582912 16777216
+net.ipv4.tcp_max_syn_backlog = 8096
+net.ipv4.tcp_slow_start_after_idle = 0
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.ip_local_port_range = 10240 65535
+EOF
+# 重新加载内核参数
+sudo sysctl --system
+```
+
+### 开始安装
+
+```bash
+# 确保 Elasticsearch 依赖的 Java 版本为 1.8 以上
+java -version
+
+# 安装 Elasticsearch
+curl -O https://mirrors.huaweicloud.com/kibana/6.1.0/kibana-6.1.0-linux-x86_64.tar.gz
+tar -xf elasticsearch-6.1.0.tar.gz
+# 开启外网访问
+cat >> elasticsearch-6.1.0/config/elasticsearch.yml <<EOF
+network.host: 0.0.0.0
+EOF
+# 启动 Elasticsearch
+(cd elasticsearch-6.1.0 && ./bin/elasticsearch)
+
+# 安装 Kibana
+curl -O https://mirrors.huaweicloud.com/elasticsearch/6.1.0/elasticsearch-6.1.0.tar.gz
+tar -xf kibana-6.1.0-linux-x86_64.tar.gz
+# 开启外网访问
+cat >> kibana-6.1.0-linux-x86_64/config/kibana.yml <<EOF
+server.host: "0.0.0.0"
+EOF
+# 启动 Kibana
+(cd kibana-6.1.0-linux-x86_64 && ./bin/kibana)
+
+# 安装 Fluentd (td-agent)
+curl -L https://toolbelt.treasuredata.com/sh/install-ubuntu-focal-td-agent4.sh | sh
+# 安装 Fluentd 的 Elasticsearch 插件
+sudo /usr/sbin/td-agent-gem install fluent-plugin-elasticsearch --no-document
+```
+
+
+
+配置 rsyslogd 以发送日志到 fluentd。在 /etc/rsyslog.d/99-fluentd.conf (没有则新建) 添加以下一行：
+
+```
+*.* @127.0.0.1:42185
+```
+
+重启 rsyslog 服务：
+
+```
+sudo systemctl restart rsyslog
+```
+
+
+
+配置 Fluentd (td-agent) 以接收来自 rsyslog 的日志，并发送日志到 Elasticsearch。备份并编辑 `/etc/td-agent/td-agent.conf` 为以下内容：
+
+```conf
+# source 标记定义数据的来源
+# @type 指定使用的插件，port 表示监听的端口，tag 表示给接收的事件打上标签
+<source>
+  @type syslog
+  port 42185
+  tag syslog
+</source>
+
+# get logs from fluent-logger, fluent-cat or other fluentd instances
+# forward 插件接收TCP请求事件，而 http 插件接收http请求事件。
+<source>
+  @type forward
+</source>
+
+# match 标记定义数据的处理方式，需要指定匹配的 tag，这里匹配打上 syslog.*.* 标签的事件。
+<match syslog.**>
+  @type elasticsearch
+  logstash_format true
+  <buffer>
+    flush_interval 10s # for testing
+  </buffer>
+</match>
+```
+
+重启并测试 Fluentd (td-agent)：
+
+```bash
+sudo systemctl restart td-agent.service
+
+# 测试
+curl -X POST -d 'json={"json":"message"}' http://localhost:8888/debug.test
+tail /var/log/td-agent/td-agent.log
+```
+
+
+
+打开 Kibana 的控制台 http://localhost:5601 查看数据。
+
+
+
+参考：
+
+https://docs.fluentd.org/how-to-guides/free-alternative-to-splunk-by-fluentd
+
+https://docs.fluentd.org/installation/install-by-deb
+
+https://docs.fluentd.org/installation/before-install
+
+https://docs.fluentd.org/configuration/config-file
+
+https://www.fluentd.org/datasources
+
+https://www.fluentd.org/guides/recipes/rsyslogd-aggregation
+
 ## *ZooKeeper
 
 版本 3.4
