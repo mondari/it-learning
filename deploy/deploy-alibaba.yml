@@ -1,0 +1,42 @@
+version: '3'
+services:
+  nacos:
+    image: nacos/nacos-server:latest
+    container_name: nacos
+    env_file:
+      - ./config/nacos-standlone-mysql.env
+    volumes:
+      - ./nacos-logs/:/home/nacos/logs
+      - ./config/nacos.properties:/home/nacos/init.d/custom.properties
+    ports:
+      - "8848:8848"
+      - "9555:9555"
+    restart: always
+  seata-server:
+    image: seataio/seata-server:latest
+    hostname: seata-server
+    ports:
+      - 8091:8091
+    environment:
+      - SEATA_PORT=8091
+    expose:
+      - 8091
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    volumes:
+      - ./config/prometheus-standalone.yaml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - nacos
+    restart: on-failure
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    ports:
+      - 3000:3000
+    restart: on-failure
+volumes:
+  prometheus-data:
