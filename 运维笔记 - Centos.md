@@ -164,7 +164,7 @@ sudo yum install -y docker-ce docker-ce-cli containerd.io
 sudo systemctl enable --now docker
 
 # Verify
-sudo docker run hello-world
+sudo docker version
 ```
 
 参考：https://docs.docker.com/engine/install/centos/
@@ -184,7 +184,7 @@ sudo dnf remove docker \
     docker-engine-selinux \
     docker-engine
                   
-# Install required packages                  
+# Install required packages
 sudo dnf -y install dnf-plugins-core
   
 # Set up the stable repository.  
@@ -202,8 +202,8 @@ sudo dnf install docker-ce docker-ce-cli containerd.io
 # 启动服务设为开机启动
 sudo systemctl enable --now docker
 
-# Verify（请先设置 Docker Hub 镜像加速器）
-sudo docker run hello-world
+# Verify
+sudo docker version
 ```
 
 参考：https://docs.docker.com/engine/install/fedora/
@@ -221,13 +221,15 @@ sudo tee /etc/docker/daemon.json <<-'EOF'
     ]
 }
 EOF
+# systemd 重新加载配置
 sudo systemctl daemon-reload
+# docker 重启
 sudo systemctl restart docker
 # 验证
 docker info
 ```
 
-### Docker Hub 镜像加速器列表
+**Docker Hub 镜像加速器列表**
 
 | 镜像加速器                                                   | 镜像加速器地址                       | 专属加速器       | 其它加速                                                     |
 | ------------------------------------------------------------ | ------------------------------------ | ---------------- | ------------------------------------------------------------ |
@@ -242,7 +244,30 @@ docker info
 
 参考：[Docker Hub 镜像加速器](https://www.jianshu.com/p/5a911f20d93e)
 
+### 设置 cgroup driver
 
+推荐 systemd 取代 cgroupfs 为 cgroup driver：
+
+```bash
+# 检查 Cgroup Driver 是否为 systemd
+docker info
+
+# 不是则进行以下配置
+# 在前面设置镜像加速器的配置上作更改
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "registry-mirrors": [
+      "https://1nj0zren.mirror.aliyuncs.com",
+      "https://docker.mirrors.ustc.edu.cn",
+      "http://f1361db2.m.daocloud.io",
+      "https://registry.docker-cn.com"
+  ]
+}
+EOF
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+```
 
 ### 开启远程访问
 
@@ -263,80 +288,47 @@ firewall-cmd --add-port=2375/tcp --permanent && firewall-cmd --reload
 # DOCKER_HOST=tcp://REMOTE_DOCKER_IP:2375
 ```
 
-### 设置容器开机自启
-
-```bash
-// 在运行docker容器时可以加如下参数来保证每次docker服务重启后容器也自动重启：
-$ docker run --restart always <CONTAINER ID>
-
-// 如果已经启动了则可以使用如下命令：
-$ docker update --restart always <CONTAINER ID>
-```
-
---restart 具体参数值详细信息：
-
-- no - 容器退出时，不重启容器；
-
-- on-failure - 只有在非0状态退出时才从新启动容器，可设置失败次数，如 on-failure:3 失败重试3次；
-
-- always - 无论退出状态是如何，都重启容器；
-
 ### 开启 IPv4 转发以访问外网
 
-一般 Docker 安装后会自动开启 IPv4 转发功能，无需手动开启。
+**一般 Docker 安装后会自动开启 IPv4 转发功能，无需手动开启。**
 
 如果不开启 IPv4 转发，Docker 容器将无法访问外网，会提示 “WARNING: IPv4 forwarding is disabled. Networking will not work”。
 
 ```bash
+// 检查是否已经开启（为1表示已开启）
+$ sysctl net.ipv4.ip_forward
+net.ipv4.ip_forward = 1
+
 // 开启
-$ vim /etc/sysctl.conf:
+$ vim /etc/sysctl.conf
 net.ipv4.ip_forward = 1
 // 重新加载
 $ sysctl -p /etc/sysctl.conf
+
 // 或者通过以下命令开启 IPv4 转发
 $ sysctl -w net.ipv4.ip_forward=1
-// 检查
-$ sysctl net.ipv4.ip_forward
-net.ipv4.ip_forward = 1
-// 或者通过以下命令检查
-$ cat /proc/sys/net/ipv4/ip_forward
-1
 ```
+
+## Docker Compose
 
 ### 安装 Docker Compose
 
 ```bash
-// 下载 docker-compose
-// 使用 daocloud 镜像下载
-sudo curl -L https://get.daocloud.io/docker/compose/releases/download/1.27.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
-// 或使用码云的镜像加快下载速度
-sudo curl -L "https://gitee.com/mirrors/compose/releases/download/1.27.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-
-// 添加执行权限
+# 下载 docker-compose（这里使用 daocloud 的镜像加快下载速度）
+sudo curl -L https://get.daocloud.io/docker/compose/releases/download/1.27.1/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+# 添加执行权限
 sudo chmod +x /usr/local/bin/docker-compose
-// 创建软连接
+# 创建软连接
 sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
-// 安装命令补全
+# 安装命令补全
 sudo curl -L https://raw.githubusercontent.com/docker/compose/1.27.1/contrib/completion/bash/docker-compose -o /etc/bash_completion.d/docker-compose
-// 验证
-docker-compose --version
-// 使用 docker-compose 启动容器
+# 验证
+docker-compose version
+# 使用 docker-compose 启动容器
 docker-compose -f docker-compose.yml up -d
 ```
 
 参考：https://docs.docker.com/compose/install/
-
-## Docker Compose 
-
-使用 docker-compose 安装服务需要配置好以下内容：
-
-- 镜像名
-- 容器名
-- 开机自启动
-- 端口映射
-- 用户名和密码
-- 数据卷映射：数据、日志、配置
-- 网络
 
 ### 部署 ELK
 
@@ -374,6 +366,8 @@ volumes:
 
 ### 部署微服务
 
+microservice.yml
+
 ```yaml
 version: '3'
 services:
@@ -405,54 +399,11 @@ volumes:
   nacos_data:
 ```
 
-## Portainer
-
-Portainer 是 Docker 的 Web 管理界面。
-
-```bash
-docker volume create portainer_data
-# 旧版本
-docker run -dp 9000:9000 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer:latest
-# 新版本
-docker run -dp 9000:9000 --name=portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce
-# 另外还需要确保开启 IPv4 转发
-```
-
-注意：端口9000是Portainer用于UI访问的通用端口。端口8000专门由边缘代理用于反向隧道功能。如果不打算使用边缘代理，则不需要公开端口8000
-
-访问 http://localhost:9000，首次访问会提示设置用户名和密码（至少8位），分别设置为 admin 和 portainer。
-
-
-
-参考：
-
-1. https://www.portainer.io/installation/
-2. http://www.senra.me/docker-management-panel-series-portainer/
-3. https://docs.kvasirsg.com/centos-7/prefilight-configuration/how-to-enable-ip-forwarding
-
-## Cockpit
-
-Cockpit 是 Linux 的 Web 控制台。Centos 8 在安装时可以选择安装该服务。
-
-```bash
-# 安装 cockpit:
-yum install cockpit
-
-# 启动 cockpit 服务:
-systemctl enable --now cockpit.socket
-
-# 打开防火墙:
-firewall-cmd --permanent --zone=public --add-service=cockpit
-firewall-cmd --reload
-```
-
-访问  https://ip-address:9090，用户名和密码就是系统用户的账号和密码
-
 ## Kubernetes
 
 ### 安装前步骤
 
-安装 Minikube 和 Kubernetes 前先执行这一步。
+安装 Minikube 和 Kubernetes 前先执行这一步操作，且所有节点都必须执行这步操作。
 
 ```bash
 # 安装仓库（这里使用阿里的镜像）
@@ -471,9 +422,13 @@ setenforce 0
 # 关闭 SELinux（可选）
 sed -i "s/SELINUX=enforcing/SELINUX=disabled/g" /etc/selinux/config
 
-# 安装相关服务
-yum install -y kubelet kubectl kubeadm 
-
+# 卸载旧版本
+yum remove -y kubelet kubeadm kubectl
+# 安装三件套（注意 kubelet 版本号不能高于 kube-apiserver，且只能比 kube-apiserver 低两个小版本）
+export kubeversion=1.20.1
+yum install -y kubelet-${kubeversion} kubeadm-${kubeversion} kubectl-${kubeversion}
+# 确保 kubelet 的 cgroupDriver 为 systemd
+sed -i "s/cgroupfs/systemd/g" /var/lib/kubelet/config.yaml
 # 设置开机启动并启动 kubelet 服务
 systemctl enable kubelet && systemctl start kubelet
 
@@ -554,27 +509,6 @@ https://developer.aliyun.com/mirror/kubernetes?spm=a2c6h.13651102.0.0.3e221b11zw
 
 ### 安装 Kubernetes
 
-这里以安装 Kubernetes v1.20.0 版本为例。如无特别说明，以下配置 master 和 worker 节点均需配置
-
-#### 配置要求
-
-```bash
-# 查看CPU核心数（核心数不少于2）
-lscpu
-# 查看内存（至少2GB）
-free -h
-# 查看系统发行版（要求 CentOS 7.8 或 CentOS Stream 8）
-cat /etc/redhat-release
-
-# K8s 节点之中不可以有重复的主机名、MAC 地址或 product_uuid。
-# 查看主机名
-hostname
-# 查看 MAC 地址
-ip link 或 ifconfig -a
-# 查看 product_uuid
-sudo cat /sys/class/dmi/id/product_uuid
-```
-
 #### 设置主机名
 
 所有节点的主机名不允许相同，也不允许为 localhost
@@ -606,11 +540,20 @@ firewall-cmd --add-port=6443/tcp --add-port=2379-2380/tcp --add-port=10250-10252
 firewall-cmd --reload
 ```
 
+- 6443 是 apiserver 的端口
+- 2379-2380 是 etcd 服务端和客户端端口
+- 10250 是 kubelet 端口
+- 10251 是 kube-scheduler 端口
+- 10252 是 kube-controller-manager 端口
+
 防火墙需要开启的端口参考：https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#check-required-ports
 
 #### 配置 containerd
 
 ```bash
+# 检查 overlay 和 br_netfilter 模块是否被加载
+lsmod | grep -E "overlay|br_netfilter"
+# 若没有，则显式加载
 cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
 overlay
 br_netfilter
@@ -618,6 +561,7 @@ EOF
 
 sudo modprobe overlay
 sudo modprobe br_netfilter
+
 
 # Setup required sysctl params, these persist across reboots.
 cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
@@ -631,7 +575,7 @@ sudo sysctl --system
 
 
 ## Configure containerd
-sudo mkdir -p /etc/containerd
+mv /etc/containerd/config.toml /etc/containerd/config.toml.backup
 containerd config default | sudo tee /etc/containerd/config.toml
 
 sed -i "s#k8s.gcr.io#registry.aliyuncs.com/k8sxio#g"  /etc/containerd/config.toml
@@ -666,7 +610,7 @@ echo "${MASTER_IP}    ${APISERVER_NAME}" >> /etc/hosts
 - **APISERVER_NAME** 必须全为小写字母、数字、小数点，不能包含减号
 - **POD_SUBNET** 所使用的网段不能与 ***master节点/worker节点*** 所在的网段重叠。该字段的取值为一个 [CIDR](https://kuboard.cn/glossary/cidr.html) 值，如果您对 CIDR 这个概念还不熟悉，请仍然执行 export POD_SUBNET=10.100.0.1/16 命令，不做修改
 
-#### 开始安装
+#### 配置 master
 
 **初始化 master 节点**
 
@@ -680,8 +624,6 @@ curl -sSL https://kuboard.cn/install-script/v1.20.x/init_master.sh | sh -s 1.20.
 **检查 master 初始化结果**
 
 ```bash
-# 只在 master 节点执行
-
 # 执行如下命令，等待 3-10 分钟，直到所有的容器组处于 Running 状态
 watch kubectl get pod -n kube-system -o wide
 
@@ -696,9 +638,15 @@ kubectl get nodes -o wide
 kubeadm join apiserver.demo:6443 --token rtji8k.i5zdrr1xs0tolckg     --discovery-token-ca-cert-hash sha256:befa1a2369ffdb2be73b857ec2964d8c63d9ac50efa49c140ae84e206a949723
 ```
 
-然后在 worker 节点执行上面输出的命令
+#### 配置 worker
 
-**检查 worker 初始化结果**
+在 worker 节点执行上面输出的命令。建议加上 `--v=5` ，方便定位问题：
+
+```bash
+kubeadm join apiserver.demo:6443 --token rtji8k.i5zdrr1xs0tolckg     --discovery-token-ca-cert-hash sha256:befa1a2369ffdb2be73b857ec2964d8c63d9ac50efa49c140ae84e206a949723 --v=5
+```
+
+检查 worker 初始化结果
 
 ```bash
 // 在 master 节点执行
@@ -708,18 +656,23 @@ c8          Ready    <none>                 8d    v1.20.2
 centos-vm   Ready    control-plane,master   9d    v1.20.2
 ```
 
-#### 重新安装
+#### 配置 kubectl
 
-如果想重新安装，执行以下命令
+**kubectl 如果没配置好，执行的时候会报 `The connection to the server localhost:8080 was refused - did you specify the right host or port?` 错误**
+
+如果当前节点是 master 节点，执行以下操作：
 
 ```bash
-kubeadm reset -f
-rm -rf /etc/cni/net.d/ $HOME/.kube/config
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
 
-参考：https://kubernetes.io/zh/docs/reference/setup-tools/kubeadm/kubeadm-reset/
+如果当前节点是 worker 节点，则复制 master 节点的配置文件 /etc/kubernetes/admin.conf 或 `.kube/config` 到当前节点的 `$HOME/.kube/config` 。
 
-#### 查看版本
+
+
+查看 kubectl 与 apiserver 的版本：
 
 ```bash
 [root@centos-vm ~]# kubectl version
@@ -728,22 +681,67 @@ Server Version: version.Info{Major:"1", Minor:"20", GitVersion:"v1.20.1", GitCom
 ```
 
 - **Client Version**  表示的是 kubectl 的版本，如上所示是 v1.20.2；
-- **Server Version** 表示的是 Kubernetes 的版本，如上所示是 v1.20.1。
+- **Server Version** 表示的是 apiserver 的版本，如上所示是 v1.20.1。
 
-#### Master 默认不能部署 Pod
 
-执行以下命令查看 Master 的污点（下面的 `centos-vm` 是 Master 的名称）：
+
+查看集群状态：
+
+```bash
+[root@cstream ~]# kubectl cluster-info
+Kubernetes control plane is running at https://apiserver.demo:6443
+KubeDNS is running at https://apiserver.demo:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+Metrics-server is running at https://apiserver.demo:6443/api/v1/namespaces/kube-system/services/https:metrics-server:/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+```
+
+#### 参考
+
+https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+
+https://kuboard.cn/install/install-k8s.html
+
+https://docker_practice.gitee.io/zh-cn/kubernetes/setup/kubeadm.html
+
+### 重置节点
+
+```bash
+kubeadm reset -f
+rm -rf /etc/cni/net.d/
+# 删除 kubelet 配置文件
+rm -rf /etc/kubernetes/ /var/lib/kubelet 
+# 删除 kubectl 配置文件（注意 kubectl 将无法连接到 master）
+rm -rf $HOME/.kube/config
+```
+
+参考：https://kubernetes.io/zh/docs/reference/setup-tools/kubeadm/kubeadm-reset/
+
+### 移除 worker 节点
+
+```bash
+# 这里假设 worker 节点名为 c8
+kubectl drain c8 --delete-local-data --force --ignore-daemonsets
+kubectl delete node c8
+# 然后再重置 worker 节点
+```
+
+参考：https://blog.csdn.net/fanren224/article/details/86610799
+
+### 解除 master 不能部署 Pod 限制
+
+执行以下命令查看 master 的污点（下面的 `centos-vm` 是 master 的名称）：
 
 ```bash
 [root@centos-vm ~]# kubectl describe nodes centos-vm |grep -i taint
 Taints:             node-role.kubernetes.io/master:NoSchedule
 ```
 
-上面的 **NoSchedule** 污点导致了 Master 不能运行 Pod。
+上面的 **NoSchedule** 污点导致了 master 不能运行 Pod。
 
 
 
-执行以下命令消除 Master 的污点，让所有节点都能调度 Pod：
+执行以下命令消除 master 的污点，让所有节点都能调度 Pod：
 
 ```bash
 kubectl taint nodes --all node-role.kubernetes.io/master-
@@ -751,7 +749,7 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 
 
 
-如果想要让 Master 恢复不能部署 Pod，执行以下命令（下面的 `centos-vm` 是 Master 的名称）：
+如果想要让 master 恢复不能部署 Pod，执行以下命令（下面的 `centos-vm` 是 master 的名称）：
 
 ```bash
 kubectl taint nodes centos-vm node-role.kubernetes.io/master=true:NoSchedule
@@ -764,15 +762,6 @@ kubectl taint nodes centos-vm node-role.kubernetes.io/master=true:NoSchedule
 1. https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#%E6%8E%A7%E5%88%B6%E5%B9%B3%E9%9D%A2%E8%8A%82%E7%82%B9%E9%9A%94%E7%A6%BB
 2. https://docker_practice.gitee.io/zh-cn/kubernetes/setup/kubeadm.html#master-%E8%8A%82%E7%82%B9%E9%BB%98%E8%AE%A4%E4%B8%8D%E8%83%BD%E8%BF%90%E8%A1%8C-pod
 
-
-
-#### 参考
-
-https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
-
-https://kuboard.cn/install/install-k8s.html
-
-https://docker_practice.gitee.io/zh-cn/kubernetes/setup/kubeadm.html
 
 ### 安装 metrics-server
 
@@ -799,6 +788,49 @@ kube-scheduler-centos-vm            4m           22Mi
 kuboard-74c645f5df-zcq5c            0m           8Mi
 metrics-server-7dbf6c4558-4wbdx     1m           14Mi
 ```
+
+## Cockpit
+
+Cockpit 是 Linux 的 Web 控制台。Centos 8 在安装时可以选择安装该服务。
+
+```bash
+# 安装 cockpit:
+yum install cockpit
+
+# 启动 cockpit 服务:
+systemctl enable --now cockpit.socket
+
+# 打开防火墙:
+firewall-cmd --permanent --zone=public --add-service=cockpit
+firewall-cmd --reload
+```
+
+访问  https://ip-address:9090，用户名和密码就是系统用户的账号和密码
+
+## Portainer
+
+Portainer 是 Docker 的 Web 管理界面。
+
+```bash
+docker volume create portainer_data
+# 旧版本
+docker run -dp 9000:9000 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer:latest
+# 新版本
+docker run -dp 9000:9000 --name=portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce
+# 另外还需要确保开启 IPv4 转发
+```
+
+注意：端口9000是Portainer用于UI访问的通用端口。端口8000专门由边缘代理用于反向隧道功能。如果不打算使用边缘代理，则不需要公开端口8000
+
+访问 http://localhost:9000，首次访问会提示设置用户名和密码（至少8位），分别设置为 admin 和 portainer。
+
+
+
+参考：
+
+1. https://www.portainer.io/installation/
+2. http://www.senra.me/docker-management-panel-series-portainer/
+3. https://docs.kvasirsg.com/centos-7/prefilight-configuration/how-to-enable-ip-forwarding
 
 ## Rancher
 
@@ -2298,6 +2330,29 @@ services:
 2. https://kafka.apache.org/quickstart
 3. https://www.jianshu.com/p/ac03f126980e
 
+## Prometheus
+
+### 配置示例
+
+prometheus.yml
+
+```yaml
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 1m
+scrape_configs:
+- job_name: prometheus
+  honor_timestamps: true
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  metrics_path: /metrics
+  scheme: http
+  static_configs:
+  - targets:
+    - localhost:9090
+```
+
 ## FastDFS
 
 建议不要在桥接网络中运行 FastDFS，因为 tracker 服务会返回 storage 服务在桥接网络的 ip，如果 fastdfs 客户端不在该桥接网络，就会无法连接上 storage 服务
@@ -2688,7 +2743,9 @@ Centos 7 默认不安装 `net-tools` 工具包，推荐使用 `ip` 和 `ss` 命�
 ### 查看端口占用情况
 
 ```bash
-netstat -tunlp | grep 8000
+netstat -tunlp | grep 80
+# 或
+ss -tunpl | grep 80
 ```
 
 netstat 的选项如下：
@@ -2699,4 +2756,4 @@ netstat 的选项如下：
 - -l --listening：只显示监听状态的连接
 - -n --numeric：全部显示数字，不要解析为名称
 - -p --programs：显示 Socket 的程序名称和 PID
-- 
+

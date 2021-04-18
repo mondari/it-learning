@@ -1,16 +1,13 @@
+# Docker
+
 ## Docker 相关组件
 
-- [docker](https://github.com/docker/cli)：Docker 命令行工具，也是 Docker 客户端，负责将命令转为相应的 HTTP 请求去调用 Docker 服务端 API 接口。
-
-- [dockerd](https://github.com/moby/moby)：Docker 服务端，提供 API 接口给客户端调用。
-
-- [containerd](https://github.com/containerd/containerd)：负责管理容器的生命周期，如启动、停止、暂停、删除等。其本质上是将镜像转换成 OCI Bundle，然后交给 runc 去创建和启动容器。
-
-- containerd-shim：作为容器内进程的根进程
-
-- [runc](https://github.com/opencontainers/runc)：容器运行时（之前是 [libcontainer](https://github.com/docker-archive/libcontainer) 项目）。负责基于 OCI Bundle 来运行容器。
-
+- [docker (Docker CLI)](https://github.com/docker/cli)：Docker 命令行工具，也是 Docker 客户端，负责将命令转为相应的 HTTP 请求去调用 Docker 服务端 API 接口。
+- [dockerd (Dockeer Daemon)](https://github.com/moby/moby)：Docker 服务端，提供 API 接口给客户端调用。
 - [docker-proxy](https://github.com/moby/libnetwork)：dockerd 的子进程。负责容器端口映射的配置。
+- [containerd](https://github.com/containerd/containerd)：容器运行时。负责管理容器的生命周期，如启动、停止、暂停、删除等。其本质上是将镜像转换成 OCI Bundle，然后交给 runc 去创建和启动容器。
+- containerd-shim：作为容器内进程的根进程
+- [runc](https://github.com/opencontainers/runc)：命令行工具，负责创建 OCI Bundle 来运行容器。runc 的前身是 [libcontainer](https://github.com/docker-archive/libcontainer) 项目，现已合并进 runc 仓库。Libcontainer 负责创建和管理容器的生命周期。
 
 ## Dockerfile 容易混淆的指令
 
@@ -47,6 +44,37 @@ https://docs.docker.com/engine/reference/builder/
 docker container export：将容器作为一个镜像导出成tar包；
 
 docker image save|load|import：保存镜像成tar包|从tar包中加载镜像|从tar包中导入容器镜像，镜像的历史记录将清空，需手动指定标签，否则镜像标签为none
+
+## Bind Mount 对比 Named Volume
+
+Bind Mount（绑定挂载）和 Named Volume（命名卷）是 Docker 挂载存储卷（Volume）的两种方式，两者的区别如下：
+
+|                                              | Named Volume                | Bind Mount                    |
+| :------------------------------------------- | :-------------------------- | ----------------------------- |
+| 挂载宿主机的位置                             | Docker 自己选择             | 用户自己选择                  |
+| 挂载示例 (使用 `-v` 选项)                    | volume-name:/usr/local/data | /path/to/data:/usr/local/data |
+| Populates new volume with container contents | Yes                         | No                            |
+| 是否支持存储卷驱动（Volume Drivers）         | Yes                         | No                            |
+
+## 容器开机自启
+
+```bash
+// 在运行docker容器时可以加如下参数来保证每次docker服务重启后容器也自动重启：
+$ docker run --restart always <CONTAINER ID>
+
+// 如果已经启动了则可以使用如下命令：
+$ docker update --restart always <CONTAINER ID>
+```
+
+--restart 具体参数值详细信息：
+
+- no - 容器退出时，不重启容器；
+
+- on-failure - 只有在非0状态退出时才从新启动容器，可设置失败次数，如 on-failure:3 失败重试3次；
+
+- always - 无论退出状态是如何，都重启容器；
+
+# Kubernetes
 
 ## Kubernetes 基本概念
 
