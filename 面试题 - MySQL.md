@@ -858,6 +858,77 @@ LEFT JOIN (
 GROUP BY r.name 
 ```
 
+## 批量更新多张表某个字段
+
+由于业务要求，需要给所有表的 school_id 和 schoolId 字段更新为一个最新值。所以准备以下 SQL 脚本：
+
+```sql
+DELIMITER //
+-- 创建存储过程，并设置一个入参
+CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_school_id`(
+	IN `schoolId` BIGINT
+)
+BEGIN
+	-- 定于全局变量，分别是数据库名、表名、字段名
+	DECLARE schemaName VARCHAR (30);
+	DECLARE tableName VARCHAR (30);
+	DECLARE columnName VARCHAR (30);
+	-- 定义全局变量sql，就是每次循环执行的sql语句
+	DECLARE sqls VARCHAR ( 200 );
+	-- 定于全局变量done，默认为false，如果循环完毕，值变为true
+	DECLARE done INT DEFAULT FALSE;
+	
+	-- 声明游标，游标对应的结果集为查询出的所有符合条件的数据库名、表名、字段名
+	-- 请根据实际情况修改查询条件中 TABLE_SCHEMA、COLUMN_NAME 的值
+	DECLARE cursor_name CURSOR FOR
+		SELECT col.TABLE_SCHEMA AS schemaName, col.TABLE_NAME AS tableName,col.COLUMN_NAME AS columnName
+        FROM information_schema.`TABLES` tab
+        LEFT JOIN information_schema.COLUMNS col ON col.TABLE_NAME = tab.TABLE_NAME
+        WHERE tab.TABLE_TYPE = 'BASE TABLE'
+        AND tab.TABLE_SCHEMA in('ql_university','userorg') 
+        AND col.COLUMN_NAME in ('SCHOOLID','SCHOOL_ID') ;
+	-- 当循环结束后，就把全局变量done设置为true
+	DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+	-- 打开游标
+	OPEN cursor_name;
+	update_loop:LOOP
+		-- 游标当前指向的一条数据赋值给tableName
+		FETCH cursor_name INTO schemaName, tableName, columnName;
+		-- 修改表的数据的sql
+		SET sqls = CONCAT(' update ', schemaName, '.', tableName, ' set ', columnName, ' = ', schoolId);
+		-- 把要执行的sql语句赋值给@a变量
+		SET @a = sqls;
+		-- 预处理语句
+		PREPARE stmt FROM @a;
+		-- 执行预处理语句
+		EXECUTE stmt;
+		-- 删除预处理语句
+		DEALLOCATE PREPARE stmt;
+		-- 每次检查done变量，如果为true，就跳出循环
+		IF done THEN LEAVE update_loop;
+		END IF;
+	-- 结束循环
+	END LOOP;
+	-- 关闭游标
+	CLOSE cursor_name;
+
+	-- 其它业务SQL放下面
+	update `userorg`.org_school t set t.id = schoolId;
+	-- 其它业务SQL放上面
+END //
+DELIMITER ;
+```
+
+执行以上 SQL，然后再调用该存储过程（注意传参）即可更新：
+
+```sql
+CALL `proc_update_school_id`('985211')
+```
+
+
+
+参考：https://blog.csdn.net/Myc_CSDN/article/details/103198027
+
 # MySQL 8.0 新特性
 
 参考：[慕课网《玩转MySQL8.0新特性》](https://www.imooc.com/learn/1102)
