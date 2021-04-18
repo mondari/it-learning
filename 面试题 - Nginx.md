@@ -390,6 +390,27 @@ server {
 
 推荐使用 JSON 日志格式，清晰明了，也方便日志采集分析
 
+```nginx
+# Log in JSON Format
+log_format json_format
+	escape=json
+	'{ "timestamp": "$time_iso8601", '
+	'"remote_addr": "$remote_addr", '
+	'"body_bytes_sent": $body_bytes_sent, '
+	'"request_time": $request_time, '
+	'"request": "$request", '
+	'"response_status": $status, '
+	'"host": "$host",'
+	'"upstream_addr": "$upstream_addr",'
+	'"http_x_forwarded_for": "$http_x_forwarded_for",'
+	'"http_referrer": "$http_referer", '
+	'"http_user_agent": "$http_user_agent", '
+	'"http_version": "$server_protocol", '
+	'"nginx_access": true }';
+
+access_log logs/access.log json_format;
+```
+
 参考：https://github.com/openresty/docker-openresty/blob/master/nginx.conf
 
 ## nginx-rtmp-module
