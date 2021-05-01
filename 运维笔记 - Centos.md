@@ -2757,3 +2757,72 @@ netstat 的选项如下：
 - -n --numeric：全部显示数字，不要解析为名称
 - -p --programs：显示 Socket 的程序名称和 PID
 
+### ls 排序
+
+**按文件大小排序**
+
+```bash
+# 大文件排在前面
+ll -hS
+# 反过来，大文件排在后面
+ll -hrS
+```
+
+其中：
+
+`-S` 表示按文件大小排序
+
+`-h` 表示文件大小的单位换成更直观的单位
+
+`-r` 表示倒序排列
+
+**按修改时间排序**
+
+```bash
+# 最新修改的排在前面
+ll -t
+```
+
+**按创建时间排序**
+
+```bash
+ll -tc
+```
+
+**按访问时间排序**
+
+```bash
+ll -tu
+```
+
+### dd 命令
+
+#### 测试磁盘读写速度
+
+**测试磁盘写能力**
+
+```bash
+dd if=/dev/zero of=largefile bs=4k count=100000 oflag=direct
+```
+
+因为 /dev/zero 是一个伪设备，它只产生空字符流，对它不会产生IO，所以，IO都会集中在 of 文件中，of 文件只用于写，所以这个命令相当于测试磁盘的写能力。命令结尾添加 oflag=direct 将跳过内存缓存，添加 oflag=sync 将跳过硬盘缓存。bs=4k 表示一次读写的块大小为 4096 字节，加上 count=100000，这里总共写入的字节为 4096×100000=409600000 字节，将近 410 MB（按1M=1000KB 来算）或 391 MB（按1M=1024KB 来算） 。
+
+**测试磁盘读能力**
+
+```bash
+# 首先清除内存的缓存，确保测试文件是从磁盘读取
+sudo sh -c "sync && echo 3 > /proc/sys/vm/drop_caches"
+dd if=./largefile of=/dev/null bs=4k iflag=direct
+```
+
+
+
+注意：dd 只能提供一个大概的测试结果，而且是连续 I/O 而不是随机 I/O，理论上文件规模越大，测试结果越准确。 同时，iflag/oflag 提供 direct 模式，direct 模式是把写入请求直接封装成 I/O 指令发到磁盘，非 direct 模式只是把数据写入到系统缓存就认为 I/O 成功，并由操作系统决定缓存中的数据什么时候被写入磁盘。
+
+
+
+参考：
+
+https://www.cnblogs.com/sylar5/p/6649009.html
+
+https://www.gnu.org/software/coreutils/manual/html_node/dd-invocation.html
