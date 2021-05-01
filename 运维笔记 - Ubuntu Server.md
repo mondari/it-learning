@@ -93,8 +93,6 @@ sudo apt-get -y install docker-ce
 
 ```
 
-
-
 ### 安装 docker.io
 
 docker.io 是 Ubuntu 软件源中自带的包
@@ -131,6 +129,28 @@ EOF
 sudo systemctl restart docker
 // 验证
 docker info
+```
+
+### Docker Swarm
+
+在 manager 节点初始化 swarm：
+
+```bash
+ubuntu@ubuntu:~$ sudo docker swarm init
+[sudo] password for ubuntu:
+Swarm initialized: current node (q671h15fa7obh291ejf2mois4) is now a manager.
+
+To add a worker to this swarm, run the following command:
+
+    docker swarm join --token SWMTKN-1-4jbnqb7fbux4ptts0ob7vr3zteznxr6qdyrwvxatae9boyzzjy-2zf0natmzb4zp5nowra31e9y8 192.168.17.131:2377
+
+To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
+```
+
+在 worker 节点执行上面输出的命令，加入 swarm 节点：
+
+```bash
+docker swarm join --token SWMTKN-1-4jbnqb7fbux4ptts0ob7vr3zteznxr6qdyrwvxatae9boyzzjy-2zf0natmzb4zp5nowra31e9y8 192.168.17.131:2377
 ```
 
 ## RabbitMQ
