@@ -683,7 +683,7 @@ SELECT INET6_NTOA(UNHEX('ABCDEF0123456789ABCDEF0123456789'));
 
 ## 流程控制语句
 
-### 条件语句
+### *条件语句
 
 
 
@@ -726,9 +726,37 @@ CALL dorepeat(10);
 SELECT @i;
 ```
 
-### 选择语句
+### *选择语句
+
+## replace into 与 insert into on duplicate key update
+
+replace into 的语法：
+
+```sql
+replace into table values (v1, v2, ..., vN)
+```
+
+insert into on duplicate key update 语法：
+
+```mysql
+insert into table values (v1, v2, ..., vN) on duplicate key update c1=v1, c2=v2, ...., cN=vN 
+```
 
 
+
+**相同点**
+
+都是如果数据库中存在相同主键的记录，会先把记录删掉，然后再添加记录。影响行数是2。
+
+**不同点**
+
+replace into：不保留原记录的值。
+
+insert into on duplicate key update：保留除 update 语句字段外的值，然后把保留的值与需要更新的值合并，然后插入一条新记录。
+
+
+
+参考：https://www.jb51.net/article/180702.htm
 
 ## SQL 删除重复数据只保留一条
 
