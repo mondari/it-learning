@@ -2673,7 +2673,8 @@ Asia/Shanghai
        mount -o remount,rw /
        ```
    
-   
+
+参考：[Linux LVM简明教程](https://linux.cn/article-3218-1.html)
 
 ### 设置网卡自动启动
 

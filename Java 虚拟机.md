@@ -8,9 +8,9 @@
 
 ![image (9).png](Java 虚拟机.assets/CgqCHl7ORbmAQusYAABWJmj1sg8743.png)
 
-- **加载(Loading)**：根据类的全限定名称将**类的字节流**从**不同的数据源**读取到 JVM 中，转换为**方法区**运行时的数据结构，并创建该类的 **Class 对象**。这里的数据源包括 jar 包、class 文件，甚至是网络数据源等。
+- **加载(Loading)**：根据类的全限定名称将从**不同的数据源**读取**类的二进制数据**，然后通过 `ClassLoader.defineClass()` 转换成 **Class 对象**。这里的数据源包括 class 文件、jar 包、甚至是网络数据源等。
 
-  这个阶段用户可以通过自定义类加载器去实现自己的加载过程。
+  这个阶段用户可以自定义类加载器去实现自己的加载过程。
 
 - 连接(Linking)：将加载到 JVM 中的二进制字节流的类数据信息合并到 JVM 的运行时状态中。
 
@@ -31,6 +31,10 @@
 1. [第23讲：说一下 JVM 的内存布局和运行原理？](https://kaiwu.lagou.com/course/courseInfo.htm?courseId=59#/detail/pc?id=1783)
 2. [Chapter 5. Loading, Linking, and Initializing](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-5.html)
 3. https://www.cnblogs.com/xiaoxian1369/p/5498817.html
+
+## ClassNotFoundException vs NoClassDefFoundError
+
+参考：https://dzone.com/articles/java-classnotfoundexception-vs-noclassdeffounderro
 
 ## 类的生命周期
 
