@@ -3,11 +3,46 @@
 ## Docker 相关组件
 
 - [docker (Docker CLI)](https://github.com/docker/cli)：Docker 命令行工具，也是 Docker 客户端，负责将命令转为相应的 HTTP 请求去调用 Docker 服务端 API 接口。
-- [dockerd (Dockeer Daemon)](https://github.com/moby/moby)：Docker 服务端，提供 API 接口给客户端调用。
+
+- [dockerd (Dockeer Daemon)](https://github.com/moby/moby/tree/master/daemon)：Docker 服务端，提供 API 接口给客户端调用。
+
 - [docker-proxy](https://github.com/moby/libnetwork)：dockerd 的子进程。负责容器端口映射的配置。
-- [containerd](https://github.com/containerd/containerd)：容器运行时。负责管理容器的生命周期，如启动、停止、暂停、删除等。其本质上是将镜像转换成 OCI Bundle，然后交给 runc 去创建和启动容器。
+
+- docker-init
+
 - containerd-shim：作为容器内进程的根进程
-- [runc](https://github.com/opencontainers/runc)：命令行工具，负责创建 OCI Bundle 来运行容器。runc 的前身是 [libcontainer](https://github.com/docker-archive/libcontainer) 项目，现已合并进 runc 仓库。Libcontainer 负责创建和管理容器的生命周期。
+
+- [Containerd](https://github.com/containerd/containerd)：容器运行时。Containerd 是一个控制 runC 的守护进程，提供了一个命令行客户端 ctr 和 API，在一台机器上管理容器的生命周期，如容器的启动、停止、暂停、删除等。其本质上是将镜像转换成 OCI Bundle，然后交给 runc 去创建和运行容器。在 1.5 版本后，Containerd 还提供了一个与 Docker 兼容的命令行客户端，并且兼容 docker-compose 语法。
+
+- [runC](https://github.com/opencontainers/runc)：命令行工具，负责根据 [OCI](https://opencontainers.org/) 生成和运行容器。runC 的前身是 [Libcontainer](https://github.com/docker-archive/libcontainer) 项目，现已合并进 runC 仓库。Libcontainer 负责创建和管理容器的生命周期。
+
+  containerd 与 runc 的关系如图所示：![Screen Shot 2015-12-17 at 12.17.36 PM](面试题 - Docker.assets/containerd-arch.png)
+
+参考：
+
+https://mobyproject.org/projects/
+
+https://www.oschina.net/p/containerd
+
+[Containerd 1.5 发布：重磅支持 docker-compose！](https://www.oschina.net/news/141038/containerd-1-5-released)
+
+[终于可以像使用 Docker 一样丝滑地使用 Containerd 了！](https://www.infoq.cn/article/4fywdLmCo9qSRVKcWaZ4)
+
+## OCI
+
+开放容器倡议，全称是 Open Container Initiative，目的是围绕容器格式和运行时创建开放的行业标准。OCI 目前包含两个规范：运行时规范和镜像规范。
+
+**运行时规范**概述了如何在磁盘上运行一个已经解压的 OCI Bundle。具体的 OCI 实现是下载一个 OCI Image，将其解压成 OCI Bundle，然后交给 OCI Runtime 去运行。
+
+**镜像规范**定义了如何创建 OCI Image（通常由构建系统完成），并输出[镜像清单信息](https://github.com/opencontainers/image-spec/blob/master/manifest.md)、[镜像配置信息](https://github.com/opencontainers/image-spec/blob/master/config.md)和[文件系统层级信息](https://github.com/opencontainers/image-spec/blob/master/layer.md)。
+
+参考：
+
+https://opencontainers.org/about/overview/
+
+https://github.com/opencontainers/runtime-spec
+
+https://github.com/opencontainers/image-spec
 
 ## Dockerfile 容易混淆的指令
 
@@ -73,6 +108,44 @@ $ docker update --restart always <CONTAINER ID>
 - on-failure - 只有在非0状态退出时才从新启动容器，可设置失败次数，如 on-failure:3 失败重试3次；
 
 - always - 无论退出状态是如何，都重启容器；
+
+## OverlayFS 存储驱动
+
+注意一些书写上的区别，OverlayFS 是在 Linux 内核层面上支持的类似于 AUFS 的联合文件系统（即 Union File System）, 而 overlay 或 overlay2 是基于 OverlayFS 的 Docker 存储驱动。要想使用 overlay2，需要 4.0 以上版本的 Linux 内核，而对于 RHEL 或 Centos 需要 3.10.0-514 以上版本内核。
+
+
+
+**OverlayFS 的四个目录说明**
+
+LowerDir：指更低层目录，Docker 用作为镜像层，只读。注意最低层的镜像层是没有该 LowerDir。
+
+UpperDir：指更高层目录，Docker 用作为容器层，可写。
+
+MergedDir：LowerDir 和 UpperDir 的联合挂载，相当于两个目录的合并显示。
+
+WorkDir：OverlayFS 内部工作目录。
+
+
+
+参考：
+
+https://docs.docker.com/storage/storagedriver/overlayfs-driver/
+
+https://blog.csdn.net/luckyapple1028/article/details/77916194
+
+# Swarm
+
+## *基本概念
+
+manager、worker
+
+service
+
+task
+
+config
+
+secret
 
 # Kubernetes
 

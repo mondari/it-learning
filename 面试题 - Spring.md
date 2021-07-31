@@ -6,6 +6,8 @@
 
 Spring IOC、AOP、MVC、Boot、Cloud 微服务相关面试题统统放到这里。
 
+# Spring 篇
+
 ## Spring、Spring MVC、Spring Boot、Spring Cloud的联系和区别
 
 - Spring 是一个相对于 Java EE 来说更轻量级的 Web 开发框架，核心是控制反转（IOC）和面向切面（AOP）
@@ -85,7 +87,7 @@ public enum Propagation {
             C2.B();
         }
     }
-
+   
     class C2(){
         @Transactional(propagation = Propagation.REQUIRED)
         function B(){
@@ -180,10 +182,10 @@ Bean factory implementations should support the standard bean lifecycle interfac
 8. MessageSourceAware 's setMessageSource (only applicable when running in an application context)
 9. **如果 Bean 实现了 ApplicationContextAware 接口，则调用 Bean 的 setApplicationContext 方法 (only applicable when running in an application context)**
 10. 如果 Bean 实现了 ServletContextAware 接口，则调用 Bean 的 setServletContext 方法 (only applicable when running in a web application context)
-11. **如果 Bean 实现了 BeanPostProcessor 接口，则调用 Bean 的 postProcessBeforeInitialization 方法**
-12. **如果 Bean 实现了 InitializingBean 接口，则调用 Bean 的 afterPropertiesSet 方法**
-13. **配置文件中 init-method 配置指定的初始化方法**
-14. **如果 Bean 实现了 BeanPostProcessor 接口，则调用 Bean 的 postProcessAfterInitialization 方法**
+11. **如果 Bean 实现了 BeanPostProcessor 接口，则调用 Bean 的 postProcessBeforeInitialization 方法**（Initialization 指的是下面的”步骤13“）
+12. **如果 Bean 实现了 InitializingBean 接口，则调用 Bean 的 afterPropertiesSet 方法**（该接口方法是会在 Bean 所有的属性都设置之后调用，可以在此处添加自定义初始化，或检查是否已设置所有必需属性）
+13. **XML 配置文件中的 init-method 配置所指定的初始化方法**
+14. **如果 Bean 实现了 BeanPostProcessor 接口，则调用 Bean 的 postProcessAfterInitialization 方法**（Initialization 指的是上面的”步骤13“）
 
 
 
@@ -191,7 +193,7 @@ On shutdown of a bean factory, the following lifecycle methods apply:
 
 1. DestructionAwareBeanPostProcessor 的 postProcessBeforeDestruction 方法
 2. **如果 Bean 实现了 DisposableBean 接口，则调用 Bean 的 destroy 方法**
-3. **配置文件中 destroy-method 配置指定的销毁方法**
+3. **XML 配置文件中的 destroy-method 配置所指定的销毁方法**
 
 
 
@@ -205,25 +207,114 @@ On shutdown of a bean factory, the following lifecycle methods apply:
 - websocket：为每个 websocket 对象创建一个实例，仅在 web 相关的 ApplicationContext 中有效
 - application：为每个 ServletContext 对象创建一个实例，仅在 web 相关的 ApplicationContext 中有效
 
+## 数据绑定
+
+PropertyAccessor 接口 -> ConfigurablePropertyAccessor 接口 -> AbstractPropertyAccessor 抽象类 -> AbstractNestablePropertyAccessor 抽象类 -> **DirectFieldAccessor | BeanWrapperImpl**
+
+PropertyAccessor 接口 -> ConfigurablePropertyAccessor 接口 ->BeanWrapper 接口 -> **BeanWrapperImpl**
+
+PropertyAccessorFactory 负责生成 DirectFieldAccessor 和 BeanWrapperImpl 实例
+
+Introspector 内省与反射的区别：内省是针对 JavaBean，设置属性值时肯定会调用其 setter 方法，而反射是针对所有类，且设置属性值时不一定要调其 setter 方法，因为可以直接操作字段来设置值。
+
+DataBinder 的数据绑定最终依赖于 PropertyAccessor#setPropertyValues 方法。
+
+参考：
+
+[聊聊Spring中的数据绑定 --- 属性访问器PropertyAccessor和实现类DirectFieldAccessor的使用【享学Spring】](https://blog.csdn.net/f641385712/article/details/95481552)
+
+[聊聊Spring中的数据绑定 --- BeanWrapper以及Java内省Introspector和PropertyDescriptor【享学Spring】](https://blog.csdn.net/f641385712/article/details/95907073)
+
+[聊聊Spring中的数据绑定 --- DataBinder本尊（源码分析）【享学Spring】](https://blog.csdn.net/f641385712/article/details/96431460)
+
+[【小家Spring】聊聊Spring中的数据转换：Converter、ConversionService、TypeConverter、PropertyEditor](https://blog.csdn.net/f641385712/article/details/90702928)
+
+
+
+## *参数解析
+
+RequestMappingHandlerAdapter#invokeHandlerMethod -> InvocableHandlerMethod#invokeAndHandle
+
+
+
+InvocableHandlerMethod#invokeAndHandle 方法中会调用以下两个接口来处理请求参数和返回值：
+
+- HandlerMethodArgumentResolver：负责解析 HTTP 请求参数并传递给处理器方法。
+- HandlerMethodReturnValueHandler：负责处理处理器方法返回值。
+
+## *返回值处理
+
+RestController 返回值处理流程如下：
+
+1. RequestResponseBodyMethodProcessor#handleReturnValue
+2. AbstractMessageConverterMethodProcessor#writeWithMessageConverters 
+3. RequestResponseBodyAdviceChain#beforeBodyWrite
+4. 遍历所有的 HttpMessageConverter，选择合适的 HttpMessageConverter 调用其 write 方法。在 write 方法里就已经将序列化后的结果 flush 到输出流。
+
+## 配置读取
+
+配置一般存在 Property 中，这里的 Property 指 properties 文件、yaml 文件等以键值对形式存储数据的文件。
+
+PropertyResolver 接口 -> ConfigurablePropertyResolver 接口 -> AbstractPropertyResolver -> PropertySourcesPropertyResolver
+
+PropertyResolver 接口 -> Environment 接口 -> ConfigurableEnvironment 接口 -> AbstractEnvironment -> StandardEnvironment
+
+PropertyResolver 处理占位符最终是调用 PropertyPlaceholderHelper 工具类
+
+
+
+**PropertyResolver 的 `resolvePlaceholders()` 和 `getProperty()` 的区别**
+
+`resolvePlaceholders()` 的入参是占位符，即 `${}` 。它有如下特点：
+
+1. 若占位符里面的 key 不存在，就原样输出，不报错。若存在就使用值替换。
+2. 如果入参不是占位符，则原样输出~~
+3. 若是 `resolveRequiredPlaceholders()` 方法，占位符不存在就会抛错~
+
+`getProperty()` 的入参是 key，不是占位符
+
+1. 若根据 key 解析出 value 不为空，还会继续调用  `resolveRequiredPlaceholders()` 方法解析里面的占位符。若占位符不存在就会抛错。
+2. `getRequiredProperty()` 方法若key不存在就直接报错了~
+
+
+
+StringValueResolver 接口 -> EmbeddedValueResolver，负责解析字符串、SpEL 表达式。其最终调用的是 PropertySourcesPropertyResolver。
+
+
+
+参考：
+
+[关于Spring属性处理器PropertyResolver以及应用运行环境Environment的深度分析，强大的StringValueResolver使用和解析【享学Spring】](https://blog.csdn.net/f641385712/article/details/91380598)
+
+[【小家Spring】Spring中@Value注解有多强大？从原理层面去剖析为何它有如此大的“能耐“](https://blog.csdn.net/f641385712/article/details/91043955)
+
+[【小家Spring】SpEL你感兴趣的实现原理浅析spring-expression~(SpelExpressionParser、EvaluationContext、rootObject)](https://blog.csdn.net/f641385712/article/details/90812967)
+
+[【小家Spring】Spring中读取配置的方式，@Value、@PropertySource、@ConfigurationProperties使用详解](https://blog.csdn.net/f641385712/article/details/84452191)
+
 # MVC 篇
 
 ## Spring MVC 核心类说明
 
-DispatcherServlet 前端控制器：拦截请求并调用 doService->doDispatch 方法处理
+DispatcherServlet 前端控制器：拦截请求并执行 doService->doDispatch 方法。
 
-HandlerMapping 处理器映射：根据请求URL找到相应的 Handler
+HandlerMapping 处理器映射接口：存放请求与 Handler 的对应关系，并提供 getHandler 方法来根据请求找到对应的 Handler（封装在 HandlerExecutionChain 中）。
 
-HandlerExecutionChain 处理器执行链：包装 Handler 和 HandlerInterceptor 处理器拦截器
+HandlerExecutionChain 处理器执行链：封装 Handler 和 HandlerInterceptor 处理器拦截器。
 
-Handler 处理器：让具体的 Controller 执行
+HandlerMethod 处理器方法：Handler 中的一种，负责封装 Controller 中的某个方法。
 
-HandlerAdapter 处理器适配器：执行 Handler
+HandlerAdapter 处理器适配器接口：负责执行 Handler。Handler 可以是 Controller、HandlerMethod、HandlerFunction、HttpRequestHandler 甚至是 Servlet。
 
-ModelAndView：包装 Model 和 View
+ModelAndView：封装 Model 和 View。
 
-ViewResolver 视图解析器：根据 ModelAndView 中的视图名称找到相应的视图
+ViewResolver 视图解析器：根据 ModelAndView 中的视图名称找到相应的视图。
 
-View 视图：根据 ModelAndView 中的 Model 渲染视图
+View 视图：根据 ModelAndView 中的 Model 渲染视图。
+
+
+
+@RequestMapping 与 HandlerMethod 的对应关系存放在 AbstractHandlerMethodMapping 类的 mappingRegistry 中，其中 @RequestMapping 以 RequestMappingInfo 类的形式保存。
 
 ## Spring MVC 的执行流程
 
@@ -234,6 +325,14 @@ View 视图：根据 ModelAndView 中的 Model 渲染视图
 流程图如下：
 
 ![clipboard](面试题 - Spring.assets/clipboard.png)
+
+## HttpServletRequest 推荐获取方法
+
+推荐使用 `@Autowired` 依赖注入获取，除非不能依赖注入，才通过 `((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest()` 获取。
+
+参考：
+
+[Spring注入的成员属性HttpServletRequest是线程安全的吗？【享学Spring MVC】](https://fangshixiang.blog.csdn.net/article/details/104579949)
 
 # Security 篇
 

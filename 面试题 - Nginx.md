@@ -325,6 +325,16 @@ Nginx 会统计哪些服务器的连接数最少，然后将请求优先分配�
 
 参考：https://nginx.org/en/docs/http/load_balancing.html
 
+## 限流
+
+Nginx 限流是通过 ngx_http_limit_req_module 模块来实现的，该模块是基于漏桶算法原理实现。
+
+参考：
+
+https://nginx.org/en/docs/http/ngx_http_limit_req_module.html
+
+https://www.cnblogs.com/biglittleant/p/8979966.html
+
 ## WebSocket 代理
 
 ```nginx

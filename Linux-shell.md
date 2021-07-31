@@ -226,6 +226,8 @@ fi
 ## 循环语句
 
 ```shell
+#!/usr/bin/env bash
+
 for (( i = 0; i < 5; i++ )); do
     echo "$i"
 done
@@ -234,6 +236,8 @@ done
 或
 
 ```shell
+#!/usr/bin/env bash
+
 for i in {1..5} ; do
     echo "$i"
 done
@@ -242,6 +246,8 @@ done
 
 
 ```shell
+#!/usr/bin/env bash
+
 a=5
 b=0
 # 循环直到 a>b 条件不再满足
@@ -254,6 +260,8 @@ done
 或
 
 ```shell
+#!/usr/bin/env bash
+
 a=5
 b=0
 until [ $a -le $b ]; do

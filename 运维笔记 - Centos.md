@@ -314,14 +314,16 @@ $ sysctl -w net.ipv4.ip_forward=1
 ### 安装 Docker Compose
 
 ```bash
+# 设置版本
+export DOCKER_COMPOSE_VERSION=1.29.2
 # 下载 docker-compose（这里使用 daocloud 的镜像加快下载速度）
-sudo curl -L https://get.daocloud.io/docker/compose/releases/download/1.27.1/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+sudo curl -L https://get.daocloud.io/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
 # 添加执行权限
 sudo chmod +x /usr/local/bin/docker-compose
 # 创建软连接
 sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 # 安装命令补全
-sudo curl -L https://raw.githubusercontent.com/docker/compose/1.27.1/contrib/completion/bash/docker-compose -o /etc/bash_completion.d/docker-compose
+sudo curl -L https://raw.githubusercontent.com/docker/compose/${DOCKER_COMPOSE_VERSION}/contrib/completion/bash/docker-compose -o /etc/bash_completion.d/docker-compose
 # 验证
 docker-compose version
 # 使用 docker-compose 启动容器
@@ -1953,7 +1955,9 @@ https://github.com/nginxinc/docker-nginx/blob/master/mainline/alpine/Dockerfile
 
 ## OpenResty
 
-### 通过 yum 安装
+### 通过包管理安装
+
+Centos
 
 ```bash
 # add the yum repo:
@@ -1970,6 +1974,28 @@ sudo yum install -y openresty-resty openresty-opm
 # 安装 restydoc
 sudo yum install -y openresty-doc
 ```
+
+Fedora
+
+```bash
+sudo dnf install -y dnf-plugins-core
+sudo dnf config-manager --add-repo https://openresty.org/package/fedora/openresty.repo
+# 安装 openresty
+sudo dnf install -y openresty
+# 安装命令行工具resty
+sudo dnf install -y openresty-resty
+```
+
+
+
+配置环境变量 ~/.bashrc
+
+```bash
+PATH=/usr/local/openresty/nginx/sbin:$PATH
+export PATH
+```
+
+配置文件位置："/usr/local/openresty/nginx/conf/nginx.conf"
 
 OpenResty 的包源地址：https://opm.openresty.org/
 
@@ -2371,7 +2397,7 @@ sudo docker run -ti -d --name tracker -v ~/tracker_data:/fastdfs/tracker/data --
 sudo docker run -ti -d --name storage -v ~/storage_data:/fastdfs/storage/data -v ~/store_path:/fastdfs/store_path --net=host -e TRACKER_SERVER="<Tracker服务的IP地址>:22122" season/fastdfs storage
 ```
 
-由于 tracker 服务连接的是 host 网络，所以"<Tracker服务的IP地址>"这里填主机的 IP 地址即可。host 网络不支持使用域名
+由于 tracker 服务连接的是 host 网络，所以"<Tracker服务的IP地址>"这里填主机的 IP 地址即可。host 网络不支持使用 Docker 容器名称作为域名。
 
 ### 使用 ygqygq2/fastdfs-nginx 镜像
 
@@ -2672,7 +2698,6 @@ Asia/Shanghai
        // 如果在救援模式下，需要重新挂载根目录为读写模式才能扩容
        mount -o remount,rw /
        ```
-   
 
 参考：[Linux LVM简明教程](https://linux.cn/article-3218-1.html)
 
@@ -2827,3 +2852,68 @@ dd if=./largefile of=/dev/null bs=4k iflag=direct
 https://www.cnblogs.com/sylar5/p/6649009.html
 
 https://www.gnu.org/software/coreutils/manual/html_node/dd-invocation.html
+
+
+
+### *iptables 的基本概念
+
+首先需要理解 iptables 的四表五链。
+
+表（tables）：iptables 内置了4张表，即filter表、nat表、mangle表和raw表，分别用于实现包过滤，网络地址转换、包重构(更改)和数据跟踪处理功能。
+
+链（chains）：链是网络规则的集合。iptables 有5个规则链，分别是 PREROUTING、POSTROUTING、INPUT、OUTPUT、FORWARD。
+
+**网络包在规则链的走向示意图**：![table_subtraverse](运维笔记 - Centos.assets/table_subtraverse.jpg)
+
+
+
+**网络包在四表五链的走向示意图**：![tables_traverse](运维笔记 - Centos.assets/tables_traverse.jpg)
+
+
+
+SNAT：源网络地址转换，目的是更改网络包的源IP地址。
+
+DNAT：目标网络地址转换，目的是更改网络包的目标IP地址。
+
+MASQUERADE：IP伪装，目的和SNAT一样，但无需指定要更改的源IP地址，而是自动从 DHCP 中获取。
+
+参考：
+
+[iptables详解及一些常用规则](https://www.jianshu.com/p/ee4ee15d3658)
+
+https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html#DNATTARGET
+
+### LVM 基本概念
+
+**物理卷 (PV)**
+
+一块物理磁盘上的一个磁盘分区
+
+**卷组 (VG)**
+
+由一组物理卷组成
+
+**逻辑卷 (LV)**
+
+一个虚拟磁盘分区，映射到 /dev/mapper/ 目录下，由卷组来分配空间。虚拟磁盘分区也能像物理磁盘分区一样在逻辑卷上创建文件系统。
+
+**物理块 (PE)**
+
+物理卷中的最小连续区域，默认为 4MB。卷组是通过分配多个物理块的方式给逻辑卷分配空间。
+
+
+
+LVM 示意图：
+
+![img](运维笔记 - Centos.assets/lvm.png)
+
+参考：
+
+https://wiki.archlinux.org/title/LVM_(%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87)
+
+[Linux LVM简明教程](https://linux.cn/article-3218-1.html)
+
+### 内核升级
+
+参考：[CentOS 7 升级 Linux 内核](https://blog.csdn.net/kikajack/article/details/79396793)
+

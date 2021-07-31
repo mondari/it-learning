@@ -272,19 +272,18 @@ Error：是错误，一般指与虚拟机相关的问题，是**不可以预料*
 
 ## 检查性异常和运行时异常的区别
 
-检查性异常：是指编译期会检查的异常，必须捕获处理，如果不知道怎么处理则应该抛出该异常。
+检查性异常（Checked Exception）：编译器在编译时会检查的异常。这些异常要求必须捕获处理，如果不知道怎么处理，则应该抛出去。检查性异常有：
 
-运行时异常：是指编译期不进行检查，但运行时会出现的异常，不强制要求捕获处理。
+- IOException（比如 FileNotFoundException）
+- ClassNotFoundException
 
-常见的运行时异常有：
+运行时异常（Runtime Exception）：在编译时不会检查、但运行时会出现的异常。这些异常虽然不强制要求捕获处理，但能够在编码阶段去避免。运行时异常有：
 
 - NullPointerException 空指针异常
-- ArrayIndexOutOfBoundsException 数组越界异常
+- IndexOutOfBoundsException 越界异常
 - ClassCastException 类型转换异常
 - ArithmeticException 算术异常
 - IllegalArgumentException 非法传参异常
-- FileNotFoundException 找不到文件异常
-- ClassNotFoundException 找不到类异常
 
 ## ClassNotFoundException 和 NoClassDefFoundError 的区别
 ClassNotFoundException：当程序试图根据字符串名称通过以下三个方法加载类时，如果没找到类的定义就会抛出该异常。
@@ -673,19 +672,31 @@ private static List<String> randomStringArray(int size) {
 
 ## Cookie
 
-Expires 属性（有效期）：如果没设置该值，则默认 Cookie 在关闭浏览器时失效。
+Cookie 的属性如下：
 
-Domain 属性（作用域）：
+- Name/Value：Cookie 的名称及相对应的值。
 
-Path 属性：
+- Expires/Max-Age（有效期）：如果缺省该值，则**默认为 Session，即 Cookie 在浏览器关闭时失效**。否则，Cookie 会持久化到硬盘上直到有效期结束或手动删除。
 
-HttpOnly 属性：用于防止客户端脚本通过 document.cookie 属性访问 Cookie，有助于保护 Cookie 不被跨站脚本攻击窃取或篡改。
+- HttpOnly：只能通过 HTTP 访问，防止通过 JavaScript [`Document.cookie`](https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie) API访问 Cookie，有助于保护 Cookie 不被跨站脚本攻击窃取或篡改。
 
-Secure 属性：指定是否使用[HTTPS](https://baike.baidu.com/item/HTTPS/285356)安全协议发送 Cookie。使用HTTPS安全协议，可以保护 Cookie 在浏览器和Web服务器间的传输过程中不被窃取和篡改。
+- Secure：指定是否使用 HTTPS 安全协议发送 Cookie。使用 HTTPS 安全协议，可以保护 Cookie 在浏览器和Web服务器间的传输过程中不被窃取和篡改。
+- Domain（作用域）：指定哪个域名能访问该 Cookie。如果缺省，则默认当前域名，不包括子域名。比如某个 Cookie 设置了 `Domain=mozilla.org` ，则子域名 `developer.mozilla.org` 也能访问该 Cookie。
 
-SameSite 属性：
+- Path（作用域）：根据 URL 路径来匹配哪些请求能够携带该 Cookie。比如某个 Cookie 设置了 `Path=/docs` ，则以下 URL 路径的请求能携带该 Cookie：
+  - `/docs`
+  - `/docs/Web/`
+  - `/docs/Web/HTTP`
 
-参考：https://baike.baidu.com/item/cookie/1119
+- SameSite
+- SameParty
+- Priority
+
+参考：
+
+https://baike.baidu.com/item/cookie/1119
+
+https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
 
 ## Session
 
@@ -716,7 +727,7 @@ Cookie 和 Session 的区别：
 
 - Cookie 有大小和数量限制；而 Session 理论上没有限制，实际上取决于服务器的内存大小
 
-  一个 Cookie 的大小 4KB 左右（4095~4097字节之间），不同浏览器对 Cookie 数量的限制不同，以 IE 6 为例，每个站点能设置的 Cookie 总数不能超过 20 个。
+  一个 Cookie 的大小 4KB 左右（4095~4097字节之间），不同浏览器对 Cookie 数量的限制不同，以 IE 6 为例，每个域名能设置的 Cookie 总数不能超过 20 个。
 
 
 
@@ -735,21 +746,53 @@ https://www.cnblogs.com/belongs-to-qinghua/articles/11353228.html
 
 ## 跨域、CORS、CSRF
 
-跨域是一种浏览器同源安全策略，即浏览器单方面限制脚本的跨域访问。发生跨域时，请求是可以正常发起，后端也能正常处理，但在返回的时候会被浏览器拦截掉，导致响应不可用。能论证这一点的著名案例就是CSRF跨站攻击，因为即使发生跨域，仍然能够发起 CSRF 攻击，只要后端服务器能正常处理 CSRF 攻击的请求就达到了攻击的目的，响应可不可用没有关系。
+跨域是一种浏览器同源安全策略，即浏览器单方面限制脚本的跨域访问。发生跨域时，请求是可以正常发起，后端也能正常处理，但在返回的时候会被浏览器拦截掉，导致响应不可用。能论证这一点的著名案例就是 CSRF 攻击，因为即使发生跨域，仍然能够发起 CSRF 攻击，只要后端服务器能正常发起 CSRF 攻击的请求就达到了攻击的目的，响应可不可用没有关系。
 
 
 
-CORS（Cross-Origin Resource Sharing，跨源资源共享）是处理跨域的一种方式。其它处理跨域的方式有 JSONP、Nginx转发处理等
+CORS（Cross-Origin Resource Sharing，跨源资源共享）是处理跨域的一种方式，它由一系列 `Access-Control-*` 开头的 HTTP 头组成跨域请求的响应。其它处理跨域的方式有 JSONP、Nginx转发处理等。
 
 
 
-CSRF的全称是（Cross Site Request Forgery），即为跨站请求伪造，是一种利用浏览器在请求时会自动携带登录态的 Cookie 而发起的安全攻击。
+CSRF（Cross Site Request Forgery，跨站请求伪造）是一种利用浏览器在发送请求时会自动携带登录态的 Cookie 而发起的安全攻击。
+
+
+
+CORS 在处理跨域问题时，将请求分为两类，简单请求（simple request）和非简单请求（not-so-simple request）。
+
+只要同时满足以下两大条件，就属于简单请求。
+
+> （1) 请求方法是以下三种方法之一：
+>
+> - HEAD
+> - GET
+> - POST
+>
+> （2）HTTP的头信息不超出以下几种字段：
+>
+> - Accept
+> - Accept-Language
+> - Content-Language
+> - Last-Event-ID
+> - Content-Type：只限于三个值 `application/x-www-form-urlencoded`、`multipart/form-data`、`text/plain`
+
+只要不同时满足上面两个条件，都属于非简单请求。比如 PUT、DELETE 请求，以及常见的 Content-Type 为 `application/json` 的请求。
+
+
+
+简单请求在请求时会加 Origin 头声明请求来源，如果指定的源允许，服务器返回响应时会携带 **Access-Control-Allow-Origin** 头，否则不携带。
+
+非简单请求在请求时需要先发送 OPTIONS 请求（预检请求），通过 Origin 头声明请求的来源、**Access-Control-Request-Method** 头声明 HTTP 请求方法，如 PUT 请求方法。如果确认允许跨域请求，服务器返回响应时会携带 **Access-Control-Allow-Methods** 头表明服务器支持的所有跨域请求的方法。
 
 
 
 参考：
 
 《Spring Security 实战》“第8章 跨域与CORS”、“第9章 跨域请求伪造的防护”
+
+https://developer.mozilla.org/zh-CN/docs/Glossary/CORS
+
+http://www.ruanyifeng.com/blog/2016/04/cors.html
 
 ## 如何防止表单重复提交
 
