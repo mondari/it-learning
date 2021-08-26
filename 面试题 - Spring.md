@@ -2,9 +2,173 @@
 
 
 
-## 前言
+# 前言
 
-Spring IOC、AOP、MVC、Boot、Cloud 微服务相关面试题统统放到这里。
+JSP、Spring IOC、AOP、MVC、Boot、Cloud 微服务相关面试题统统放到这里。
+
+# JSP 篇
+
+## JSP 与 Servlet 的区别
+
+1. JSP 经 ApplicationServer 编译后就是 Servlet
+2. JSP 负责处理页面显示，Servlet 负责处理业务逻辑
+3. Servlet 中没有内置对象，必须通过 HttpServletRequest 对象，HttpServletResponse 对象以及 HttpServlet 对象得到 JSP 中的内置对象。
+
+## JSP 九大内置对象
+
+| 内置对象    | 类型                | 作用                                                    |
+| ----------- | ------------------- | ------------------------------------------------------- |
+| request     | HttpServletRequest  | HTTP请求                                                |
+| response    | HttpServletResponse | HTTP响应                                                |
+| session     | HttpSession         | HTTP会话                                                |
+| application | ServletContext      | 多个Servlet可以通过ServletContext对象来实现数据间的共享 |
+| pageContext | PageContext         | 获取其他八个内置对象                                    |
+| config      | ServletConfig       | 获取服务器的配置信息                                    |
+| page        | Object(this)        | 代表JSP页面本身                                         |
+| out         | JspWriter           | 在浏览器中打印信息                                      |
+| exception   | Throwable           | 异常                                                    |
+
+## Cookie
+
+Cookie 的属性如下：
+
+- Name/Value：Cookie 的名称及相对应的值。
+
+- Expires/Max-Age（有效期）：如果缺省该值，则**默认为 Session，即 Cookie 在浏览器关闭时失效**。否则，Cookie 会持久化到硬盘上直到有效期结束或手动删除。
+
+- HttpOnly：只能通过 HTTP 请求访问，不能通过 JS 脚本访问（如通过 JavaScript [`Document.cookie`](https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie) API 访问），有助于保护 Cookie 不被跨站脚本攻击窃取或篡改。
+
+- Secure：指定是否使用 HTTPS 安全协议发送 Cookie。使用 HTTPS 安全协议，可以保护 Cookie 在浏览器和Web服务器间的传输过程中不被窃取和篡改。
+- Domain（作用域）：指定哪个域名能访问该 Cookie。如果缺省，则默认当前域名，不包括子域名。比如某个 Cookie 设置了 `Domain=mozilla.org` ，则子域名 `developer.mozilla.org` 也能访问该 Cookie。
+
+- Path（作用域）：根据 URL 路径来匹配哪些请求能够携带该 Cookie。比如某个 Cookie 设置了 `Path=/docs` ，则以下 URL 路径的请求能携带该 Cookie：
+  - `/docs`
+  - `/docs/Web/`
+  - `/docs/Web/HTTP`
+
+- SameSite
+- SameParty
+- Priority
+
+参考：
+
+https://baike.baidu.com/item/cookie/1119
+
+https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
+
+## Session
+
+## Token
+
+Token 又叫令牌，一般在登录、认证的场景下使用。
+
+Token 使用步骤如下：
+
+1. 当用户登录成功时，服务端会生成一个 Token，将其保存到 Redis，并返回给客户端；
+
+2. 客户端拿到这个 Token 后，会保存到本地，下一次网络请求时会带上这个 Token；
+
+3. 服务端接收到请求后，会将客户端的 Token 值与数据库的 Token 值对比
+
+   - 存在，说明当前用户登录成功过，处于已登录状态
+   - 不存在，说明没有登录成功过，或者是登录失效，需要重新登录
+
+## Cookie、Session、Token的区别
+
+Cookie、Session 和 Token 都是保持会话的方式，三者有一定的区别。
+
+
+
+Cookie 和 Session 的区别：
+
+- Cookie 是保存在浏览器上，而 Session 是保存在服务器上
+
+- Cookie 有大小和数量限制；而 Session 理论上没有限制，实际上取决于服务器的内存大小
+
+  一个 Cookie 的大小 4KB 左右（4095~4097字节之间），不同浏览器对 Cookie 数量的限制不同，以 IE 6 为例，每个域名能设置的 Cookie 总数不能超过 20 个。
+
+
+
+Session 和 Token 的区别：
+
+- Session 是基于 Cookie，需要借助 Cookie 来保存 SessionId。由于基于 Cookie，所以有 CSRF 攻击的风险
+- Token 和 Session 原理差不多，但是 Token 可以保存在 Cookie、Local Storage 和 SessionStorage 中。并且 Token 是在请求头中手动携带，避免了 CSRF 攻击的风险。
+
+参考：
+
+https://www.jianshu.com/p/b4a9569823dd
+
+https://www.cnblogs.com/belongs-to-qinghua/articles/11353228.html
+
+
+
+## 跨域、CORS、CSRF
+
+跨域是一种浏览器同源安全策略，即浏览器单方面限制脚本的跨域访问。发生跨域时，请求是可以正常发起，后端也能正常处理，但在返回的时候会被浏览器拦截掉，导致响应不可用。能论证这一点的著名案例就是 CSRF 攻击，因为即使发生跨域，仍然能够发起 CSRF 攻击，只要后端服务器能正常发起 CSRF 攻击的请求就达到了攻击的目的，响应可不可用没有关系。
+
+
+
+CORS（Cross-Origin Resource Sharing，跨源资源共享）是处理跨域的一种方式，它由一系列 `Access-Control-*` 开头的 HTTP 头组成跨域请求的响应。其它处理跨域的方式有 JSONP、Nginx转发处理等。
+
+
+
+CSRF（Cross Site Request Forgery，跨站请求伪造）是一种利用浏览器在发送请求时会自动携带登录态的 Cookie 而发起的安全攻击。
+
+
+
+CORS 在处理跨域问题时，将请求分为两类，简单请求（simple request）和非简单请求（not-so-simple request）。
+
+只要同时满足以下两大条件，就属于简单请求。
+
+> （1) 请求方法是以下三种方法之一：
+>
+> - HEAD
+> - GET
+> - POST
+>
+> （2）HTTP的头信息不超出以下几种字段：
+>
+> - Accept
+> - Accept-Language
+> - Content-Language
+> - Last-Event-ID
+> - Content-Type：只限于三个值 `application/x-www-form-urlencoded`、`multipart/form-data`、`text/plain`
+
+只要不同时满足上面两个条件，都属于非简单请求。比如 PUT、DELETE 请求，以及常见的 Content-Type 为 `application/json` 的请求。
+
+
+
+简单请求在请求时会加 Origin 头声明请求来源，如果指定的源允许，服务器返回响应时会携带 **Access-Control-Allow-Origin** 头，否则不携带。
+
+非简单请求在请求时需要先发送 OPTIONS 请求（预检请求），通过 Origin 头声明请求的来源、**Access-Control-Request-Method** 头声明 HTTP 请求方法，如 PUT 请求方法。如果确认允许跨域请求，服务器返回响应时会携带 **Access-Control-Allow-Methods** 头表明服务器支持的所有跨域请求的方法。
+
+
+
+参考：
+
+《Spring Security 实战》“第8章 跨域与CORS”、“第9章 跨域请求伪造的防护”
+
+https://developer.mozilla.org/zh-CN/docs/Glossary/CORS
+
+http://www.ruanyifeng.com/blog/2016/04/cors.html
+
+## 如何防止表单重复提交
+
+**一、有很多的应用场景都会遇到重复提交问题，比如**：
+
+1、点击提交按钮两次。
+2、点击刷新按钮。
+3、使用浏览器后退按钮重复之前的操作，导致重复提交表单。
+4、使用浏览器历史记录重复提交表单。
+5、浏览器重复的 HTTP 请求。
+
+二、**防止表单重复提交的方法**
+
+1. 表单提交后将提交按钮设置为不可用。但是如果客户端禁止使用 JavaScript，这个方法无效。
+2. Post/Redirect/Get 模式。表单提交后进行页面重定向，转到提交成功信息页面。
+3. 数据库添加唯一索引。
+
+参考：[如何防止表单重复提交](https://www.cnblogs.com/wenlj/p/4951766.html)
 
 # Spring 篇
 
@@ -57,11 +221,116 @@ Spring 依赖注入的步骤：1.实例化 Bean 2.设置 Bean 的属性
 
 当实例化A并设置A的属性时，发现A依赖于B，而B还没实例化，于是就实例化B，并设置B的属性，此时发现B依赖于A，而A又已经实例化，于是将A设置成B的属性。此时B已经实例化并设置属性完成，所以最后将B设置为A的属性即可，这样就解决了循环依赖的问题。
 
-## *事务传播机制
+## Bean 的生命周期
 
-Spring 定义的事务传播类型：
+Bean 的生命周期除了以下两步，还包括 14 + 3 步
 
-```
+1. 实例化 Bean
+2. 设置 Bean 的属性值
+
+
+
+Bean factory implementations should support the standard bean lifecycle interfaces as far as possible. The full set of initialization methods and their standard order is:
+
+1. **如果 Bean 实现了 BeanNameAware 接口，则调用 Bean 的 setBeanName 方法**
+2. 如果 Bean 实现了 BeanClassLoaderAware 接口，则调用 Bean 的 setBeanClassLoader 方法
+3. **如果 Bean 实现了 BeanFactoryAware 接口，则调用 Bean 的 setBeanFactory 方法**
+4. EnvironmentAware 's setEnvironment
+5. EmbeddedValueResolverAware 's setEmbeddedValueResolver
+6. ResourceLoaderAware 's setResourceLoader (only applicable when running in an application context)
+7. ApplicationEventPublisherAware 's setApplicationEventPublisher (only applicable when running in an application context)
+8. MessageSourceAware 's setMessageSource (only applicable when running in an application context)
+9. **如果 Bean 实现了 ApplicationContextAware 接口，则调用 Bean 的 setApplicationContext 方法 (only applicable when running in an application context)**
+10. 如果 Bean 实现了 ServletContextAware 接口，则调用 Bean 的 setServletContext 方法 (only applicable when running in a web application context)
+11. **如果 Bean 实现了 BeanPostProcessor 接口，则调用 Bean 的 postProcessBeforeInitialization 方法**（Initialization 指的是下面的”步骤13“）
+12. **如果 Bean 实现了 InitializingBean 接口，则调用 Bean 的 afterPropertiesSet 方法**（该接口方法是会在 Bean 所有的属性都设置之后调用，可以在此处添加自定义初始化，或检查是否已设置所有必需属性）
+13. **XML 配置文件中的 init-method 配置所指定的初始化方法**
+14. **如果 Bean 实现了 BeanPostProcessor 接口，则调用 Bean 的 postProcessAfterInitialization 方法**（Initialization 指的是上面的”步骤13“）
+
+
+
+On shutdown of a bean factory, the following lifecycle methods apply:
+
+1. DestructionAwareBeanPostProcessor 的 postProcessBeforeDestruction 方法
+2. **如果 Bean 实现了 DisposableBean 接口，则调用 Bean 的 destroy 方法**
+3. **XML 配置文件中的 destroy-method 配置所指定的销毁方法**
+
+
+
+## Bean 的作用域
+
+- **singleton** 单例：Spring 容器中自始至终只有一个 Bean 实例
+- **prototype** 原型：每次从容器中获取 Bean 时，容器都会创建一个新的 Bean 实例
+- **request**：每个 HTTP 请求，容器都会创建一个 Bean 实例，仅在当前 HTTP 请求中有效
+- **session**：每个 HTTP Session，容器都会创建一个 Bean 实例，仅在当前 HTTP Session 中有效
+- globalSession：每个全局的 HTTP Session，容器都会创建一个 Bean 实例，仅在使用 Portlet 上下文时有效
+- websocket：为每个 websocket 对象创建一个实例，仅在 web 相关的 ApplicationContext 中有效
+- application：为每个 ServletContext 对象创建一个实例，仅在 web 相关的 ApplicationContext 中有效
+
+
+
+## 配置读取
+
+配置一般存在 Property 中，这里的 Property 指 properties 文件、yaml 文件等以键值对形式存储数据的文件。
+
+PropertyResolver 接口 -> ConfigurablePropertyResolver 接口 -> AbstractPropertyResolver -> PropertySourcesPropertyResolver
+
+PropertyResolver 接口 -> Environment 接口 -> ConfigurableEnvironment 接口 -> AbstractEnvironment -> StandardEnvironment
+
+PropertyResolver 处理占位符最终是调用 PropertyPlaceholderHelper 工具类
+
+
+
+**PropertyResolver 的 `resolvePlaceholders()` 和 `getProperty()` 的区别**
+
+`resolvePlaceholders()` 的入参是占位符，即 `${}` 。它有如下特点：
+
+1. 若占位符里面的 key 不存在，就原样输出，不报错。若存在就使用值替换。
+2. 如果入参不是占位符，则原样输出~~
+3. 若是 `resolveRequiredPlaceholders()` 方法，占位符不存在就会抛错~
+
+`getProperty()` 的入参是 key，不是占位符
+
+1. 若根据 key 解析出 value 不为空，还会继续调用  `resolveRequiredPlaceholders()` 方法解析里面的占位符。若占位符不存在就会抛错。
+2. `getRequiredProperty()` 方法若key不存在就直接报错了~
+
+
+
+StringValueResolver 接口 -> EmbeddedValueResolver，负责解析字符串、SpEL 表达式。其最终调用的是 PropertySourcesPropertyResolver。
+
+
+
+参考：
+
+[关于Spring属性处理器PropertyResolver以及应用运行环境Environment的深度分析，强大的StringValueResolver使用和解析【享学Spring】](https://blog.csdn.net/f641385712/article/details/91380598)
+
+[【小家Spring】Spring中@Value注解有多强大？从原理层面去剖析为何它有如此大的“能耐“](https://blog.csdn.net/f641385712/article/details/91043955)
+
+[【小家Spring】SpEL你感兴趣的实现原理浅析spring-expression~(SpelExpressionParser、EvaluationContext、rootObject)](https://blog.csdn.net/f641385712/article/details/90812967)
+
+[【小家Spring】Spring中读取配置的方式，@Value、@PropertySource、@ConfigurationProperties使用详解](https://blog.csdn.net/f641385712/article/details/84452191)
+
+## 事务篇
+
+先看这几篇文章：
+
+[【小家java】spring事务不生效的原因大解读](https://blog.csdn.net/f641385712/article/details/80445933)
+
+[【小家java】Spring事务嵌套引发的血案---Transaction rolled back because it has been marked as rollback-only](https://fangshixiang.blog.csdn.net/article/details/80445912)
+
+[【小家Spring】源码分析Spring的事务拦截器：TransactionInterceptor和事务管理器：PlatformTransactionManager](https://blog.csdn.net/f641385712/article/details/89673753)
+
+主要认识到以下这点：
+
+> 在同一个类中**一个无事务的方法调用另一个有事务的方法，事务是不会生效的**（这就是业界老问题：类内部方法调用事务不生效的问题原因）
+>
+> 这是因为不是通过代理对象来调用有事务的方法。解决方法：内部维护一个注入自己的Bean，然后通过这个属性来调用方法。
+
+### *事务传播机制
+
+TransactionDefinition 中定义了7种事务传播机制。
+
+```java
 package org.springframework.transaction.annotation;
 
 public enum Propagation {
@@ -161,53 +430,66 @@ public enum Propagation {
 1. [spring事务传播机制和隔离级别](https://blog.csdn.net/qq_17085835/article/details/84837253)
 2. [JavaGuide 33-事务属性详解](https://snailclimb.gitee.io/javaguide/#/docs/system-design/framework/spring/spring-transaction?id=_33-事务属性详解)
 
-## Bean 的生命周期
+# MVC 篇
 
-Bean 的生命周期除了以下两步，还包括 14 + 3 步
+## Spring MVC 核心类说明
 
-1. 实例化 Bean
-2. 设置 Bean 的属性值
+DispatcherServlet 前端控制器：拦截请求并执行 doService->doDispatch 方法。Dispatch 是分发、调度的意思，就是将请求分发给 Handler 来处理。
 
+Handler：表现形式有 Servlet、Controller 接口、HandlerMethod（即 @RequestMapping 标记的方法）、HttpRequestHandler 和 HandlerFunction（5.2版本新增）。
 
+HandlerMapping 处理器映射接口：存放请求与 Handler 的对应关系，并提供 getHandler 方法来根据请求找到对应的 Handler（和 HandlerInterceptor 一起封装在 HandlerExecutionChain 中返回）。@RequestMapping 与 HandlerMethod 的对应关系存放在 AbstractHandlerMethodMapping 类的 mappingRegistry 中，其中 @RequestMapping 以 RequestMappingInfo 类的形式保存。
 
-Bean factory implementations should support the standard bean lifecycle interfaces as far as possible. The full set of initialization methods and their standard order is:
+HandlerExecutionChain 处理器执行链：封装 Handler 和 HandlerInterceptor 处理器拦截器。
 
-1. **如果 Bean 实现了 BeanNameAware 接口，则调用 Bean 的 setBeanName 方法**
-2. 如果 Bean 实现了 BeanClassLoaderAware 接口，则调用 Bean 的 setBeanClassLoader 方法
-3. **如果 Bean 实现了 BeanFactoryAware 接口，则调用 Bean 的 setBeanFactory 方法**
-4. EnvironmentAware 's setEnvironment
-5. EmbeddedValueResolverAware 's setEmbeddedValueResolver
-6. ResourceLoaderAware 's setResourceLoader (only applicable when running in an application context)
-7. ApplicationEventPublisherAware 's setApplicationEventPublisher (only applicable when running in an application context)
-8. MessageSourceAware 's setMessageSource (only applicable when running in an application context)
-9. **如果 Bean 实现了 ApplicationContextAware 接口，则调用 Bean 的 setApplicationContext 方法 (only applicable when running in an application context)**
-10. 如果 Bean 实现了 ServletContextAware 接口，则调用 Bean 的 setServletContext 方法 (only applicable when running in a web application context)
-11. **如果 Bean 实现了 BeanPostProcessor 接口，则调用 Bean 的 postProcessBeforeInitialization 方法**（Initialization 指的是下面的”步骤13“）
-12. **如果 Bean 实现了 InitializingBean 接口，则调用 Bean 的 afterPropertiesSet 方法**（该接口方法是会在 Bean 所有的属性都设置之后调用，可以在此处添加自定义初始化，或检查是否已设置所有必需属性）
-13. **XML 配置文件中的 init-method 配置所指定的初始化方法**
-14. **如果 Bean 实现了 BeanPostProcessor 接口，则调用 Bean 的 postProcessAfterInitialization 方法**（Initialization 指的是上面的”步骤13“）
+HandlerAdapter 处理器适配器接口：负责执行 Handler。根据 `Handler` 来找到支持它的 `HandlerAdapter`，通过 `HandlerAdapter` 执行这个 `Handler` 得到 `ModelAndView` 对象。HandlerAdapter 对应 Handler 的五种表现形式分别有 SimpleServletHandlerAdapter、SimpleControllerHandlerAdapter、HttpRequestHandlerAdapter、HandlerFunctionAdapter、AbstractHandlerMethodAdapter 这五个实现类，前三个类的实现非常简单，都是对请求直接处理，没有参数校验、返回值处理等功能。最后一个类的子类 RequestMappingHandlerAdapter 才是我们最常用的，也是功能最多的。
+
+ModelAndView：封装 Model 和 View。
+
+ViewResolver 视图解析器：根据 ModelAndView 中的视图名称找到相应的视图。
+
+View 视图：根据 ModelAndView 中的 Model 渲染视图。
 
 
 
-On shutdown of a bean factory, the following lifecycle methods apply:
+参考：https://fangshixiang.blog.csdn.net/article/details/89844141
 
-1. DestructionAwareBeanPostProcessor 的 postProcessBeforeDestruction 方法
-2. **如果 Bean 实现了 DisposableBean 接口，则调用 Bean 的 destroy 方法**
-3. **XML 配置文件中的 destroy-method 配置所指定的销毁方法**
+## Spring MVC 的执行流程
+
+当用户向服务器发送请求，被**前端控制器**（DispatcherServlet）拦截，前端控制器将请求交给处理器映射（HandlerMapping)，处理器映射根据请求 URL 找到相应的 Handler，然后将 Handler 和 HandlerInterceptor 一起封装成 HandlerExecutionChain处理器执行链 返回给前端控制器，前端控制器根据 Handler 找到相应的 HandlerAdapter 去执行，执行完后会返回 ModelAndView 给前端控制器，前端控制器再把 ModleAndView 交给 ViewResolver 视图解析器找到相应的 View 视图对象，View 根据 ModelAndView 的中的 Model 渲染视图，最后前端控制器把渲染后的视图返回给用户。
+
+（执行 Handler 之前或之后 DispatcherServlet 会分别调用 HandlerExecutionChain 的 applyPreHandle 和 applyPostHandle 方法去执行注册过的 HandlerInterceptor）
+
+流程图如下：
+
+![clipboard](面试题 - Spring.assets/clipboard.png)
+
+## *请求映射
+
+请求映射是将请求映射到处理该请求的方法上。
+
+## *参数解析
+
+请求映射后，还要从请求中解析出方法的入参，才能让处理该请求的方法执行。在参数解析的过程中，还会伴随着**数据转换**（比如请求参数中传的是日期字符串，而方法入参是日期类型，则需要将字符串转换为日期类型）、**数据绑定**（比如方法入参是个实体类，则需要将请求参数绑定到实体类的属性中）。
+
+参数解析的位置：
+
+HandlerAdapter#handle -> AbstractHandlerMethodAdapter#handle -> RequestMappingHandlerAdapter#handleInternal -> RequestMappingHandlerAdapter#invokeHandlerMethod -> ServletInvocableHandlerMethod#invokeAndHandle
 
 
 
-## Bean 的作用域
+ServletInvocableHandlerMethod#invokeAndHandle 方法中会调用以下两个接口来处理请求参数和返回值：
 
-- **singleton** 单例：Spring 容器中自始至终只有一个 Bean 实例
-- **prototype** 原型：每次从容器中获取 Bean 时，容器都会创建一个新的 Bean 实例
-- **request**：每个 HTTP 请求，容器都会创建一个 Bean 实例，仅在当前 HTTP 请求中有效
-- **session**：每个 HTTP Session，容器都会创建一个 Bean 实例，仅在当前 HTTP Session 中有效
-- globalSession：每个全局的 HTTP Session，容器都会创建一个 Bean 实例，仅在使用 Portlet 上下文时有效
-- websocket：为每个 websocket 对象创建一个实例，仅在 web 相关的 ApplicationContext 中有效
-- application：为每个 ServletContext 对象创建一个实例，仅在 web 相关的 ApplicationContext 中有效
+- HandlerMethodArgumentResolver：负责解析 HTTP 请求参数并传递给处理器方法。
+- HandlerMethodReturnValueHandler：负责处理处理器方法返回值。
 
-## 数据绑定
+## *数据转换
+
+[【小家Spring】聊聊Spring中的数据转换类：Converter、ConverterFactory、ConversionService、ConversionServiceFactoryBean](https://blog.csdn.net/f641385712/article/details/90702928)
+
+[【小家Spring】聊聊Spring中的格式化：Formatter、AnnotationFormatterFactory、DateFormatter以及@DateTimeFormat...](https://blog.csdn.net/f641385712/article/details/90758540)
+
+## *数据绑定
 
 PropertyAccessor 接口 -> ConfigurablePropertyAccessor 接口 -> AbstractPropertyAccessor 抽象类 -> AbstractNestablePropertyAccessor 抽象类 -> **DirectFieldAccessor | BeanWrapperImpl**
 
@@ -229,18 +511,9 @@ DataBinder 的数据绑定最终依赖于 PropertyAccessor#setPropertyValues 方
 
 [【小家Spring】聊聊Spring中的数据转换：Converter、ConversionService、TypeConverter、PropertyEditor](https://blog.csdn.net/f641385712/article/details/90702928)
 
+[从原理层面掌握@InitBinder的使用【享学Spring MVC】](https://blog.csdn.net/f641385712/article/details/95473929)
 
-
-## *参数解析
-
-RequestMappingHandlerAdapter#invokeHandlerMethod -> InvocableHandlerMethod#invokeAndHandle
-
-
-
-InvocableHandlerMethod#invokeAndHandle 方法中会调用以下两个接口来处理请求参数和返回值：
-
-- HandlerMethodArgumentResolver：负责解析 HTTP 请求参数并传递给处理器方法。
-- HandlerMethodReturnValueHandler：负责处理处理器方法返回值。
+[聊聊Spring中的数据绑定 --- WebDataBinder、ServletRequestDataBinder、WebBindingInitializer...【享学Spring】](https://blog.csdn.net/f641385712/article/details/96450469)
 
 ## *返回值处理
 
@@ -251,84 +524,21 @@ RestController 返回值处理流程如下：
 3. RequestResponseBodyAdviceChain#beforeBodyWrite
 4. 遍历所有的 HttpMessageConverter，选择合适的 HttpMessageConverter 调用其 write 方法。在 write 方法里就已经将序列化后的结果 flush 到输出流。
 
-## 配置读取
-
-配置一般存在 Property 中，这里的 Property 指 properties 文件、yaml 文件等以键值对形式存储数据的文件。
-
-PropertyResolver 接口 -> ConfigurablePropertyResolver 接口 -> AbstractPropertyResolver -> PropertySourcesPropertyResolver
-
-PropertyResolver 接口 -> Environment 接口 -> ConfigurableEnvironment 接口 -> AbstractEnvironment -> StandardEnvironment
-
-PropertyResolver 处理占位符最终是调用 PropertyPlaceholderHelper 工具类
-
-
-
-**PropertyResolver 的 `resolvePlaceholders()` 和 `getProperty()` 的区别**
-
-`resolvePlaceholders()` 的入参是占位符，即 `${}` 。它有如下特点：
-
-1. 若占位符里面的 key 不存在，就原样输出，不报错。若存在就使用值替换。
-2. 如果入参不是占位符，则原样输出~~
-3. 若是 `resolveRequiredPlaceholders()` 方法，占位符不存在就会抛错~
-
-`getProperty()` 的入参是 key，不是占位符
-
-1. 若根据 key 解析出 value 不为空，还会继续调用  `resolveRequiredPlaceholders()` 方法解析里面的占位符。若占位符不存在就会抛错。
-2. `getRequiredProperty()` 方法若key不存在就直接报错了~
-
-
-
-StringValueResolver 接口 -> EmbeddedValueResolver，负责解析字符串、SpEL 表达式。其最终调用的是 PropertySourcesPropertyResolver。
-
-
-
-参考：
-
-[关于Spring属性处理器PropertyResolver以及应用运行环境Environment的深度分析，强大的StringValueResolver使用和解析【享学Spring】](https://blog.csdn.net/f641385712/article/details/91380598)
-
-[【小家Spring】Spring中@Value注解有多强大？从原理层面去剖析为何它有如此大的“能耐“](https://blog.csdn.net/f641385712/article/details/91043955)
-
-[【小家Spring】SpEL你感兴趣的实现原理浅析spring-expression~(SpelExpressionParser、EvaluationContext、rootObject)](https://blog.csdn.net/f641385712/article/details/90812967)
-
-[【小家Spring】Spring中读取配置的方式，@Value、@PropertySource、@ConfigurationProperties使用详解](https://blog.csdn.net/f641385712/article/details/84452191)
-
-# MVC 篇
-
-## Spring MVC 核心类说明
-
-DispatcherServlet 前端控制器：拦截请求并执行 doService->doDispatch 方法。
-
-HandlerMapping 处理器映射接口：存放请求与 Handler 的对应关系，并提供 getHandler 方法来根据请求找到对应的 Handler（封装在 HandlerExecutionChain 中）。
-
-HandlerExecutionChain 处理器执行链：封装 Handler 和 HandlerInterceptor 处理器拦截器。
-
-HandlerMethod 处理器方法：Handler 中的一种，负责封装 Controller 中的某个方法。
-
-HandlerAdapter 处理器适配器接口：负责执行 Handler。Handler 可以是 Controller、HandlerMethod、HandlerFunction、HttpRequestHandler 甚至是 Servlet。
-
-ModelAndView：封装 Model 和 View。
-
-ViewResolver 视图解析器：根据 ModelAndView 中的视图名称找到相应的视图。
-
-View 视图：根据 ModelAndView 中的 Model 渲染视图。
-
-
-
-@RequestMapping 与 HandlerMethod 的对应关系存放在 AbstractHandlerMethodMapping 类的 mappingRegistry 中，其中 @RequestMapping 以 RequestMappingInfo 类的形式保存。
-
-## Spring MVC 的执行流程
-
-当用户向服务器发送请求，被**前端控制器**（DispatcherServlet）拦截，前端控制器将请求交给处理器映射（HandlerMapping)，处理器映射根据请求 URL 找到相应的 Handler，然后将 Handler 和 HandlerInterceptor 一起封装成 HandlerExecutionChain处理器执行链 返回给前端控制器，前端控制器根据 Handler 找到相应的 HandlerAdapter 去执行，执行完后会返回 ModelAndView 给前端控制器，前端控制器再把 ModleAndView 交给 ViewResolver 视图解析器找到相应的 View 视图对象，View 根据 ModelAndView 的中的 Model 渲染视图，最后前端控制器把渲染后的视图返回给用户。
-
-（执行 Handler 之前或之后 DispatcherServlet 会分别调用 HandlerExecutionChain 的 applyPreHandle 和 applyPostHandle 方法去执行注册过的 HandlerInterceptor）
-
-流程图如下：
-
-![clipboard](面试题 - Spring.assets/clipboard.png)
-
-## HttpServletRequest 推荐获取方法
+## HttpServletRequest 推荐获取方式
 
 推荐使用 `@Autowired` 依赖注入获取，除非不能依赖注入，才通过 `((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest()` 获取。
+
+
+
+提问：
+
+1. Spring 何时把 Request 上下文放进 RequestContextHolder？
+
+   在 FrameworkServlet#processRequest 中，即在 FrameworkServlet#doService 的前后通过 initContextHolders 和 resetContextHolders 初始化和释放 Request 上下文。
+
+2. @Autowired 注入的 HttpServletRequest 为啥是动态代理对象？
+
+   **所有的 @Autowired 进来的JDK动态代理对象的 InvocationHandler 处理器均为 AutowireUtils.ObjectFactoryDelegatingInvocationHandler，其里面 invoke 调用的实例是来自于objectFactory.getObject()** 。而 HttpServletRequest 使用的 ObjectFactory 是 WebApplicationContextUtils.RequestObjectFactory，之所以是这个，是因为在 web 容器初始化时调用的 WebApplicationContextUtils.registerWebApplicationScopes 里设置了 HttpServletRequest 的实例要用 RequestObjectFactory 来生成。而 RequestObjectFactory 中返回的 HttpServletRequest 实例，恰恰是从 RequestContextHolder 中来的。
 
 参考：
 
@@ -418,7 +628,30 @@ OAuth2LoginAuthenticationProvider 主要有以下两个功能：
 
 基于条件注解
 
+## CommandLineRunner 和 ApplicationRunner
 
+**区别**
+
+两者的区别是接收的参数类型不一样，前者入参是 String，后者是 ApplicationArguments。Spring Boot 在调用 callRunner 方法时会将 ApplicationArguments 转换成 String 给 CommandLineRunner。
+
+**源码分析**
+
+SpringApplication.run 方法在设置并刷新 ApplicationContext 后，会调用 callRunners 方法遍历 CommandLineRunner 接口和 ApplicationRunner 接口的实例，并调用 AnnotationAwareOrderComparator.sort 方法排序（可以利用 @Order 注解或者实现 Order 接口来设置所有 Runner 实例的运行顺序），最后运行它们的 run 方法（类似于开机自启）。
+
+**与 `ApplicationListener<ContextRefreshedEvent>` 的区别**
+
+1. Runner 是在 SpringApplication 启动的最后才被执行，而 `ApplicationListener<ContextRefreshedEvent>` 是在 ApplicationContext 被 refreshed 后执行。
+2. 注意 Runner 是 Spring Boot 中引入的类，而 ApplicationListener 是 Spring 中引入的类，早于 Runner。
+3. ContextRefreshedEvent 继承的是 ApplicationEvent，更多 ApplicationEvent 发送的顺序请看[这里](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.spring-application.application-events-and-listeners)。
+4. Spring 建议不要在 ApplicationListener 中执行时间较长的任务，推荐使用 Runner 来执行这些任务。
+
+
+
+参考：
+
+[CommandLineRunner和ApplicationListener原理分析](https://blog.csdn.net/qq_32332777/article/details/106018279)
+
+[理解 Spring ApplicationListener](https://blog.csdn.net/liyantianmin/article/details/81017960)
 
 # Cloud 篇
 

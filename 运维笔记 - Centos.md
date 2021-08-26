@@ -2699,6 +2699,10 @@ Asia/Shanghai
        mount -o remount,rw /
        ```
 
+
+
+注意，缩容的步骤是相反的，要先给文件系统缩容，然后再给逻辑卷缩容。且 XFS 文件系统不支持缩容。
+
 参考：[Linux LVM简明教程](https://linux.cn/article-3218-1.html)
 
 ### 设置网卡自动启动
