@@ -86,6 +86,198 @@
 
 [java中的值传递和引用传递问题](https://www.cnblogs.com/coderising/p/5697986.html)
 
+## 强引用 软引用 弱引用 虚引用
+
+**强引用**：不回收引用对象。
+
+**软引用**：内存不够就会回收引用对象。软引用的使用场景是缓存，可以避免内存溢出。
+
+**弱引用**：内存足够也会回收引用对象。
+
+**虚引用**：内存足够也会回收引用对象。和弱引用不同的是，get 方法返回永远是 null，它需要和引用队列配合使用以使引用对象在被垃圾回收之前被放到引用队列中。虚引用的使用场景是跟踪对象被垃圾回收的状态。
+
+
+
+**强引用**
+
+```java
+class Scratch {
+    public static void main(String[] args) {
+        Object a = new Object();
+        // softReference和o都指向同一个对象
+        Object b = a;
+
+        // 将a的引用置为null，不影响b的引用
+        a = null;
+        System.gc();
+        System.out.println(a);// null
+        System.out.println(b);// java.lang.Object@799d4f69
+    }
+}
+```
+
+**软引用**
+
+```java
+import java.lang.ref.SoftReference;
+
+/**
+ * jvmArgs: -Xmx5m -Xms5m
+ */
+class Scratch {
+    public static void main(String[] args) {
+        Object o = new Object();
+        // softReference和o都指向同一个对象
+        SoftReference<Object> softReference = new SoftReference<>(o);
+        
+        System.out.println(o);// java.lang.Object@7bc1a03d
+        System.out.println(softReference.get());// java.lang.Object@7bc1a03d
+
+        o = null;
+        System.gc();
+        // 内存够用，软引用所引用的对象不会回收
+        System.out.println(o);// null
+        System.out.println(softReference.get());// java.lang.Object@7bc1a03d
+
+        try {
+            // 设置30MB超出堆内存
+            byte[] bytes = new byte[1024 * 1024 * 30];
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 内存不够，软引用所引用的对象被回收
+            System.out.println(o);// null
+            System.out.println(softReference.get());// null
+        }
+
+    }
+}
+```
+
+**弱引用**
+
+```java
+import java.lang.ref.WeakReference;
+
+class Scratch {
+    public static void main(String[] args) {
+        Object o = new Object();
+        // weakReference和o都指向同一个对象
+        WeakReference<Object> weakReference = new WeakReference<>(o);
+
+        System.out.println(o);// java.lang.Object@23a5fd2
+        System.out.println(weakReference.get());// java.lang.Object@23a5fd2
+
+        o = null;
+        System.gc();
+        // 即使内存够用，弱引用所指向的对象也会被回收
+        System.out.println(o);// null
+        System.out.println(weakReference.get());// null
+    }
+}
+```
+
+关于 WeakHashMap：
+
+```java
+import java.util.HashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
+
+class Scratch {
+    public static void main(String[] args) {
+        weakHashMapTest();
+        hashMapTest();
+        // 在HashMap中，键被置为null，唤醒gc后，不会垃圾回收键为null的键值对。
+        // 但是在WeakHashMap中，键被置为null，唤醒gc后，键为null的键值对会被回收。
+    }
+
+    public static void weakHashMapTest() {
+        Map<Integer, String> weakHashMap = new WeakHashMap();
+        Integer key = new Integer(1);
+        String value = "李四";
+        weakHashMap.put(key, value);
+        System.out.println(weakHashMap);//{1=李四}
+        key = null;
+        System.gc();
+        System.out.println(weakHashMap);//{}
+    }
+
+    public static void hashMapTest() {
+        HashMap<Integer, String> map = new HashMap<>();
+        Integer key = new Integer(1);
+        String value = "张三";
+        map.put(key, value);
+        System.out.println(map);//{1=张三}
+        key = null;
+        System.gc();
+        System.out.println(map);//{1=张三}
+    }
+}
+```
+
+在 ThreadLocal 中也使用了弱引用，具体请查看 ThreadLocal 的源码。
+
+**虚引用**
+
+```java
+import java.lang.ref.PhantomReference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+
+class Scratch {
+    public static void main(String[] args) {
+        weakReferenceQueueTest();
+        phantomReferenceQueueTest();
+    }
+
+    public static void weakReferenceQueueTest() {
+        Object o = new Object();
+        ReferenceQueue<Object> queue = new ReferenceQueue<>();
+        WeakReference<Object> weakReference = new WeakReference<>(o, queue);
+
+        System.out.println("\n##### weakReferenceQueueTest #####");
+        System.out.println(o);                      // java.lang.Object@7bc1a03d
+        System.out.println(weakReference.get());    // java.lang.Object@7bc1a03d
+        System.out.println(queue.poll());           // null
+        System.out.println("-------------------");
+
+        o = null;
+        System.gc();
+        System.out.println(o);                      // null
+        System.out.println(weakReference.get());    // null
+        // 引用在回收之前被加入到了引用队列中
+        System.out.println(queue.poll());           // java.lang.ref.WeakReference@70b0b186
+    }
+
+    public static void phantomReferenceQueueTest() {
+        Object o = new Object();
+        ReferenceQueue<Object> queue = new ReferenceQueue<>();
+        PhantomReference<Object> phantomReference = new PhantomReference<>(o, queue);
+
+        System.out.println("\n##### phantomReferenceQueueTest #####");
+        System.out.println(o);                      // java.lang.Object@ba8d91c
+        // 虚引用get方法永远返回null
+        System.out.println(phantomReference.get()); // null
+        System.out.println(queue.poll());           // null
+        System.out.println("-------------------");
+
+        o = null;
+        System.gc();
+        System.out.println(o);                      //null
+        System.out.println(phantomReference.get()); //null
+        // 引用在回收之前被加入到了引用队列中
+        System.out.println(queue.poll());           //java.lang.ref.PhantomReference@7364985f
+    }
+}
+```
+
+
+
+参考：
+
+[JVM中如何理解强引用、软引用、弱引用、虚引用？](https://zhuanlan.zhihu.com/p/145097711)
+
 ## *Java 对象头详解
 
 参考：https://www.jianshu.com/p/3d38cba67f8b
