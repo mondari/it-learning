@@ -439,16 +439,16 @@ StringBuffer：线程安全，其它同 StringBuilder
 ### 如何创建不可变类？
 
 1. 确保类不被继承。通常将类声明为 final，防止子类破坏父类的不可变行为。
-2. 确保类中所有方法不改变对象内部状态。如果要提供 setter 等修改方法，则新建一个对象返回。
-3. 将类中所有字段声明为 private。从而防止直接获取对象内部属性并修改。
-4. 将类中所有字段声明为 final。从而防止对象的内部状态发生改变。
+2. 确保类中所有方法不改变对象内部状态。**凡是涉及到内部属性的修改，都新建一个对象返回。**
+3. 将类中所有字段声明为 private。防止直接获取对象内部属性并修改。
+4. 将类中所有字段声明为 final。防止对象的内部属性发生改变（值改变或引用改变）。
 
 不可变类示例如下：
 
 ```java
 // 类声明为 final
 public final class ImmutableClass {
-    // 内部变量声明为 private 和 final
+    // 内部属性声明为 private 和 final
     private final int value;
 
     public ImmutableClass(int value) {
@@ -459,7 +459,7 @@ public final class ImmutableClass {
         return value;
     }
 
-    // 如果要提供 setter 等修改方法，则新建一个对象返回。
+    // （重点）凡是涉及到内部属性的修改，都新建一个对象返回
     public ImmutableClass setValue(int value) {
         return new ImmutableClass(value);
     }
@@ -478,15 +478,17 @@ public final class ImmutableClass {
 不可变对象并不是真正的不可变，还是能够通过反射来修改其值。不可变类和不可变对象的初衷是为了方便大家编写代码，减少编码时出错的概率。
 
 ```java
-public class Test {
+import java.lang.reflect.Field;
+
+class Test {
     public static void main(String[] args) throws Exception {
         String s = "Hello World";
         System.out.println("s = " + s);
- 
-        Field valueFieldOfString = String.class.getDeclaredField("value");
-        valueFieldOfString.setAccessible(true);
- 
-        char[] value = (char[]) valueFieldOfString.get(s);
+
+        Field field = String.class.getDeclaredField("value");
+        field.setAccessible(true);
+
+        char[] value = (char[]) field.get(s);
         value[5] = '_';
         System.out.println("s = " + s);
     }
@@ -502,11 +504,74 @@ s = Hello_World
 
 
 
+这里简单演示一下不可变类如果不声明为final的后果：
+
+```java
+/**
+ * 没有声明为final的不可变类
+ */
+class NonFinalImmutableClass {
+    private final int value;
+
+    public NonFinalImmutableClass(int value) {
+        this.value = value;
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+    // 凡是涉及到内部属性的修改，都新建一个对象返回
+    public NonFinalImmutableClass setValue(int value) {
+        return new NonFinalImmutableClass(value);
+    }
+
+}
+
+/**
+ * 如果父类没有声明为final，则能够通过子类修改父类的不可变行为
+ */
+class ChildClass extends NonFinalImmutableClass {
+    // 覆盖父类的不可变属性
+    private int value;
+
+    public ChildClass(int value) {
+        super(value);
+        this.value = value;
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+    // 覆盖父类的不可变行为
+    public NonFinalImmutableClass setValue(int value) {
+        this.value = value;
+        return this;
+    }
+
+    public static void main(String[] args) {
+        NonFinalImmutableClass a = new NonFinalImmutableClass(5);
+        NonFinalImmutableClass b = a;
+        System.out.println(a.setValue(10).getValue());  // 10
+        System.out.println(b.getValue());               // 5
+
+        a = new ChildClass(5);
+        b = a;
+        // 子类修改了父类的不可变行为，导致和上面的结果不一致
+        System.out.println(a.setValue(10).getValue());  // 10
+        System.out.println(b.getValue());               // 10
+    }
+}
+```
+
+
+
 参考：https://www.cnblogs.com/dolphin0520/p/10693891.html
 
-### String 为什么是不可变
+### String 为什么要设计成不可变？
 
-一是为了提高性能，实现字符串常量池。字符串是频繁使用的数据类型，将字符串字面量缓存到字符串常量池中，当要使用的时候从中直接获取，无需频繁创建，有利于提高性能。
+一是为了实现字符串常量池，以提高性能。字符串是频繁使用的数据类型，如果能将字符串缓存到常量池中，当要使用的时候可以直接从中获取（字面量要相同），无需再创建一个 String 对象，则可以提高性能。如果 String 是可变的，则缓存在常量池中的 String 对象会被篡改，引起数据安全问题。
 
 二是为了线程安全，保障多线程场景下数据不会发生篡改。
 
