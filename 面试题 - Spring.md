@@ -577,7 +577,7 @@ Security 相关的异常状态码：
 
 
 
-源码入口-配置：springSecurityFilterChain Bean 的配置。位于 WebSecurityConfiguration 类中，其实就是配置 FilterChainProxy。FilterChainProxy 持有多个 SecurityFilterChain，而 SecurityFilterChain 持有多个 Security 过滤器。多个 SecurityFilterChain 也有先后顺序，比如如果配置了 OAuth2，则默认先后顺序为：授权服务器的 > 资源服务器 > WebSecurity（默认最低）
+源码入口-配置：springSecurityFilterChain Bean 的配置。位于 WebSecurityConfiguration 类中，其实就是配置 FilterChainProxy。FilterChainProxy 持有多个 SecurityFilterChain，而 SecurityFilterChain 持有多个 Security 过滤器。SecurityFilterChain 之间有先后顺序，比如在配置了 OAuth2 的情况下，先后顺序为：授权服务器 SecurityFilterChain > 资源服务器 SecurityFilterChain > WebSecurity（默认最低）
 
 源码入口-认证流程：FilterChainProxy-> SecurityFilterChain-> Security Filters-> AuthenticationManager-> ProviderManager-> AuthenticationProvider
 
