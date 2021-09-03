@@ -198,6 +198,28 @@ Spring AOP 基于动态代理，动态代理有两种实现方式，如果代理
 - JDK 动态代理：基于反射机制实现。只要目标对象实现了某个接口，就能生成目标对象的代理对象。新版本也开始结合 ASM 字节码操纵机制来实现动态代理。
 - CGlib 动态代理：基于 ASM 字节码操纵机制实现，通过生成目标类的子类来生成代理对象。
 
+## IOC 容器的初始化步骤
+
+IOC容器的初始化包括资源定位、加载解析和注册这三个部分。资源定位即对beans.xml这个定义Bean的资源文件的定位，加载解析即对这个资源文件进行加载并解析成BeanDefinition，最后的注册是将BeanDefinition注册到容器中。
+
+## Bean的实例化与属性注入在哪里？
+
+在 AbstractBeanFactory#doGetBean
+AbstractAutowireCapableBeanFactory#createBean-> doCreateBean 中调用了以下两个关键方法，分别对应 Bean 的实例化和属性注入：
+
+1. **createBeanInstance**
+
+   创建 Bean 实例。创建 Bean 实例有三种方式，分别是
+
+   - 通过工厂方法生成
+   - 通过autowired构造方法生成
+   - 通过反射使用默认构造方法生成
+
+2. **populateBean**
+
+   填充Bean实例（依赖注入）
+
+
 
 ## *IOC 容器如何实现？
 
