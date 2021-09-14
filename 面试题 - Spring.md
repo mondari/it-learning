@@ -202,6 +202,36 @@ Spring AOP 基于动态代理，动态代理有两种实现方式，如果代理
 
 IOC容器的初始化包括资源定位、加载解析和注册这三个部分。资源定位即对beans.xml这个定义Bean的资源文件的定位，加载解析即对这个资源文件进行加载并解析成BeanDefinition，最后的注册是将BeanDefinition注册到容器中。
 
+## IOC 容器相关类
+
+- BeanFactory：基础版容器，能根据 Bean 名称或类型获取一个 Bean
+
+- ListableBeanFactory：有列举功能的BeanFactory，能根据 Bean 类型获取多个 Bean
+
+- HierarchicalBeanFactory：有层级功能的Bean工厂，内部维护一个父级容器
+
+  
+
+- ApplicationContext：加强版容器，附带 Environment、MessageSource、ApplicationEventPublisher、ResourcePatternResolver 这些额外功能。
+
+- ConfigurableApplicationContext：在 ApplicationContext 的基础上增加一些 add、set 方法。
+
+- WebApplicationContext: 在 ApplicationContext 的基础上增加 ServletContext 功能。ServletContext 封装了当前 Web 应用的所有信息，能够实现多个 Servlet 之间的数据共享。
+
+- WebServerApplicationContext：在 ApplicationContext 的基础上增加 WebServer 功能
+
+
+
+- AbstractXmlApplicationContext：能使用 XmlBeanDefinitionReader 读取 XML 格式容器配置文件并解析出 BeanDefinition 信息，然后加载到 IOC 容器中。
+- FileSystemXmlApplicationContext：能从文件系统、URL 中读取 XML 格式容器配置文件
+- ClassPathXmlApplicationContext：能从 ClassPath 中读取 XML 格式容器配置文件
+
+
+
+- AnnotationConfigApplicationContext：非 Web 应用上下文
+- AnnotationConfigServletWebServerApplicationContext：Servlet Web 应用上下文
+- AnnotationConfigReactiveWebServerApplicationContext：Reactive Web 应用上下文
+
 ## Bean的实例化与属性注入在哪里？
 
 在 AbstractBeanFactory#doGetBean
