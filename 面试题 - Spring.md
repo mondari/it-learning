@@ -10,25 +10,31 @@ JSP、Spring IOC、AOP、MVC、Boot、Cloud 微服务相关面试题统统放到
 
 ## JSP 与 Servlet 的区别
 
-1. JSP 经 ApplicationServer 编译后就是 Servlet
+1. JSP 经应用服务器编译后就是 Servlet
 2. JSP 负责处理页面显示，Servlet 负责处理业务逻辑
 3. Servlet 中没有内置对象，必须通过 HttpServletRequest 对象，HttpServletResponse 对象以及 HttpServlet 对象得到 JSP 中的内置对象。
 
 ## JSP 九大内置对象
 
-| 内置对象    | 类型                | 作用                                                    |
-| ----------- | ------------------- | ------------------------------------------------------- |
-| request     | HttpServletRequest  | HTTP请求                                                |
-| response    | HttpServletResponse | HTTP响应                                                |
-| session     | HttpSession         | HTTP会话                                                |
-| application | ServletContext      | 多个Servlet可以通过ServletContext对象来实现数据间的共享 |
-| pageContext | PageContext         | 获取其他八个内置对象                                    |
-| config      | ServletConfig       | 获取服务器的配置信息                                    |
-| page        | Object(this)        | 代表JSP页面本身                                         |
-| out         | JspWriter           | 在浏览器中打印信息                                      |
-| exception   | Throwable           | 异常                                                    |
+| 内置对象    | 类型                | 作用                                                         |
+| ----------- | ------------------- | ------------------------------------------------------------ |
+| request     | HttpServletRequest  | HTTP 请求                                                    |
+| response    | HttpServletResponse | HTTP 响应                                                    |
+| session     | HttpSession         | HTTP 会话                                                    |
+| application | ServletContext      | Web 应用上下文，封装了当前 Web 应用的所有信息，能够实现多个 Servlet 直接的数据共享 |
+| config      | ServletConfig       | Servlet 配置信息，在 Servlet 初始化时会传递给相应的 Servlet 对象。 |
+| page        | Object(this)        | 代表 JSP 页面本身                                            |
+| exception   | Throwable           | 异常                                                         |
+| pageContext | PageContext         | 提供一系列 get 方法来获取上面的对象。如 getPage、getException、getErrorData 和 getRequest 等。 |
+| out         | JspWriter           | 在浏览器中打印信息                                           |
 
 ## Cookie
+
+**什么是 Cookie？**
+
+Cookie 是一种会话技术，负责将 HTTP 相应指定的数据保存到客户端本地，并在下一次 HTTP 请求中携带上这些数据，以实现 HTTP 的”有状态“也即会话功能。
+
+
 
 Cookie 的属性如下：
 
@@ -58,9 +64,15 @@ https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
 
 ## Session
 
+**什么是 Session？**
+
+Session 也是类似于 Cookie 的一种会话技术，但是基于 Cookie，需要通过 Cookie 将 SessionID 保存到客户端本地，并在下一次 HTTP 请求中携带上。而且与 Cookie 不一样的是，Session 的数据是保存在服务器上，并且这些数据是通过 SessionID 来区分是属于哪个客户端。
+
 ## Token
 
-Token 又叫令牌，一般在登录、认证的场景下使用。
+**什么是 Token？**
+
+Token 又叫令牌，也是一种会话技术。区别于 Cookie、Session 这些会话技术，Token 的安全性更高，因为浏览器每次发起 HTTP 请求，都会自动携带上 Cookie，会有 CSRF 攻击的风险。而 Token 则需要手动放到 HTTP 请求头或 URL 中，所以安全性更高。
 
 Token 使用步骤如下：
 
@@ -75,7 +87,7 @@ Token 使用步骤如下：
 
 ## Cookie、Session、Token的区别
 
-Cookie、Session 和 Token 都是保持会话的方式，三者有一定的区别。
+Cookie、Session 和 Token 都是一种会话技术，三者有一定的区别。
 
 
 
