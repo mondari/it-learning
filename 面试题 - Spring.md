@@ -28,6 +28,24 @@ JSP、Spring IOC、AOP、MVC、Boot、Cloud 微服务相关面试题统统放到
 | pageContext | PageContext         | 提供一系列 get 方法来获取上面的对象。如 getPage、getException、getErrorData 和 getRequest 等。 |
 | out         | JspWriter           | 在浏览器中打印信息                                           |
 
+## RequestDispatcher
+
+当 Servlet 接收到一个 HTTP 请求，可以将该请求通过 RequestDispatcher 转发给服务器上的其它 Web 资源（如 Servlet、JSP 页面、HTTP 页面）。
+
+RequestDispatcher 支持以下两种转发方式：
+
+- forward：请求转发。将请求转发给当前服务器上的其它 Web 资源去处理。
+
+- include：请求包含。将请求转发给当前服务器上的其它 Web 资源去处理，并将其结果包含在响应中，后续还可以附加自己的结果到响应中。
+
+## 转发与重定向的区别
+
+转发是服务器行为，重定向是客户端行为。
+
+转发：将请求转发给服务器上另外的 Web 资源去处理该请求，并将其结果返回给客户端（浏览器），客户端是不知道请求具体是由哪个 Web 资源来处理。
+
+重定向：返回一个 HTTP 响应，其中 HTTP 状态码是 302，告诉浏览器重新去访问一个 Web 资源。
+
 ## Cookie
 
 **什么是 Cookie？**
@@ -83,7 +101,7 @@ Token 使用步骤如下：
 3. 服务端接收到请求后，会将客户端的 Token 值与数据库的 Token 值对比
 
    - 存在，说明当前用户登录成功过，处于已登录状态
-   - 不存在，说明没有登录成功过，或者是登录失效，需要重新登录
+   - 不存在，说明没有登录过，或者是登录失效，需要重新登录
 
 ## Cookie、Session、Token的区别
 
