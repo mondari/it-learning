@@ -4,13 +4,13 @@
 
 # 前言
 
-JSP、Spring IOC、AOP、MVC、Boot、Cloud 微服务相关面试题统统放到这里。
+Java Web、Spring IOC、AOP、MVC、Boot、Cloud 微服务相关面试题统统放到这里。
 
-# JSP 篇
+# Java Web 篇
 
 ## JSP 与 Servlet 的区别
 
-1. JSP 经应用服务器编译后就是 Servlet
+1. JSP 经应用服务器（如 Tomcat）编译后就是 Servlet
 2. JSP 负责处理页面显示，Servlet 负责处理业务逻辑
 3. Servlet 中没有内置对象，必须通过 HttpServletRequest 对象，HttpServletResponse 对象以及 HttpServlet 对象得到 JSP 中的内置对象。
 
@@ -194,9 +194,9 @@ http://www.ruanyifeng.com/blog/2016/04/cors.html
 
 二、**防止表单重复提交的方法**
 
-1. 表单提交后将提交按钮设置为不可用。但是如果客户端禁止使用 JavaScript，这个方法无效。
+1. 表单提交后将提交按钮置灰，设置为不可用。但是如果客户端禁止使用 JavaScript，这个方法无效。
 2. Post/Redirect/Get 模式。表单提交后进行页面重定向，转到提交成功信息页面。
-3. 数据库添加唯一索引。
+3. 数据库添加唯一索引或唯一约束，防止出现重复数据。
 
 参考：[如何防止表单重复提交](https://www.cnblogs.com/wenlj/p/4951766.html)
 
