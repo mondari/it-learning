@@ -279,13 +279,13 @@ systemctl daemon-reload
 # 重启服务
 systemctl restart docker.service
 # 查看端口是否开启
-netstat -anp|grep 2375
+ss -anp|grep 2375
 # curl查看是否生效（docker info 命令就是读取该接口）
 curl http://127.0.0.1:2375/info
 # 开启防火墙端口
 firewall-cmd --add-port=2375/tcp --permanent && firewall-cmd --reload
-# Windows主机修改环境变量即可用 IDEA 连接
-# DOCKER_HOST=tcp://REMOTE_DOCKER_IP:2375
+# Windows 主机修改环境变量即可用 IDEA 连接（将下面的“$REMOTE_DOCKER_IP”变量改为 Docker 主机的 IP）
+# DOCKER_HOST=tcp://$REMOTE_DOCKER_IP:2375
 ```
 
 ### 开启 IPv4 转发以访问外网
