@@ -43,12 +43,6 @@ https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/
 
 参考：https://www.archlinux.org/releng/releases/
 
-## Centos Stream 安装源
-
-在用 Centos Stream CD 来安装 Centos Stream 时，需要指定安装源才能继续安装，否则只能使用 DVD 来安装。
-
-推荐使用阿里的安装源：http://mirrors.aliyun.com/centos/8-stream/BaseOS/x86_64/os/
-
 ## 配置 Bash
 
 ### .inputrc
@@ -101,7 +95,7 @@ $ mv /etc/yum.repos.d/epel.repo /etc/yum.repos.d/epel.repo.backup
 $ mv /etc/yum.repos.d/epel-testing.repo /etc/yum.repos.d/epel-testing.repo.backup
 
 // 下载新repo 到/etc/yum.repos.d/
-$ wget -O /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo
+$ curl -o /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo
 
 ```
 
@@ -405,7 +399,7 @@ volumes:
 
 ### 安装前步骤
 
-安装 Minikube 和 Kubernetes 前先执行这一步操作，且所有节点都必须执行这步操作。
+无论是选择安装 Minikube 还是 Kubernetes，都需要先执行这一步操作，且集群中的所有节点都要执行这步操作。
 
 ```bash
 # 安装仓库（这里使用阿里的镜像）
@@ -422,12 +416,13 @@ EOF
 # SELinux运行模式切换为宽容模式
 setenforce 0
 # 关闭 SELinux（可选）
-sed -i "s/SELINUX=enforcing/SELINUX=disabled/g" /etc/selinux/config
+#sed -i "s/SELINUX=enforcing/SELINUX=disabled/g" /etc/selinux/config
 
 # 卸载旧版本
 yum remove -y kubelet kubeadm kubectl
+# 设置k8s版本号
+export kubeversion=1.21.5
 # 安装三件套（注意 kubelet 版本号不能高于 kube-apiserver，且只能比 kube-apiserver 低两个小版本）
-export kubeversion=1.20.1
 yum install -y kubelet-${kubeversion} kubeadm-${kubeversion} kubectl-${kubeversion}
 # 确保 kubelet 的 cgroupDriver 为 systemd
 sed -i "s/cgroupfs/systemd/g" /var/lib/kubelet/config.yaml
@@ -443,7 +438,7 @@ echo "source <(kubeadm completion bash)" >> ~/.bashrc
 
 ### 安装 Minikube
 
-minikube 能在macOS、Linux和Windows上快速建立一个本地Kubernetes集群，帮助开发者开发 Kubernetes 应用。
+minikube 能在macOS、Linux和Windows上快速建立一个本地Kubernetes集群，帮助开发者开发 Kubernetes 应用。新手建议先使用 minikube 尝尝鲜，再使用 k8s。
 
 ```bash
 # 安装 minikube（使用阿里镜像）
@@ -538,7 +533,7 @@ cat /etc/fstab_bak |grep -v swap > /etc/fstab
 #### 配置防火墙
 
 ```bash
-firewall-cmd --add-port=6443/tcp --add-port=2379-2380/tcp --add-port=10250-10252/tcp --add-port=443/tcp --add-port=4443/tcp --permanent
+firewall-cmd --add-port=6443/tcp --add-port=2379-2380/tcp --add-port=10250-10252/tcp --add-port=443/tcp --add-port=4443/tcp --add-port=5473/tcp --permanent
 firewall-cmd --reload
 ```
 
@@ -547,6 +542,7 @@ firewall-cmd --reload
 - 10250 是 kubelet 端口
 - 10251 是 kube-scheduler 端口
 - 10252 是 kube-controller-manager 端口
+- 5473 是 Calico networking with Typha 端口
 
 防火墙需要开启的端口参考：https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#check-required-ports
 
@@ -603,8 +599,11 @@ https://kuboard.cn/install/install-k8s.html#%E5%AE%89%E8%A3%85containerd-kubelet
 所有的节点上配置以下环境变量和 apiserver 的域名
 
 ```bash
+# master 主节点的 IP 地址
 export MASTER_IP=192.168.17.134
+# k8s apiserver 的域名，不能与 master 节点的主机名相同
 export APISERVER_NAME=apiserver.demo
+# 配置域名 hosts 信息
 echo "${MASTER_IP}    ${APISERVER_NAME}" >> /etc/hosts
 ```
 
@@ -614,22 +613,25 @@ echo "${MASTER_IP}    ${APISERVER_NAME}" >> /etc/hosts
 
 #### 配置 master
 
+在 master 节点执行以下步骤
+
 **初始化 master 节点**
 
 ```bash
-export POD_SUBNET=10.100.0.1/16
-curl -sSL https://kuboard.cn/install-script/v1.20.x/init_master.sh | sh -s 1.20.1
+# pod 的子网范围
+export POD_SUBNET=10.100.0.0/16
+curl -sSL https://kuboard.cn/install-script/v1.21.x/init_master.sh | sh -s 1.21.5 /coredns
 ```
 
-这里是使用 Kuboard 的脚本来安装，参考：[使用kubeadm安装kubernetes_v1.20.x](https://kuboard.cn/install/install-k8s.html#%E5%88%9D%E5%A7%8B%E5%8C%96-master-%E8%8A%82%E7%82%B9)
+这里是使用 Kuboard 的脚本来安装，参考：[安装Kubernetes单Master节点](https://kuboard.cn/install/install-k8s.html#%E5%88%9D%E5%A7%8B%E5%8C%96-master-%E8%8A%82%E7%82%B9)
 
 **检查 master 初始化结果**
 
 ```bash
 # 执行如下命令，等待 3-10 分钟，直到所有的容器组处于 Running 状态
-watch kubectl get pod -n kube-system -o wide
+# watch kubectl get pod -n kube-system -o wide
 
-# 查看 master 节点初始化结果
+# 查看 master 节点初始化结果（coredns 需要在安装网络插件后才能正常启动）
 kubectl get nodes -o wide
 ```
 
@@ -639,6 +641,32 @@ kubectl get nodes -o wide
 [root@centos-vm ~]# kubeadm token create --print-join-command
 kubeadm join apiserver.demo:6443 --token rtji8k.i5zdrr1xs0tolckg     --discovery-token-ca-cert-hash sha256:befa1a2369ffdb2be73b857ec2964d8c63d9ac50efa49c140ae84e206a949723
 ```
+
+#### 安装网络插件
+
+Calico 和 Flannel 二选一安装。
+
+**选择安装 Calico**
+
+```bash
+export POD_SUBNET=10.100.0.0/16
+kubectl apply -f https://kuboard.cn/install-script/v1.21.x/calico-operator.yaml
+curl -O https://kuboard.cn/install-script/v1.21.x/calico-custom-resources.yaml
+sed -i "s#192.168.0.0/16#${POD_SUBNET}#" calico-custom-resources.yaml
+kubectl apply -f calico-custom-resources.yaml
+```
+
+**选择安装 Flannel**
+
+```bash
+export POD_SUBNET=10.100.0.0/16
+kubectl apply -f https://kuboard.cn/install-script/v1.21.x/calico-operator.yaml
+curl -O https://kuboard.cn/install-script/flannel/flannel-v0.14.0.yaml
+sed -i "s#10.244.0.0/16#${POD_SUBNET}#" flannel-v0.14.0.yaml
+kubectl apply -f ./flannel-v0.14.0.yaml
+```
+
+注意 Pod 的子网要和前面的一致，否则会出现 coredns 一直为 running 但不是 ready 的状态。
 
 #### 配置 worker
 
@@ -710,9 +738,10 @@ https://docker_practice.gitee.io/zh-cn/kubernetes/setup/kubeadm.html
 
 ```bash
 kubeadm reset -f
+# 删除网络插件配置信息
 rm -rf /etc/cni/net.d/
-# 删除 kubelet 配置文件
-rm -rf /etc/kubernetes/ /var/lib/kubelet 
+# 删除 kubelet 配置文件（kubeadm 1.21.x 版本会自动清理）
+rm -rf /etc/kubernetes/ /var/lib/kubelet
 # 删除 kubectl 配置文件（注意 kubectl 将无法连接到 master）
 rm -rf $HOME/.kube/config
 ```
@@ -1961,7 +1990,7 @@ Centos
 
 ```bash
 # add the yum repo:
-wget https://openresty.org/package/centos/openresty.repo
+curl -O https://openresty.org/package/centos/openresty.repo
 sudo mv openresty.repo /etc/yum.repos.d/
 
 # update the yum index:
