@@ -544,7 +544,11 @@ firewall-cmd --reload
 - 10252 是 kube-controller-manager 端口
 - 5473 是 Calico networking with Typha 端口
 
-防火墙需要开启的端口参考：https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#check-required-ports
+防火墙需要开启的端口参考：
+
+https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#check-required-ports
+
+https://docs.projectcalico.org/getting-started/kubernetes/requirements#network-requirements
 
 #### 配置 containerd
 
