@@ -256,31 +256,43 @@ IOC容器的初始化包括资源定位、加载解析和注册这三个部分�
 
 ## IOC 容器相关类
 
-- BeanFactory：基础版容器，能根据 Bean 名称或类型获取一个 Bean
+- BeanFactory：基础版容器，能根据 Bean 名称或类型获取一个 Bean。以下是其三个子接口：
 
-- ListableBeanFactory：有列举功能的BeanFactory，能根据 Bean 类型获取多个 Bean
-
-- HierarchicalBeanFactory：有层级功能的Bean工厂，内部维护一个父级容器
+  - ListableBeanFactory：有列举功能的容器，能根据 Bean 类型获取所有 Bean 名称
+  - HierarchicalBeanFactory：有层级功能的容器，内部维护一个父级容器
+  - AutowireCapableBeanFactory：提供自动装配能力的容器，不过一般不会直接使用该容器，更多情况下还是使用 ListableBeanFactory。
 
   
 
 - ApplicationContext：加强版容器，附带 Environment、MessageSource、ApplicationEventPublisher、ResourcePatternResolver 这些额外功能。
 
-- ConfigurableApplicationContext：在 ApplicationContext 的基础上增加一些 add、set 方法。
-
-- WebApplicationContext: 在 ApplicationContext 的基础上增加 ServletContext 功能。ServletContext 封装了当前 Web 应用的所有信息，能够实现多个 Servlet 之间的数据共享。
-
-- WebServerApplicationContext：在 ApplicationContext 的基础上增加 WebServer 功能
-
-
-
-- AbstractXmlApplicationContext：能使用 XmlBeanDefinitionReader 读取 XML 格式容器配置文件并解析出 BeanDefinition 信息，然后加载到 IOC 容器中。
-- FileSystemXmlApplicationContext：能从文件系统、URL 中读取 XML 格式容器配置文件
-- ClassPathXmlApplicationContext：能从 ClassPath 中读取 XML 格式容器配置文件
+  - ConfigurableApplicationContext：一个非常重要的 SPI 接口，大部分 ApplicationContext 都会实现该接口。其在 ApplicationContext 的基础上增加 refresh、close 生命周期方法和一些 add、set 配置方法，**其中 refresh 是容器的启动方法**，close 是容器的关闭方法。
+  - WebApplicationContext: 在 ApplicationContext 的基础上增加 ServletContext 功能。ServletContext 封装了当前 Web 应用的所有信息，能够实现多个 Servlet 之间的数据共享。
+  
+  上面两个是 Spring 中 ApplicationContext 子接口，下面两个则是 Spring Boot 中 ApplicationContext 子接口：
+  
+  - WebServerApplicationContext：在 ApplicationContext 的基础上增加 WebServer 功能。
+  - ReactiveWebApplicationContext：直接继承 ApplicationContext，没有添加任何方法和属性。
 
 
 
-- AnnotationConfigApplicationContext：非 Web 应用上下文
+- AbstractApplicationContext：ApplicationContext 的抽象实现类，继承自 ConfigurableApplicationContext 接口，并提供 refreshBeanFactory 方法供子类去实现以重新刷新容器。
+  - GenericApplicationContext：只能刷新一次的容器，即容器的 refresh 方法只能调用一次。还有就是支持不同的 Bean 定义格式来注册 Bean，不仅仅是 XML。
+  - AbstractRefreshableApplicationContext：可重复刷新的容器抽象类，每次刷新都会重新创建一个新的 BeanFactory 实例。提供 loadBeanDefinitions 方法供子类实现。
+    - AbstractRefreshableConfigApplicationContext：AbstractRefreshableApplicationContext 的子抽象类，支持从不同的位置去加载 Bean。
+
+
+
+- AbstractXmlApplicationContext：能使用 XmlBeanDefinitionReader 读取 XML 格式容器配置文件并解析出 BeanDefinition 信息，然后加载到 IOC 容器中。其是 AbstractRefreshableConfigApplicationContext 的子类。
+  - FileSystemXmlApplicationContext：能从文件系统、URL 中读取 XML 格式容器配置文件
+  - ClassPathXmlApplicationContext：能从 ClassPath 中读取 XML 格式容器配置文件
+
+
+
+- AnnotationConfigApplicationContext：GenericApplicationContext 的子类，提供 `register(Class<?>... componentClasses)` 和 `scan(String... basePackages)` 两个方法来注册 Bean。
+
+下面两个类跟 AnnotationConfigApplicationContext 只是名称相似，但没有一毛钱关系，而且是 Spring Boot 中国才有。
+
 - AnnotationConfigServletWebServerApplicationContext：Servlet Web 应用上下文
 - AnnotationConfigReactiveWebServerApplicationContext：Reactive Web 应用上下文
 
@@ -302,18 +314,6 @@ AbstractAutowireCapableBeanFactory#createBean-> doCreateBean 中调用了以下�
    填充Bean实例（依赖注入）
 
 
-
-## *IOC 容器如何实现？
-
-要看 IOC 容器如何实现，要从最经典的IOC容器类 XmlBeanFactory 入手。
-
-```java
-BeanFactory bf = new XmlBeanFactory(new ClassPathResource("beanFactoryTest.xml"));
-```
-
-1. 将 XML 配置文件封装为 Resource
-2. 然后将 Resource 逐步封装成 EncodedResource、InputSource、Document
-3. 最后从 Document 中解析并注册 BeanDefinition
 
 ## *循环依赖问题
 
