@@ -289,9 +289,9 @@ IOC容器的初始化包括资源定位、加载解析和注册这三个部分�
 
 
 
-- AnnotationConfigApplicationContext：GenericApplicationContext 的子类，提供 `register(Class<?>... componentClasses)` 和 `scan(String... basePackages)` 两个方法来注册 Bean。
+- AnnotationConfigApplicationContext：GenericApplicationContext 的子类，并实现了 AnnotationConfigRegistry 接口，该接口提供 `register(Class<?>... componentClasses)` 和 `scan(String... basePackages)` 两个方法来注册 Bean。
 
-下面两个类跟 AnnotationConfigApplicationContext 只是名称相似，但没有一毛钱关系，而且是 Spring Boot 中国才有。
+下面两个类跟 AnnotationConfigApplicationContext 只是名称相似，但没有继承关系，唯一联系就是都是实现了 AnnotationConfigRegistry 接口（凡是 AnnotationConfig 开头的 ApplicationContext 都是），而且是 Spring Boot 中才有。
 
 - AnnotationConfigServletWebServerApplicationContext：Servlet Web 应用上下文
 - AnnotationConfigReactiveWebServerApplicationContext：Reactive Web 应用上下文
