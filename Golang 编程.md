@@ -182,6 +182,10 @@ func main() {
 
 #### *select 语句
 
+### [Exercise: Loops and Functions](https://golang.google.cn/tour/flowcontrol/8)
+
+
+
 ## defer 延迟执行语句
 
 defer 语句将会被放入延迟调用栈中，在 defer 语句所在的函数即将返回时（类似于 Java 的 finally 代码块），按照先进后出的顺序也就是逆序执行。
@@ -558,18 +562,22 @@ func main() {
 
 ## 数组
 
-声明一个长度为 5、类型为 float32、名叫 balance 的数组
+类型 `[n]T` 是一个包含 n 个类型为 T 的值的数组，其中 n 为数组的长度。
+
+声明一个长度为 5，类型为 float32，且名叫 array 的数组：
 
 ```go
-var balance [5] float32
+var array [5]float32
 ```
+
+注意数组一旦定义下来，其长度不可变。
+
+
 
 声明并初始化
 
 ```go
 // 声明长度为5，并初始化3个值，未初始化默认为0
-var balance = [5]int{1, 2, 3}
-// 或
 balance := [5]int{1, 2, 3}
 
 // 也可以指定下标初始化，初始化结果为[0,0,1,2,3]
@@ -581,14 +589,7 @@ balance := [5]int{2:1, 2, 3}
 如果数组长度不确定，可以使用 `...` 代替数组的长度，编译器会根据元素个数自行推断数组的长度：
 
 ```go
-var balance = [...]int{1, 2, 3}
-// 或
 balance := [...]int{1, 2, 3}
-
-// 声明切片（注意这不是数组）
-var balance = []int{1, 2, 3}
-// 或
-balance := []int{1, 2, 3}
 ```
 
 
@@ -640,7 +641,11 @@ index: 4 value: 0
 
 ## 切片(Slice)
 
-切片相当于动态数组，长度可变，容量不足时会按长度的 2 倍扩容。
+切片是数组的一个“片段”，其长度可变，相当于数组的一个视图。
+
+切片本质上是数组的引用，所以改变切片的值也会改变其引用数组的值。
+
+切片的最大长度和容量不能超过其底层数组的长度，但是可以通过 append 方法动态调整其底层数组。通过 append 方法往切片添加元素时，如果切片底层数组的长度不足以支撑其元素的数量时，就会分配一个更大的数组，新数组长度**一般？**为之前的 2 倍，并且切片将指向新数组。
 
 ### 切片定义
 
@@ -702,24 +707,27 @@ s :=make([]int,len,cap)
 
 切片有长度 len 和容量 cap 两个属性，而数组只有长度 len 一个属性。
 
+- 数组的长度是数组中元素个数。因为数组的长度是数组类型的一部分，所以一旦数组定义下来，其长度不可变。
+- 切片的长度是切片中元素个数，容量是从切片第一个元素算起的数组中元素个数。**切片容量的计算是最容易出错的地方**，在计算切片的容量时，必须先知道切片第一个元素在数组中的位置，然后统计该元素到数组最后一个元素的个数，才是切片的容量。
+
 ```go
 package main
 
 import "fmt"
 
 func main() {
-   array := [5]int{1, 2, 3}
-   fmt.Println("数组长度:", len(array)) //3
+	array := [5]int{1, 2, 3}
+	fmt.Println("数组长度:", len(array)) //5
 
-   slice := make([]int, 3, 5)
-   fmt.Println("切片长度:", len(slice)) // 3
-   fmt.Println("切片容量:", cap(slice)) // 5
+	slice := array[1:3]
+	fmt.Println("切片长度:", len(slice)) // 2
+	fmt.Println("切片容量:", cap(slice)) // 4
 }
 ```
 
 
 
-**注意在 Go 中，数组是值传递，而切片才是引用传递**。
+**注意在 Go 中，数组是值传递，而切片才是引用传递，且其引用的是数组**。
 
 ```go
 package main
@@ -763,9 +771,74 @@ func reverseSlice(slice []int) {
 
 
 
+把上面的代码稍微改一下：
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	// 数组
+	array := [...]int{2, 3, 5, 7, 11}
+	reverseArray(array)
+	fmt.Println("array before: ", array)
+
+	// 切片
+	slice := array[:]
+	// 对切片倒序，其实倒的是数组本身
+	reverseSlice(slice)
+	fmt.Println("array after: ", array)
+}
+
+func reverseArray(array [5]int) {
+	array[0], array[len(array)-1] = array[len(array)-1], array[0]
+}
+
+func reverseSlice(slice []int) {
+	slice[0], slice[len(slice)-1] = slice[len(slice)-1], slice[0]
+}
+
+```
+
+控制台输出：
+
+```
+array before:  [2 3 5 7 11]
+array after:  [11 3 5 7 2]
+```
+
+
+
 参考：
 
 https://www.runoob.com/go/go-slice.html
+
+### [Exercise: Slices](https://golang.google.cn/tour/moretypes/18)
+
+```go
+package main
+
+import "golang.org/x/tour/pic"
+
+func Pic(dx, dy int) [][]uint8 {
+	image := make([][]uint8, dy)
+	for x := range image {
+		image[x] = make([]uint8, dx)
+		for y := range image[x] {
+			image[x][y] = uint8((x + y) / 2)
+		}
+	}
+	return image
+}
+
+func main() {
+	pic.Show(Pic)
+}
+
+```
+
+参考：https://nylira.com/a-tour-of-go-solutions/
 
 ## 集合(map)
 
@@ -832,6 +905,8 @@ func main() {
 
 ## 指针
 
+虽然 Go 也有指针，但是 Go 的指针不像 C 一样有指针运算功能，即没有“指针地址增加”或“指针地址减少”。
+
 当一个指针被定义后没有分配到任何变量时，它的值为 nil。nil 指针也称为空指针。
 
 ```go
@@ -842,7 +917,7 @@ import "fmt"
 func main() {
 	var ptr *int
 
-	fmt.Printf("ptr 的值为 : %x\n", ptr)
+	fmt.Printf("ptr 的值为 : %v 或 %x\n", ptr, ptr)
 	if ptr == nil {
 		fmt.Printf("ptr 是空指针")
 	}
@@ -853,11 +928,15 @@ func main() {
 以上实例输出结果为：
 
 ```
-ptr 的值为 : 0
+ptr 的值为 : <nil> 或 0
 ptr 是空指针
 ```
 
-参考：https://www.runoob.com/go/go-pointers.html
+参考：
+
+https://www.runoob.com/go/go-pointers.html
+
+https://golang.google.cn/tour/moretypes/1
 
 ## 结构体
 
