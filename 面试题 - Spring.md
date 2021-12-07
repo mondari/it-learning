@@ -258,19 +258,24 @@ IOC容器的初始化包括资源定位、加载解析和注册这三个部分�
 
 - BeanFactory：基础版容器，能根据 Bean 名称或类型获取一个 Bean。以下是其三个子接口：
 
-  - ListableBeanFactory：有列举功能的容器，能根据 Bean 类型获取所有 Bean 名称
+  - ListableBeanFactory：有列举功能的容器，能根据 Bean 类型获取所有 Bean 名称（不考虑父容器）
   - HierarchicalBeanFactory：有层级功能的容器，内部维护一个父级容器
+    - ConfigurableBeanFactory：继承自 HierarchicalBeanFactory 和 **SingletonBeanRegistry** 接口，提供了很多配置方法去配置容器。
+      - AbstractBeanFactory：实现了大部分接口方法，其中 getBean-> **doGetBean** 是依赖注入的入口，并提供了 **createBean** 抽象方法供子类去实现创建 Bean 实例的逻辑。
+        - AbstractAutowireCapableBeanFactory：实现了 AutowireCapableBeanFactory 接口，并实现了 AbstractBeanFactory#createBean 方法。
+
   - AutowireCapableBeanFactory：提供自动装配能力的容器，不过一般不会直接使用该容器，更多情况下还是使用 ListableBeanFactory。
 
-  
 
-- ApplicationContext：加强版容器，附带 Environment、MessageSource、ApplicationEventPublisher、ResourcePatternResolver 这些额外功能。
+
+
+- ApplicationContext：加强版容器，增加了 Environment、MessageSource、ApplicationEventPublisher、ResourcePatternResolver 这些额外功能。
 
   - ConfigurableApplicationContext：一个非常重要的 SPI 接口，大部分 ApplicationContext 都会实现该接口。其在 ApplicationContext 的基础上增加 refresh、close 生命周期方法和一些 add、set 配置方法，**其中 refresh 是容器的启动方法**，close 是容器的关闭方法。
   - WebApplicationContext: 在 ApplicationContext 的基础上增加 ServletContext 功能。ServletContext 封装了当前 Web 应用的所有信息，能够实现多个 Servlet 之间的数据共享。
-  
+
   上面两个是 Spring 中 ApplicationContext 子接口，下面两个则是 Spring Boot 中 ApplicationContext 子接口：
-  
+
   - WebServerApplicationContext：在 ApplicationContext 的基础上增加 WebServer 功能。
   - ReactiveWebApplicationContext：直接继承 ApplicationContext，没有添加任何方法和属性。
 
