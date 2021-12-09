@@ -881,6 +881,108 @@ sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80
 
 ## MySQL
 
+### 通过 k8s 安装
+
+#### Deployment
+
+建议以 Deployment 方式部署。部署后还需要部署 Service 资源对象来暴露端口给外网。需要注意的是，由于没有
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "toor"
+```
+
+#### ReplicaSet
+
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "toor"
+```
+
+#### ReplicationController
+
+```yaml
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "toor"
+```
+
+#### Service
+
+要想外网能够访问服务，需要通过 NodePort 把让集群节点开放端口（这里开放的端口是 30006）。
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  type: NodePort
+  ports:
+    - port: 3306
+      nodePort: 30006
+  selector:
+    app: mysql
+```
+
 ### 通过 docker-compose 安装
 
 ```yaml
