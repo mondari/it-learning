@@ -163,45 +163,6 @@ sudo docker version
 
 参考：https://docs.docker.com/engine/install/centos/
 
-#### Fedora
-
-```bash
-# Uninstall old versions
-sudo dnf remove docker \
-    docker-client \
-    docker-client-latest \
-    docker-common \
-    docker-latest \
-    docker-latest-logrotate \
-    docker-logrotate \
-    docker-selinux \
-    docker-engine-selinux \
-    docker-engine
-                  
-# Install required packages
-sudo dnf -y install dnf-plugins-core
-  
-# Set up the stable repository.  
-# 这里改用阿里云的 docker-ce.repo 文件
-sudo dnf config-manager \
-    --add-repo \
-    http://mirrors.aliyun.com/docker-ce/linux/fedora/docker-ce.repo
-    
-# 并将仓库地址替换
-sudo sed -i 's+download.docker.com+mirrors.tuna.tsinghua.edu.cn/docker-ce+' /etc/yum.repos.d/docker-ce.repo
-
-# Install the latest version of Docker Engine - Community and containerd    
-sudo dnf install docker-ce docker-ce-cli containerd.io
-
-# 启动服务设为开机启动
-sudo systemctl enable --now docker
-
-# Verify
-sudo docker version
-```
-
-参考：https://docs.docker.com/engine/install/fedora/
-
 ### 设置 Docker Hub 镜像加速器
 
 ```bash
@@ -2129,8 +2090,6 @@ https://github.com/nginxinc/docker-nginx/blob/master/mainline/alpine/Dockerfile
 
 ### 通过包管理安装
 
-Centos
-
 ```bash
 # add the yum repo:
 curl -O https://openresty.org/package/centos/openresty.repo
@@ -2146,19 +2105,6 @@ sudo yum install -y openresty-resty openresty-opm
 # 安装 restydoc
 sudo yum install -y openresty-doc
 ```
-
-Fedora
-
-```bash
-sudo dnf install -y dnf-plugins-core
-sudo dnf config-manager --add-repo https://openresty.org/package/fedora/openresty.repo
-# 安装 openresty
-sudo dnf install -y openresty
-# 安装命令行工具resty
-sudo dnf install -y openresty-resty
-```
-
-
 
 配置环境变量 ~/.bashrc
 
