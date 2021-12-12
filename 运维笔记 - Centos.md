@@ -2,7 +2,7 @@
 
 
 
-## 用户名和密码
+## 约定默认用户名和密码
 
 - 用户名：root
 - 密码：toor
@@ -45,18 +45,17 @@ https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/
 
 ## 配置 Bash
 
-### .inputrc
+**.inputrc**
 
 ```bash
-// 设置 bash 大小写不敏感
-$ echo "set completion-ignore-case on">>~/.inputrc
+# 设置 bash 大小写不敏感
+echo "set completion-ignore-case on">>~/.inputrc
 ```
 
-### 设置命令别名
+**设置命令别名**
 
 ```bash
-$ vi ~/.bashrc
-alias ll='ls -alFh --color'
+echo "alias ll='ls -alFh --color'" >> ~/.bashrc
 ```
 
 ls 命令的 -F 选项可以让目录在后面加 “/”的形式显示，方便区分
@@ -75,6 +74,12 @@ yum install python-pip（默认安装pyhon-pip2）
 pip install --upgrade pip（更新pip）
 open-vm-tools.x86_64（[VMware 虚拟机包](https://github.com/vmware/open-vm-tools)）
 psmisc（内含 pstree）
+
+## 设置网卡自动启动
+
+Centos 安装后本地网卡不会自动启动并获取IP地址，需要使用 `nmtui` 来配置
+
+参考：https://wiki.centos.org/FAQ/CentOS7#Why_does_my_Ethernet_not_work_unless_I_log_in_and_explicitly_enable_it.3F
 
 ## 设置静态IP地址
 
@@ -126,8 +131,6 @@ $ yum install neofetch
 ## Docker
 
 ### 安装 Docker CE
-
-#### Centos
 
 ```bash
 # Uninstall old versions
@@ -222,6 +225,7 @@ sudo tee /etc/docker/daemon.json <<-'EOF'
 EOF
 sudo systemctl daemon-reload
 sudo systemctl restart docker
+docker info
 ```
 
 ### 开启远程访问
@@ -362,8 +366,10 @@ volumes:
 
 无论是选择安装 Minikube 还是 Kubernetes，都需要先执行这一步操作，且集群中的所有节点都要执行这步操作。
 
+#### 安装 kubernetes.repo
+
 ```bash
-# 安装仓库（这里使用阿里的镜像）
+# 这里使用阿里的镜像
 cat <<EOF > /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
@@ -373,93 +379,184 @@ gpgcheck=1
 repo_gpgcheck=1
 gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
 EOF
-
-# SELinux运行模式切换为宽容模式
-setenforce 0
-# 关闭 SELinux（可选）
-#sed -i "s/SELINUX=enforcing/SELINUX=disabled/g" /etc/selinux/config
-
-# 卸载旧版本
-yum remove -y kubelet kubeadm kubectl
-# 设置k8s版本号
-export kubeversion=1.21.5
-# 安装三件套（注意 kubelet 版本号不能高于 kube-apiserver，且只能比 kube-apiserver 低两个小版本）
-yum install -y kubelet-${kubeversion} kubeadm-${kubeversion} kubectl-${kubeversion}
-# 确保 kubelet 的 cgroupDriver 为 systemd
-sed -i "s/cgroupfs/systemd/g" /var/lib/kubelet/config.yaml
-# 设置开机启动并启动 kubelet 服务
-systemctl enable kubelet && systemctl start kubelet
-
-# 安装 kubectl、kubeadm 命令补全
-echo "source <(kubectl completion bash)" >> ~/.bashrc
-echo "source <(kubeadm completion bash)" >> ~/.bashrc
 ```
 
-如果此时执行 `systemctl status kubelet` 命令，将得到 kubelet 启动失败的错误提示，请忽略此错误，因为必须完成后续步骤中 `kubeadm init` 的操作，kubelet 才能正常启动
+#### 关闭 SELinux
+
+关闭 SELinux 以允许容器访问宿主机的文件系统
+
+```bash
+# 临时关闭 SELinux，切换为宽容模式
+setenforce 0
+# 永久关闭 SELinux（建议）
+# sed -i "s/SELINUX=enforcing/SELINUX=disabled/g" /etc/selinux/config
+```
+
+#### 关闭交换分区
+
+K8s 不支持交换分区，必须关闭
+
+```bash
+# 关闭所有的 Swap
+swapoff -a
+# 注释掉 Swap 行
+cp /etc/fstab /etc/fstab_bak
+cat /etc/fstab_bak |grep -v swap > /etc/fstab
+# 查看 Swap 是否为空
+free -h
+```
+
+### 通过 sealos 秒装 K8s
+
+sealos 据称可以一条命令离线安装高可用 Kubernetes，3min 装完。试用了下，的确可以称得上是神器。
+
+安装前请先看一下官方文档的安装要求，以下是主要安装命令。
+
+```bash
+# 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
+curl -O https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && sudo install sealos /usr/bin/
+# 下载离线资源包
+curl -O https://sealyun.oss-cn-beijing.aliyuncs.com/05a3db657821277f5f3b92d834bbaf98-v1.22.0/kube1.22.0.tar.gz
+# 安装Kubernetes集群（单 Master 单 Node 集群）
+sealos init --passwd 'toor' \
+	--master 192.168.17.130 \
+	--node 192.168.17.131 \
+	--pkg-url /root/kube1.22.0.tar.gz \
+	--version v1.22.0	
+# 清理集群
+# sealos clean --all
+```
+
+参考：https://github.com/fanux/sealos
 
 ### 安装 Minikube
 
-minikube 能在macOS、Linux和Windows上快速建立一个本地Kubernetes集群，帮助开发者开发 Kubernetes 应用。新手建议先使用 minikube 尝尝鲜，再使用 k8s。
+minikube 能在单机上快速建立一个本地 Kubernetes 集群，帮助开发者开发 Kubernetes 应用。新手建议先使用 minikube 尝尝鲜，再使用 k8s。
+
+**配置要求**
+
+- 2 个以上的 CPU
+- 2GB 空闲内存
+- 20GB 磁盘空间
+- 安装了 Docker
+
+**安装 minikube**
 
 ```bash
-# 安装 minikube（使用阿里镜像）
-curl -Lo minikube https://kubernetes.oss-cn-hangzhou.aliyuncs.com/minikube/releases/v1.16.0/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
+# 下载 minikube
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+# 如果下载慢则切换为阿里镜像
+# curl -Lo minikube https://kubernetes.oss-cn-hangzhou.aliyuncs.com/minikube/releases/v1.16.0/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
 
-# 安装 minikube 命令补全
+# 添加命令补全
 echo "source <(minikube completion bash)" >> ~/.bashrc
 
-// 启动 minikube 集群
-minikube start
-// 查看 minikube 集群状态
-minikube status
-// 停止 minikube 集群
-minikube stop
-// 删除 minikube 集群
-minikube delete
-// 升级 minikube 版本前需要执行以下命令
-minikube delete && rm -rf ~/.minikube
+# 添加命令别名（建议安装 kubectl 以使用命令补全功能）
+# echo "alias kubectl='minikube kubectl --'" >> ~/.bashrc
 ```
 
-`minikube start --driver=none` 执行结果如下：
+**创建 K8s 集群**
 
 ```bash
-[root@localhost ~]# minikube start --driver=none
-
-minikube start --driver=none
-* minikube v1.13.0 on Centos 7.8.2003
-* Using the none driver based on user configuration
-* Starting control plane node minikube in cluster minikube
-* Running on localhost (CPUs=2, Memory=3770MB, Disk=37874MB) ...
-* OS release is CentOS Linux 7 (Core)
-* Preparing Kubernetes v1.19.0 on Docker 19.03.13 ...
-* Configuring local host environment ...
-*
-! The 'none' driver is designed for experts who need to integrate with an existing VM
-* Most users should use the newer 'docker' driver instead, which does not require root!
-* For more information, see: https://minikube.sigs.k8s.io/docs/reference/drivers/none/
-*
-! kubectl and minikube configuration will be stored in /root
-! To use kubectl or minikube commands as your own user, you may need to relocate them. For example, to overwrite your own settings, run:
-*
-  - sudo mv /root/.kube /root/.minikube $HOME
-  - sudo chown -R $USER $HOME/.kube $HOME/.minikube
-*
-* This can also be done automatically by setting the env var CHANGE_MINIKUBE_NONE_USER=true
-* Verifying Kubernetes components...
-* Enabled addons: default-storageclass, storage-provisioner
-* Done! kubectl is now configured to use "minikube" by default
-
+# 首次执行大概需要1-2分钟才能完成集群创建
+minikube start --image-mirror-country='cn' --driver=none
+# 或
+minikube start --image-mirror-country='cn' --driver=none --cpus=2 --memory=2048mb
 ```
+
+在虚拟机中不加 --driver=none 会执行失败：
+
+```bash
+[root@minikube ~]# minikube start --image-mirror-country='cn' --cpus=2 --memory=2048mb
+* minikube v1.24.0 on Centos 7.8.2003
+* Automatically selected the docker driver. Other choices: none, ssh
+! Your cgroup does not allow setting memory.
+  - More information: https://docs.docker.com/engine/install/linux-postinstall/#your-kernel-does-not-support-cgroup-swap-limit-capabilities
+* The "docker" driver should not be used with root privileges.
+* If you are running minikube within a VM, consider using --driver=none:
+*   https://minikube.sigs.k8s.io/docs/reference/drivers/none/
+
+X Exiting due to DRV_AS_ROOT: The "docker" driver should not be used with root privileges.
+```
+
+由上可知，minikube 默认选择 docker 驱动，docker 驱动是不支持以 root 权限运行的。
+
+如果是在虚拟机内运行，建议添加 --driver=none 参数不指定驱动来创建集群。
+
+**安装 kubectl**
+
+安装 kubectl 和命令补全以取代 `minikube kubectl` 
+
+```bash
+yum install -y kubectl
+echo "source <(kubectl completion bash)" >> ~/.bashrc
+```
+
+**部署一个应用测试一下**
+
+```bash
+# 部署一个 Deployment
+kubectl create deployment hello-minikube --image=registry.aliyuncs.com/google_containers/echoserver:1.4
+# 部署一个 Service，以便集群外能访问，注意对外开放的端口是随机的
+kubectl expose deployment hello-minikube --type=NodePort --port=8080
+# 查看 Service
+kubectl get -o wide service hello-minikube
+```
+
+**打开 Kubernetes 控制台**
+
+```bash
+# 前台程序，启动后可以 Ctrl-C，仍然会在后台以 Deployment 方式调度
+minikube dashboard --url
+
+# 由于只能在虚拟机内访问，所以添加 Service 转发。注意要加“--name=xxx”参数以避免与已有 Service 冲突
+kubectl -n kubernetes-dashboard expose deployment kubernetes-dashboard --type=NodePort --port=9090 --name=boardforward
+# 查看添加的 Service 生成的随机端口
+kubectl -n kubernetes-dashboard get service boardforward
+```
+
+**管理 K8s 集群**
+
+```bash
+# 查看 minikube 集群状态
+minikube status
+# 停止 minikube 集群
+minikube stop
+# 再次启动 minikube 集群，无需再加任何参数
+minikube start
+# 暂停 minikube 集群，但不影响已部署的应用程序
+minikube pause
+# 取消暂停
+minikube unpause
+# 删除 minikube 集群
+minikube delete
+# 升级 minikube 版本前需要执行以下命令
+minikube delete && rm -rf ~/.minikube
+
+# Addon 组件
+minikube addons list
+# 启用 'ingress' 插件
+minikube addons enable ingress
+# 启用 'ingress-dns' 插件
+minikube addons enable ingress-dns
+# 启用 'metrics-server' 插件
+minikube addons enable metrics-server
+# 启用 'dashboard' 插件
+minikube addons enable dashboard
+```
+
+
 
 参考：
 
 https://github.com/AliyunContainerService/minikube
 
-[Minikube - Kubernetes本地实验环境](https://developer.aliyun.com/article/221687)
-
 [15分钟在笔记本上搭建 Kubernetes + Istio开发环境](https://developer.aliyun.com/article/672675)
 
 
+
+https://minikube.sigs.k8s.io/docs/start/
 
 https://mirrors.huaweicloud.com/
 
@@ -469,7 +566,7 @@ https://developer.aliyun.com/mirror/kubernetes?spm=a2c6h.13651102.0.0.3e221b11zw
 
 #### 设置主机名
 
-所有节点的主机名不允许相同，也不允许为 localhost
+所有节点的主机名不允许相同，也不允许为 localhost，且需要确保主机名能 Ping 通。
 
 ```bash
 # 设置主机名
@@ -480,18 +577,9 @@ hostnamectl
 echo "127.0.0.1   $(hostname)" >> /etc/hosts
 ```
 
-
-#### 禁用交换分区
-
-```bash
-# 关闭所有的 Swap
-swapoff -a
-# 注释掉 Swap 行
-cp /etc/fstab /etc/fstab_bak
-cat /etc/fstab_bak |grep -v swap > /etc/fstab
-```
-
 #### 配置防火墙
+
+安装 K8s 时，建议先禁用防火墙，安装完成后再开启，避免出现各种问题。
 
 ```bash
 firewall-cmd --add-port=6443/tcp --add-port=2379-2380/tcp --add-port=10250-10252/tcp --add-port=443/tcp --add-port=4443/tcp --add-port=5473/tcp --permanent
@@ -510,6 +598,31 @@ firewall-cmd --reload
 https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#check-required-ports
 
 https://docs.projectcalico.org/getting-started/kubernetes/requirements#network-requirements
+
+#### 安装 K8s 三件套
+
+注意 kubelet 版本号不能高于 kube-apiserver，且只能比 kube-apiserver 低两个小版本
+
+```bash
+yum install -y kubelet kubeadm kubectl
+
+# 如果要指定版本安装，需要先卸载旧版本
+# yum remove -y kubelet kubeadm kubectl
+# 然后设置版本号
+# export kubeversion=1.21.5
+# yum install -y kubelet-${kubeversion} kubeadm-${kubeversion} kubectl-${kubeversion}
+
+# 确保 kubelet 的 cgroupDriver 为 systemd
+sed -i "s/cgroupfs/systemd/g" /var/lib/kubelet/config.yaml
+# 设置开机启动并启动 kubelet 服务
+systemctl enable kubelet && systemctl start kubelet
+
+# 安装 kubectl、kubeadm 命令补全
+echo "source <(kubectl completion bash)" >> ~/.bashrc
+echo "source <(kubeadm completion bash)" >> ~/.bashrc
+```
+
+如果此时执行 `systemctl status kubelet` 命令，将得到 kubelet 启动失败的错误提示，请忽略此错误，因为必须完成后续步骤中 `kubeadm init` 的操作，kubelet 才能正常启动
 
 #### 配置 containerd
 
@@ -607,9 +720,9 @@ kubectl get nodes -o wide
 kubeadm join apiserver.demo:6443 --token rtji8k.i5zdrr1xs0tolckg     --discovery-token-ca-cert-hash sha256:befa1a2369ffdb2be73b857ec2964d8c63d9ac50efa49c140ae84e206a949723
 ```
 
-#### 安装网络插件
+#### 安装CNI
 
-Calico 和 Flannel 二选一安装。
+安装 CNI 插件后，集群中的 Pod 才能互相通信。CNI 插件有很多，一般在 Calico 和 Flannel 之间二选一安装。
 
 **选择安装 Calico**
 
@@ -830,9 +943,7 @@ docker run -dp 9000:9000 --name=portainer --restart=always -v /var/run/docker.so
 
 ## Rancher
 
-Rancher 开源的企业级 Kubernetes 管理平台。
-
-### 通过 docker 安装
+Rancher 是开源的企业级 Kubernetes 管理平台。Rancher 在安装时会自动创建一个 Kubernetes 集群，该集群需要登录进 Rancher 控制台才能看到。
 
 ```bash
 sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80 -p 443:443 -v /var/lib/rancher/:/var/lib/rancher/ rancher/rancher:stable
@@ -840,13 +951,15 @@ sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80
 
 用户名默认为 admin，安装后会提示设置密码，这里设置为 admin
 
+参考：https://www.rancher.cn/quick-start/
+
 ## MySQL
 
 ### 通过 k8s 安装
 
-#### Deployment
+**Deployment**
 
-建议以 Deployment 方式部署。部署后还需要部署 Service 资源对象来暴露端口给外网。需要注意的是，由于没有
+建议以 Deployment 方式部署。部署后还需要部署 Service 资源对象来暴露端口给外网。**注意这里没有配置持久化存储。**
 
 ```yaml
 apiVersion: apps/v1
@@ -873,7 +986,7 @@ spec:
               value: "toor"
 ```
 
-#### ReplicaSet
+**ReplicaSet**
 
 ```yaml
 apiVersion: apps/v1
@@ -900,7 +1013,7 @@ spec:
               value: "toor"
 ```
 
-#### ReplicationController
+**ReplicationController**
 
 ```yaml
 apiVersion: v1
@@ -926,7 +1039,7 @@ spec:
               value: "toor"
 ```
 
-#### Service
+**Service**
 
 要想外网能够访问服务，需要通过 NodePort 把让集群节点开放端口（这里开放的端口是 30006）。
 
@@ -1301,7 +1414,7 @@ mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'pass4wOrd!';
 
 ## MariaDB
 
-### 通过 yum 安装
+**通过 yum 安装**
 
 Centos 7 默认不带 MySQL，但是有 MariaDB 替代
 
@@ -1791,7 +1904,7 @@ curl -X GET "localhost:9200/_cat/nodes?v&pretty"
 
 ## InfluxDB
 
-### 通过 docker 安装
+**通过 docker 安装**
 
 ```bash
 docker run --name influxdb -p 8086:8086 influxdb:2.0.4
@@ -1858,11 +1971,11 @@ services:
 
 ## Gogs
 
-### 硬件要求
+**硬件要求**
 
 至少双核CPU、512MB内存。Gogs 要求安装 MySQL、PostgreSQL、SQLite3、MSSQL 或 TiDB。
 
-### 通过 docker 安装
+**通过 docker 安装**
 
 ```
 mkdir -p /var/gogs
@@ -1880,7 +1993,7 @@ https://github.com/gogs/gogs/tree/main/docker
 
 ## Gitea
 
-### 通过 docker-compose 安装
+**通过 docker-compose 安装**
 
 deploy-gitea.yml
 
@@ -1919,7 +2032,7 @@ https://docs.gitea.io/en-us/install-with-docker/
 
 ## Jenkins
 
-### 通过 docker 安装
+**通过 docker 安装**
 
 1. ```bash
    $ docker volume create jenkins-data
@@ -1943,7 +2056,7 @@ https://docs.gitea.io/en-us/install-with-docker/
 
 Nexus3 用于搭建Maven私有仓库
 
-### 通过 docker 安装
+**通过 docker 安装**
 
 ```bash
 $ docker volume create --name nexus-data
@@ -1974,7 +2087,7 @@ cat /var/lib/docker/volumes/nexus-data/_data/admin.password
 
 ## Docker Registry
 
-### 通过 docker 安装
+**通过 docker 安装**
 
 ```bash
 $ docker volume create --name registry-data
@@ -2157,7 +2270,7 @@ docker run -dp 80:80 --name openresty openresty/openresty:alpine
 
 Kong 是一个基于 OpenResty 的 API 网关，支持 Postgres 和 Cassandra 数据库。
 
-### 通过 docker 安装
+**通过 docker 安装**
 
 ```bash
 // 安装 Postgres
@@ -2349,7 +2462,7 @@ https://nacos.io/zh-cn/docs/monitor-guide.html
 
 ## Seata
 
-### 通过 docker 安装
+**通过 docker 安装**
 
 ```bash
 $ docker run --name seata-server -p 8091:8091 seataio/seata-server:latest -d
@@ -2359,14 +2472,6 @@ $ docker run --name seata-server -p 8091:8091 seataio/seata-server:latest -d
 
 ## Consul
 
-### 通过 docker 安装
-
-```bash
-
-```
-
-
-
 参考：
 
 [Docker 部署 Consul，多数据中心](https://www.jianshu.com/p/df3ef9a4f456)
@@ -2375,7 +2480,7 @@ $ docker run --name seata-server -p 8091:8091 seataio/seata-server:latest -d
 
 ## Zipkin
 
-### 通过 docker 安装
+**通过 docker 安装**
 
 ```bash
 $ docker run -d -p 9411:9411 openzipkin/zipkin --name zipkin
@@ -2438,7 +2543,7 @@ services:
 
 ## Kafka
 
-### 通过 docker-compose 安装
+**通过 docker-compose 安装**
 
 kafka-compose.yml
 
@@ -2476,7 +2581,7 @@ services:
 
 ## Prometheus
 
-### 配置示例
+**配置示例**
 
 prometheus.yml
 
@@ -2587,8 +2692,6 @@ curl -L http://mirrors.host900.com:9090/snail007/proxy_admin_free/install_auto.s
 
 ## xxl-job-admin
 
-### 通过 docker 安装
-
 ```bash
 $ docker run -e PARAMS="--spring.datasource.username=root --spring.datasource.password=toor --spring.datasource.url=jdbc:mysql://centos-vm:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai" -p 8080:8080 -v /tmp:/data/applogs --name xxl-job-admin -d xuxueli/xxl-job-admin:2.2.0
 ```
@@ -2599,7 +2702,7 @@ $ docker run -e PARAMS="--spring.datasource.username=root --spring.datasource.pa
 
 ### *查看系统硬件配置
 
-### 查看系统版本
+### 查看系统版本方法汇总
 
 - `uname` 命令查看内核版本（通用）
 
@@ -2823,19 +2926,15 @@ Asia/Shanghai
 
 参考：[Linux LVM简明教程](https://linux.cn/article-3218-1.html)
 
-### 设置网卡自动启动
-
-Centos 安装后本地网卡不会自动启动并获取IP地址，需要使用 `nmtui` 来配置
-
-参考：https://wiki.centos.org/FAQ/CentOS7#Why_does_my_Ethernet_not_work_unless_I_log_in_and_explicitly_enable_it.3F
-
 ### NetworkManager 导致网卡无法获取 IP
 
 NetworkManager 异常导致网卡设备处以 unmanaged 状态，且无法恢复为 managed 状态，可以尝试以下操作：
 
 ```bash
-systemctl stop network-manager.service(Ubuntu)
-systemctl stop NetworkManager.service(Centos)
+# Ubuntu
+systemctl stop network-manager.service
+# Centos
+systemctl stop NetworkManager.service
 // 清除 NetworkManager 异常状态
 rm -f /var/lib/NetworkManager/NetworkManager.state
 systemctl start network-manager
