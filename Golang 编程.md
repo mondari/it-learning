@@ -17,6 +17,24 @@ $ go run hello.go
 Hello, World!
 ```
 
+## Go 代理
+
+Go 可以通过 `go install` 来安装包，但是由于墙的原因，很多包会安装失败。所以在安装 Go 后，建议第一时间设置 Go 代理，免除后面的困扰。
+
+Go 代理设置方法：
+
+```
+1. 右键 我的电脑 -> 属性 -> 高级系统设置 -> 环境变量
+2. 在 “[你的用户名]的用户变量” 中点击 ”新建“ 按钮
+3. 在 “变量名” 输入框并新增 “GOPROXY”
+4. 在对应的 “变量值” 输入框中新增 “https://goproxy.io,direct”
+5. 最后点击 “确定” 按钮保存设置
+```
+
+
+
+参考：https://goproxy.io/zh/docs/getting-started.html
+
 ## 语言特性
 
 计算机软件经历了数十年的发展，形成了多种学术流派，有面向过程编程、面向对象编程、函数式编程、面向消息编程等，这些思想究竟孰优孰劣，众说纷纭。
@@ -180,8 +198,6 @@ func main() {
 
 参考：https://www.runoob.com/go/go-switch-statement.html
 
-#### *select 语句
-
 ### [Exercise: Loops and Functions](https://golang.google.cn/tour/flowcontrol/8)
 
 
@@ -225,7 +241,17 @@ defer end
 
 参考：http://c.biancheng.net/view/61.html
 
-## *基本类型
+## 类型
+
+基础类型：bool、string、整型、string、byte(alias for uint8)、rune(alias for int32)、float32、float64、complex32、complex64
+
+复合类型：array、struct、interface、func、**pointer？**
+
+引用类型：slice、map、chan
+
+
+
+参考：https://go.dev/tour/moretypes/1
 
 ## 变量
 
@@ -641,11 +667,11 @@ index: 4 value: 0
 
 ## 切片(Slice)
 
-切片是数组的一个“片段”，其长度可变，相当于数组的一个视图。
+切片是数组的引用，所以改变切片的值也会改变数组的值。
 
-切片本质上是数组的引用，所以改变切片的值也会改变其引用数组的值。
+切片可以看做是数组的一个片段，其长度可变，但最大不能超过数组的长度。
 
-切片的最大长度和容量不能超过其底层数组的长度，但是可以通过 append 方法动态调整其底层数组。通过 append 方法往切片添加元素时，如果切片底层数组的长度不足以支撑其元素的数量时，就会分配一个更大的数组，新数组长度**一般？**为之前的 2 倍，并且切片将指向新数组。
+通过 append 函数可以动态调整切片引用的数组。append 方法往切片添加元素时，如果数组的长度不足以支撑切片元素的数量时，就会分配一个更大的数组，新数组长度**一般？**为之前的 2 倍，并且切片将指向新数组。
 
 ### 切片定义
 
@@ -705,10 +731,16 @@ s :=make([]int,len,cap)
 
 ### 数组与切片区别
 
-切片有长度 len 和容量 cap 两个属性，而数组只有长度 len 一个属性。
+- 切片有长度 len 和容量 cap 两个属性，而数组只有长度 len 一个属性，但数组仍然可以调用 cap() 函数，其返回结果与 len() 函数一致。
 
 - 数组的长度是数组中元素个数。因为数组的长度是数组类型的一部分，所以一旦数组定义下来，其长度不可变。
+
 - 切片的长度是切片中元素个数，容量是从切片第一个元素算起的数组中元素个数。**切片容量的计算是最容易出错的地方**，在计算切片的容量时，必须先知道切片第一个元素在数组中的位置，然后统计该元素到数组最后一个元素的个数，才是切片的容量。
+
+- 切片长度和容量快速计算公式：
+
+  slice.len = slice.highBound - slice.lowBound
+  slice.cap = array.len - slice.lowBound
 
 ```go
 package main
@@ -716,10 +748,11 @@ package main
 import "fmt"
 
 func main() {
-	array := [5]int{1, 2, 3}
+	array := [5]int{1, 2, 3}// [1 2 3 0 0]
 	fmt.Println("数组长度:", len(array)) //5
+ 	fmt.Println("数组cap=len:", cap(array)) //5
 
-	slice := array[1:3]
+	slice := array[1:3]// [2 3]
 	fmt.Println("切片长度:", len(slice)) // 2
 	fmt.Println("切片容量:", cap(slice)) // 4
 }
@@ -905,7 +938,7 @@ func main() {
 
 ## 指针
 
-虽然 Go 也有指针，但是 Go 的指针不像 C 一样有指针运算功能，即没有“指针地址增加”或“指针地址减少”。
+Go 有指针，但 Go 没有指针运算，即不像 C 语言有“指针地址增加”或“指针地址减少”这些操作。
 
 当一个指针被定义后没有分配到任何变量时，它的值为 nil。nil 指针也称为空指针。
 
@@ -939,6 +972,8 @@ https://www.runoob.com/go/go-pointers.html
 https://golang.google.cn/tour/moretypes/1
 
 ## 结构体
+
+Go 结构体是属性的集合。
 
 参考：https://www.runoob.com/go/go-structures.html
 
@@ -1123,7 +1158,7 @@ func main(){
 
 ## 接口(interface)
 
-Go 语言提供了另外一种数据类型即接口，它把所有的具有共性的方法定义在一起，任何其他类型只要实现了这些方法就是实现了这个接口。
+Go 接口是方法签名的集合（而 Go 结构体是属性的集合），它把所有的具有共性的方法定义在一起，任何其他类型只要实现了这些方法就是实现了这个接口。
 
 Go 中的接口需要结构体来实现。
 
@@ -1179,5 +1214,129 @@ func main() {
 
 ## *并发
 
+## select 语句
+
+> The `select` statement lets a goroutine wait on multiple communication operations.
+>
+> A `select` blocks until one of its cases can run, then it executes that case. It chooses one at random if multiple are ready.
+
+```go
+package main
+
+import "fmt"
+
+func fibonacci(c, quit chan int) {
+	x, y := 0, 1
+	for {
+		select {
+		case c <- x:
+			x, y = y, x+y
+		case <-quit:
+			fmt.Println("quit")
+			return
+		}
+	}
+}
+
+func main() {
+	c := make(chan int)
+	quit := make(chan int)
+	go func() {
+		for i := 0; i < 10; i++ {
+			fmt.Println(<-c)
+		}
+		quit <- 0
+	}()
+	fibonacci(c, quit)
+}
+
+```
+
+参考：https://go.dev/tour/concurrency/5
+
 ## *反射
+
+## 刷题
+
+### [Go支持给任意类型添加方法。这一说法是否正确？](https://www.nowcoder.com/questionTerminal/c894f2df2ef349c6bb92ea6efafbf3a3)
+
+这个说法是错误的。只能给自定义类型(包括内置类型，但不包括指针类型)添加方法。
+
+**内置类型**：
+
+```
+func(i int) test() {}
+```
+
+报错：cannot define new methods on non-local type int
+
+**指针类型**： 
+
+```
+type integer *int func(i integer) test() {}
+```
+
+ 报错：invalid receiver type integer (integer is a pointer type)
+
+### [`var x = nil` 和 `var x string = nil`](https://www.nowcoder.com/profile/9951268/test/50560060/138285)
+
+```go
+var x = nil // Cannot assign nil without the explicit type
+var x string = nil // cannot use nil as type string in assignment
+```
+
+总结：nil 不能赋值给没有声明类型的变量，且不能赋值给默认值不是 nil 的变量
+
+### [cap 与 len 函数](https://www.nowcoder.com/profile/9951268/test/50560060/138308)
+
+cap 适用于以下类型：
+
+- array：同 len 函数，返回数组中元素的个数
+- slice：返回切片的容量
+- **数组指针**：返回所指数组的长度，即使所指数组是 nil
+- channel：返回 buffer 容量
+
+len 适用于以下类型：
+
+- array：返回数组中元素的个数
+- slice：返回切片中元素的个数
+- **数组指针**：返回所指数组的长度，即使所指数组是 nil
+- channel：返回 buffer 中元素的个数
+- map：返回 map 中元素的个数
+- string：字符串长度
+
+示例：
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	array := [5]int{1, 2, 3}
+	fmt.Printf("array's len: %v, cap: %v\n", len(array), cap(array))
+	slices := array[1:3]
+	fmt.Printf("slice's len: %v, cap: %v\n", len(slices), cap(slices))
+	var nilArray [3]int // 定义一个空数组
+	p := &nilArray
+	fmt.Printf("pointer to array's len: %v, cap: %v\n", len(p), cap(p))
+	channel := make(chan int, 4)
+	fmt.Printf("channel's len: %v, cap: %v\n", len(channel), cap(channel))
+	mapping := make(map[string]string, 2)
+	fmt.Printf("map's len: %v, cap() don't support map!\n", len(mapping))
+	str := "string"
+	fmt.Printf("string's len: %v, cap() don't support string!\n", len(str))
+}
+```
+
+执行结果：
+
+```
+array's len: 5, cap: 5
+slice's len: 2, cap: 4                      
+pointer to array's len: 3, cap: 3           
+channel's len: 0, cap: 4                    
+map's len: 0, cap() don't support map!      
+string's len: 6, cap() don't support string!
+```
 
