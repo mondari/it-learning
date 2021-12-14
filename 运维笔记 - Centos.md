@@ -447,7 +447,7 @@ minikube 能在单机上快速建立一个本地 Kubernetes 集群，帮助开�
 curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
 # 如果下载慢则切换为阿里镜像
-# curl -Lo minikube https://kubernetes.oss-cn-hangzhou.aliyuncs.com/minikube/releases/v1.16.0/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
+# curl -Lo minikube https://kubernetes.oss-cn-hangzhou.aliyuncs.com/minikube/releases/v1.16.0/minikube-linux-amd64 && chmod +x minikube && sudo install minikube /usr/local/bin/
 
 # 添加命令补全
 echo "source <(minikube completion bash)" >> ~/.bashrc
@@ -582,16 +582,21 @@ echo "127.0.0.1   $(hostname)" >> /etc/hosts
 安装 K8s 时，建议先禁用防火墙，安装完成后再开启，避免出现各种问题。
 
 ```bash
-firewall-cmd --add-port=6443/tcp --add-port=2379-2380/tcp --add-port=10250-10252/tcp --add-port=443/tcp --add-port=4443/tcp --add-port=5473/tcp --permanent
+firewall-cmd --add-port=443/tcp --add-port=6443/tcp --add-port=2379-2380/tcp --add-port=10250-10252/tcp --add-port=4443/tcp --add-port=179/tcp --add-port=5473/tcp --add-port=4789/udp --permanent
 firewall-cmd --reload
 ```
 
-- 6443 是 apiserver 的端口
+- 443 或 6443 是 kube-apiserver 的端口
 - 2379-2380 是 etcd 服务端和客户端端口
 - 10250 是 kubelet 端口
 - 10251 是 kube-scheduler 端口
 - 10252 是 kube-controller-manager 端口
+- 179 是 Calico networking (BGP) 端口
+
 - 5473 是 Calico networking with Typha 端口
+- 4789 是 Calico networking with VXLAN 或 flannel networking (VXLAN) 端口
+
+
 
 防火墙需要开启的端口参考：
 
@@ -952,6 +957,28 @@ sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80
 用户名默认为 admin，安装后会提示设置密码，这里设置为 admin
 
 参考：https://www.rancher.cn/quick-start/
+
+## Helm
+
+Helm 是 K8s 的包管理工具。
+
+```bash
+# 二进制方式安装
+curl -O https://repo.huaweicloud.com/helm/v3.7.2/helm-v3.7.2-linux-amd64.tar.gz
+tar -zxvf helm-v3.7.2-linux-amd64.tar.gz
+sudo install linux-amd64/helm /usr/local/bin/helm
+# 添加命令补全
+echo "source <(helm completion bash)" >> ~/.bashrc
+# 添加仓库
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+```
+
+参考：
+
+https://helm.sh/docs/intro/install/
+
+https://helm.sh/docs/intro/using_helm/
 
 ## MySQL
 
