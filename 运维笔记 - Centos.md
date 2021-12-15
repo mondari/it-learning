@@ -2957,6 +2957,46 @@ Asia/Shanghai
 
 参考：[Linux LVM简明教程](https://linux.cn/article-3218-1.html)
 
+### 创建逻辑分区
+
+```bash
+# 已存在磁盘 /dev/sda，新增两个磁盘 /dev/sdb 和 /dev/sdc，需要将其添加到一个 LV，方法如下
+
+# 磁盘分区，创建分区表
+fdisk /dev/sdb
+fdisk /dev/sdc
+# 同步分区表
+partprobe
+
+# 创建 PV
+pvcreate /dev/sdb1 /dev/sdc1
+# 查看 PV
+pvs
+pvscan
+pvdisplay
+
+# 创建 VG，名为 rocky（Centos 的意志由 RockyLinux 来继承吧）
+vgcreate rocky /dev/sdb1 /dev/sdc1
+# 查看 VG
+vgs
+vgscan
+vgdisplay
+
+# 创建 LV，名为 lv1，大小为 100% 的VG，指定由名为 rocky 的 VG 分配空间。不指定名称的话系统会自动分配一个
+lvcreate rocky -l 100%VG -n lv1
+
+# 格式化磁盘以创建文件系统
+mkfs.xfs /dev/rocky/lv1
+
+# 挂载
+mkdir /lv1
+mount -t auto /dev/rocky/lv1 /lv1/
+
+# 添加到/etc/fstab
+# 执行 man fstab 以查看 /etc/fstab 各字段的含义
+echo "/dev/rocky/lv1 /lv1/                    xfs    defaults        0 0" >> /etc/fstab
+```
+
 ### NetworkManager 导致网卡无法获取 IP
 
 NetworkManager 异常导致网卡设备处以 unmanaged 状态，且无法恢复为 managed 状态，可以尝试以下操作：
