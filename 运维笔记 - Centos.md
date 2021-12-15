@@ -923,7 +923,7 @@ firewall-cmd --reload
 
 ## Portainer
 
-Portainer 是 Docker 的 Web 管理界面。
+Portainer 是 Docker 的 Web 控制台。
 
 ```bash
 docker volume create portainer_data
@@ -979,6 +979,10 @@ helm repo update
 https://helm.sh/docs/intro/install/
 
 https://helm.sh/docs/intro/using_helm/
+
+## Istio
+
+参考：https://istio.io/latest/docs/setup/getting-started/
 
 ## MySQL
 
