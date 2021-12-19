@@ -431,7 +431,7 @@ sealos init --passwd 'toor' \
 
 ### 安装 Minikube
 
-minikube 能在单机上快速建立一个本地 Kubernetes 集群，帮助开发者开发 Kubernetes 应用。新手建议先使用 minikube 尝尝鲜，再使用 k8s。
+minikube 能在单机上快速建立一个本地 Kubernetes 集群，帮助开发者开发 Kubernetes 应用。新手建议先使用 minikube 尝尝鲜，再使用 K8s。
 
 **配置要求**
 
@@ -988,11 +988,68 @@ https://helm.sh/docs/intro/using_helm/
 
 ### 通过 k8s 安装
 
-**Deployment**
-
-建议以 Deployment 方式部署。部署后还需要部署 Service 资源对象来暴露端口给外网。**注意这里没有配置持久化存储。**
-
 ```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  type: NodePort
+  ports:
+    - port: 3306
+      nodePort: 30006
+  selector:
+    app: mysql
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /mnt/disks/mysql
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - kube-master
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+spec:
+  storageClassName: local-storage
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: mysql-secret
+data:
+  password: toor
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1009,84 +1066,36 @@ spec:
     spec:
       containers:
         - name: mysql
-          image: mysql
+          image: mysql:8.0
           ports:
             - containerPort: 3306
           env:
             - name: MYSQL_ROOT_PASSWORD
-              value: "toor"
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: mysql-secret
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: mysql-volume
+          args:
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_unicode_ci
+      volumes:
+        - name: mysql-volume
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim
 ```
 
-**ReplicaSet**
+参考：
 
-```yaml
-apiVersion: apps/v1
-kind: ReplicaSet
-metadata:
-  name: mysql
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: mysql
-  template:
-    metadata:
-      labels:
-        app: mysql
-    spec:
-      containers:
-        - name: mysql
-          image: mysql
-          ports:
-            - containerPort: 3306
-          env:
-            - name: MYSQL_ROOT_PASSWORD
-              value: "toor"
-```
+https://kubernetes.io/docs/tutorials/stateful-application/mysql-wordpress-persistent-volume/
 
-**ReplicationController**
+https://kubernetes.io/docs/concepts/configuration/secret/
 
-```yaml
-apiVersion: v1
-kind: ReplicationController
-metadata:
-  name: mysql
-spec:
-  replicas: 1
-  selector:
-    app: mysql
-  template:
-    metadata:
-      labels:
-        app: mysql
-    spec:
-      containers:
-        - name: mysql
-          image: mysql
-          ports:
-            - containerPort: 3306
-          env:
-            - name: MYSQL_ROOT_PASSWORD
-              value: "toor"
-```
+https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/
 
-**Service**
-
-要想外网能够访问服务，需要通过 NodePort 把让集群节点开放端口（这里开放的端口是 30006）。
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: mysql
-spec:
-  type: NodePort
-  ports:
-    - port: 3306
-      nodePort: 30006
-  selector:
-    app: mysql
-```
+https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#port-forward
 
 ### 通过 docker-compose 安装
 
