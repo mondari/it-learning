@@ -3228,5 +3228,80 @@ https://wiki.archlinux.org/title/LVM_(%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87)
 
 ### 内核升级
 
-参考：[CentOS 7 升级 Linux 内核](https://blog.csdn.net/kikajack/article/details/79396793)
+```bash
+# Import the public key:
+rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+# To install ELRepo for RHEL-7, SL-7 or CentOS-7:
+yum install https://www.elrepo.org/elrepo-release-7.el7.elrepo.noarch.rpm
+# 查看有哪些内核版本可用
+yum --disablerepo=\* --enablerepo=elrepo-kernel list available
+```
 
+执行结果示例：
+
+```bash
+[root@localhost ~]# yum --disablerepo=\* --enablerepo=elrepo-kernel list available
+Loaded plugins: fastestmirror
+Loading mirror speeds from cached hostfile
+ * elrepo-kernel: hkg.mirror.rackspace.com
+Available Packages
+kernel-lt.x86_64                                 5.4.170-1.el7.elrepo                elrepo-kernel
+kernel-lt-devel.x86_64                           5.4.170-1.el7.elrepo                elrepo-kernel
+kernel-lt-doc.noarch                             5.4.170-1.el7.elrepo                elrepo-kernel
+kernel-lt-headers.x86_64                         5.4.170-1.el7.elrepo                elrepo-kernel
+kernel-lt-tools.x86_64                           5.4.170-1.el7.elrepo                elrepo-kernel
+kernel-lt-tools-libs.x86_64                      5.4.170-1.el7.elrepo                elrepo-kernel
+kernel-lt-tools-libs-devel.x86_64                5.4.170-1.el7.elrepo                elrepo-kernel
+kernel-ml.x86_64                                 5.16.0-1.el7.elrepo                 elrepo-kernel
+kernel-ml-devel.x86_64                           5.16.0-1.el7.elrepo                 elrepo-kernel
+kernel-ml-doc.noarch                             5.16.0-1.el7.elrepo                 elrepo-kernel
+kernel-ml-headers.x86_64                         5.16.0-1.el7.elrepo                 elrepo-kernel
+kernel-ml-tools.x86_64                           5.16.0-1.el7.elrepo                 elrepo-kernel
+kernel-ml-tools-libs.x86_64                      5.16.0-1.el7.elrepo                 elrepo-kernel
+kernel-ml-tools-libs-devel.x86_64                5.16.0-1.el7.elrepo                 elrepo-kernel
+perf.x86_64                                      5.16.0-1.el7.elrepo                 elrepo-kernel
+python-perf.x86_64                               5.16.0-1.el7.elrepo                 elrepo-kernel
+```
+
+其中
+`lt` 表示 long-term support 长期支持版的内核，推荐使用
+`ml` 表示 mainline stable 主线稳定版的内核，会频繁更新，不推荐
+
+安装内核：
+
+```bash
+yum --enablerepo=elrepo-kernel install kernel-lt -y
+```
+
+有时 **yum-plugin-fastestmirror** 选择的镜像源下载速度很慢，可以尝试使用国内的镜像源来下载安装：
+
+```bash
+# elrepo 仓库在国内有两个镜像源，一个是清华大学，另一个是阿里
+https://mirrors.tuna.tsinghua.edu.cn/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-5.4.170-1.el7.elrepo.x86_64.rpm
+# https://mirrors.aliyun.com/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-5.4.170-1.el7.elrepo.x86_64.rpm
+# 安装内核
+rpm -ivh kernel-lt-5.4.170-1.el7.elrepo.x86_64.rpm
+```
+
+安装完毕后，重启机器，即可选择新安装的内核版本来启动系统
+
+
+
+如果想要新安装的内核成为默认启动选项，执行以下命令：
+
+```bash
+# 设置 GRUB_DEFAULT=0，选择 GRUB 初始化页面的第一个内核将作为默认内核
+sed -i 's/GRUB_DEFAULT=saved/GRUB_DEFAULT=0/' /etc/default/grub
+# 重新生成 grub 配置
+grub2-mkconfig -o /boot/grub2/grub.cfg
+```
+
+
+
+参考：
+
+https://elrepo.org/tiki/HomePage
+
+[Linux centos7升级内核（两种方法：内核编译和yum更新）](https://blog.csdn.net/alwaysbefine/article/details/108931626)
+
+[CentOS 7 升级 Linux 内核](https://blog.csdn.net/kikajack/article/details/79396793)
