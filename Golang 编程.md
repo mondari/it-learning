@@ -243,15 +243,39 @@ defer end
 
 ## 类型
 
-基础类型：bool、string、整型、string、byte(alias for uint8)、rune(alias for int32)、float32、float64、complex32、complex64
+基础类型：
 
-复合类型：array、struct、interface、func、**pointer？**
+```
+bool
 
-引用类型：slice、map、chan
+string // 注意 Go 中的字符串类型是基础类型
+
+int  int8  int16  int32  int64
+uint uint8 uint16 uint32 uint64 uintptr
+
+byte // alias for uint8
+
+rune // alias for int32
+     // represents a Unicode code point
+
+float32 float64
+
+complex64 complex128
+```
+
+复合类型：array、struct、interface、function、**pointer？**
+
+引用类型：slice、map、channel
 
 
 
-参考：https://go.dev/tour/moretypes/1
+参考：
+
+https://go.dev/tour/basics/11
+
+https://go.dev/tour/moretypes/1
+
+https://golang.google.cn/ref/spec#Types
 
 ## 变量
 
@@ -585,6 +609,8 @@ func main() {
 ```
 
 参考：https://www.runoob.com/go/go-method.html
+
+### 函数不支持重载（这点跟 C 学的）
 
 ## 数组
 
