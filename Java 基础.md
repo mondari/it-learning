@@ -2,38 +2,53 @@
 
 （带 * 号的表示有待完善）
 
+## *什么是面向对象？
+
 ## 面向对象的三大基本特征
 
 继承：子类继承父类的属性和方法，或者重新定义、追加属性和方法等
 
 封装：隐藏对象的内部状态和实现细节，只对外提供公共访问方法。
 
-多态：不同对象的同一个行为具有多个不同表现形式。主要体现在方法重写（override）、方法重载（overload）、抽象类和接口
+多态：不同对象的同一个行为具有多个不同表现形式。Java 的多态主要体现在方法重写（override）、方法重载（overload）、抽象类和接口
 
 参考：[聊聊 Go 语言中的面向对象编程](https://zhuanlan.zhihu.com/p/94625212)
 
 ## *面向对象的五大基本原则
 
-- 单一职责原则（Single Responsibility Principle，简称SRP）：一个类有且只有一项职责
+- 单一职责原则（SRP，全称 Single Responsibility Principle）：一个类有且只有一项职责。
 
-- 开放封闭原则（Open Close Principle，简称OCP）：对扩展开放，对修改封闭
+- 开放封闭原则（OCP，全称 Open Close Principle）：对象或实体应该对扩展开放，对修改封闭。
 
-- 里氏替换原则（Liskov Substitution Principle，简称LSP）：顾名思义，父类能用的地方，子类也能正常使用。引申的意义就是：**子类可以扩展父类的功能，但不能修改父类的原有功能。**具体来说：
+- 里氏替换原则（LSP，全称 Liskov Substitution Principle）：父类能用的地方，子类也要能正常使用。引申的意义就是：**子类可以扩展父类的功能，但不能修改父类的原有功能。**具体来说：
   - 子类可以实现父类的抽象方法，但不能覆盖父类的非抽象方法。
   - 子类中可以增加自己特有的方法。
-  - 当子类的方法重载父类的方法时，方法的前置条件（即方法的入参）要比父类方法更宽松。
-  - 当子类的方法实现父类的方法时（重载/重写或实现抽象方法），方法的后置条件（即方法的返回值）要比父类更严格或相等。
-
-- 依赖倒置原则（Dependence Inversion Principle，简称DIP）：
-  - 高层模块不应该依赖底层模块，两者都应该依赖其抽象
+  - 当子类的方法重载父类的方法时，方法的入参要比父类更宽松。
+  
+- 依赖倒置原则（DIP，全称 Dependence Inversion Principle）：
+  - 高层模块不应该依赖底层模块，两者都应该依赖其抽象。
+  - （笔者记：也就是说高层模块和底层模块之间要有个抽象层，这样底层模块无论如何变，高层模块都不需要跟着变。Spring 中常见的有日志抽象层、网络请求抽象层、Resource 抽象层、ByteBuffer 抽象层）
   - 抽象不应该依赖细节
   - 细节应该依赖抽象 
+  
+- 接口分隔原则（ISP，全称 Interface Segregation Principles）：接口最小原则，不需要的接口方法不要添加接口中
 
-- 接口隔离原则（Interface Segregation Principles，简称ISP）：接口最小原则，不需要的接口方法不要添加接口中
+  总而言之，接口分隔原则指导我们：
 
-- 迪米特原则（Law of Demeter ，简称LoD）：只与朋友联系，不与朋友的朋友联系，由朋友（中介）来与朋友的朋友联系，从而实现低耦合，高内聚
+  - 一个类对一个类的依赖应该建立在最小的接口上
+  - 建立单一接口，不要建立庞大臃肿的接口
+  - 尽量细化接口，接口中的方法尽量少
 
-参考：[面向对象设计的七大设计原则详解](https://blog.csdn.net/qq_34760445/article/details/82931002)
+
+
+- 迪米特原则（LoD，全称 Law of Demeter）：只与朋友联系，不与朋友的朋友联系，由朋友（中介）来与朋友的朋友联系，从而实现低耦合，高内聚
+- 组合/聚合复用原则（CARP，全称 Composite/Aggregate Reuse Principle）
+
+参考：
+
+[面向对象的三大基本特征，五大基本原则 - 风之之 - 博客园](https://www.cnblogs.com/fzz9/p/8973315.html)
+
+[面向对象设计的七大设计原则详解 - CSDN](https://blog.csdn.net/qq_34760445/article/details/82931002)
 
 ## 基本数据类型的大小
 
@@ -167,20 +182,20 @@ public class Test {
 
 ## *接口和抽象类的区别及使用场景
 
-1. 接口中的所有方法都是抽象的，而抽象类则不是；
+1. **接口是对行为的抽象，而抽象类时对属性和行为的抽象**；
 
-2. 接口是实现，而抽象类是继承，一个类可以实现多个接口，但只能继承一个抽象类，因为类是单继承的；
+1. 接口中的所有方法都是抽象的，而抽象类不一定是；
 
-3. **接口可以继承接口，并可以继承多个接口，比如 ApplicationContext：**
+2. 接口是实现，而抽象类是继承。接口可以实现多个，但类只能继承一个（Java 是单继承）；
+
+4. **注意**：接口可以继承接口，并且可以继承多个接口，如下。但接口不能实现接口，因为接口中的方法都必须是抽象的。
 
    ```java
    public interface ApplicationContext extends EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,
    		MessageSource, ApplicationEventPublisher, ResourcePatternResolver
    ```
 
-   接口不能实现接口，因为接口中的方法都必须是抽象的。
-
-4. 接口中的变量不管有没有显式地声明，都是 public static final；
+5. 接口中的变量不管有没有显式地声明，都是 public static final；
 
 5. 接口中的方法不管有没有显式地声明，都是 public abstract；
 
@@ -415,8 +430,8 @@ protected 修饰的成员变量和方法，可以被该类自身、同一个包�
 缺点：
 
 1. 代码可读性变差（因为代码简洁了，所以可读性变差了）
-2. 若不用并行计算，很多时候计算速度没有比传统的 for 循环快（并行计算有时需要预热才显示出效率优势）
-3. 不容易进行调试（或者说不方便调试）
+2. 不容易进行调试（或者说不方便调试）
+3. 若不用并行计算，很多时候计算速度没有比传统的 for 循环快（并行计算有时需要预热才显示出效率优势）
 
 参考：[说说Lamda表达式的优缺点](https://www.nowcoder.com/questionTerminal/5d29d10e35fd4003b3c186b02ab073f0)
 
