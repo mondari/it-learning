@@ -148,11 +148,9 @@ Session 和 Token 的区别：
 
 参考：
 
-https://www.jianshu.com/p/b4a9569823dd
+[浏览器cookie数量与大小限制](https://www.jianshu.com/p/b4a9569823dd)
 
-https://www.cnblogs.com/belongs-to-qinghua/articles/11353228.html
-
-
+[token和session的区别](https://www.cnblogs.com/belongs-to-qinghua/p/11353228.html)
 
 ## 跨域、CORS、CSRF
 
@@ -202,7 +200,9 @@ CORS 在处理跨域问题时，将请求分为两类，简单请求（simple re
 
 https://developer.mozilla.org/zh-CN/docs/Glossary/CORS
 
-http://www.ruanyifeng.com/blog/2016/04/cors.html
+[跨域资源共享 CORS 详解 - 阮一峰的网络日志](http://www.ruanyifeng.com/blog/2016/04/cors.html)
+
+[Cookie 的 SameSite 属性 - 阮一峰的网络日志](https://www.ruanyifeng.com/blog/2019/09/cookie-samesite.html)
 
 ## 如何防止表单重复提交
 

@@ -49,7 +49,10 @@ Go 代理设置方法：
 - 类型和接口
 - **并发编程**
 - 反射
-- 语言交互性
+- 语言交互性（提供了与C语言交互的功能）
+- 官方提供单元测试支持，且支持 Example 和 Benchmark 测试
+- 官方提供代码格式化支持（提供 gofmt 工具统一代码格式化风格）
+- 文档齐全（这点 Java 比不了）
 
 参考：https://www.runoob.com/go/go-tutorial.html
 
@@ -58,6 +61,9 @@ Go 代理设置方法：
 - 不支持热编译
 - 不支持重载（向 C 看齐）
 - 变量名与包名易混淆
+- 不支持类似 Java 中的 ThreadLocal 的东西
+- 错误处理机制比较原始
+- 不支持注解（annotation），虽有 [Struct Tags](https://golang.google.cn/ref/spec#Struct_types)、`go:generate` 和 `go:build`，但不足以提供类似注解般的功能
 
 ## Go 编译 Linux 可执行文件
 
