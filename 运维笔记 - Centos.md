@@ -2702,6 +2702,28 @@ sudo firewall-cmd --list-ports
 
 参考：https://hub.docker.com/r/season/fastdfs
 
+## [MinIO](https://min.io/)
+
+**单机模式部署**
+
+MinIO Server 端
+
+```bash
+docker run -p 9000:9000 -p 9001:9001 --name minio-server minio/minio server /data --console-address ":9001"
+```
+
+> 其中，9000是API端口，9001是控制台端口，通过 `http://<MinIO Server IP>:9001` 可以访问 MinIO Web 控制台。
+
+MinIO Client 端
+
+```bash
+docker run -it --entrypoint=/bin/bash --rm minio/mc
+mc alias set local-minio/ http://<MinIO Server IP>:9000 minioadmin minioadmin
+mc ls local-minio/
+```
+
+> 其中，`local-minio` 是别名，9000是上面的API端口，`minioadmin` 是默认用户名和密码
+
 ## [goproxy](https://gitee.com/snail/proxy)
 
 安装 goproxy 高性能代理
