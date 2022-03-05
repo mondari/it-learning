@@ -77,17 +77,18 @@ psmisc（内含 pstree）
 
 ## 设置网卡自动启动
 
-Centos 安装后本地网卡不会自动启动并获取IP地址，需要使用 `nmtui` 来配置
+Centos 安装后本地网卡不会自动启动并获取IP地址，需要使用 `nmtui` 来配置，当然也可以用 `nmcli` 来配置
+
+```bash
+nmcli connection modify ens33 connection.autoconnect yes
+```
 
 参考：https://wiki.centos.org/FAQ/CentOS7#Why_does_my_Ethernet_not_work_unless_I_log_in_and_explicitly_enable_it.3F
 
 ## 设置静态IP地址
 
 ```bash
-nmcli connection modify ens33 ipv4.addresses 192.168.17.136/24
-nmcli connection modify ens33 ipv4.gateway 192.168.17.2
-nmcli connection modify ens33 ipv4.dns 114.114.114.114
-nmcli connection modify ens33 ipv4.method manual
+nmcli connection modify ens33 ipv4.addresses 192.168.17.136/24 ipv4.gateway 192.168.17.2 ipv4.dns 114.114.114.114 ipv4.method manual connection.autoconnect yes
 nmcli connection up ens33
 ```
 
@@ -3053,6 +3054,20 @@ systemctl stop NetworkManager.service
 rm -f /var/lib/NetworkManager/NetworkManager.state
 systemctl start network-manager
 ```
+
+### 给网卡分配多个IP地址
+
+```bash
+nmcli connection modify ens33 +ipv4.addresses 192.168.17.137/24
+# 重启启动连接
+nmcli connection up ens33
+# 查看IP
+ip a
+# 查看连接详情
+nmcli connection show ens33
+```
+
+注意，IP地址可以配置多个，但是网关只能有一个，所以无法通过 `+ipv4.gateway` 来增加多个网关，只会覆盖。
 
 ### 防火墙开放端口
 
