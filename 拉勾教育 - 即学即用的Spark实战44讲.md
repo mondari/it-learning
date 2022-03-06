@@ -22,11 +22,11 @@ MapReduce 模型将数据处理方式抽象为 map 和 reduce：
 
 - map 被称为映射，顾名思义，它表现的是数据的一对一映射，通常完成数据转换的工作。
 
-  ![img](拉勾教育 - 即学即用的Spark实战44讲.assets/Cgq2xl6OuuWAMmCdAABmTwpHHM4748.png)
+  ![img](拉勾教育%20-%20即学即用的Spark实战44讲.assets/Cgq2xl6OuuWAMmCdAABmTwpHHM4748.png)
 
 - reduce 被称为归约，它表示另外一种映射方式（多变少），通常完成聚合的工作
 
-  ![img](拉勾教育 - 即学即用的Spark实战44讲.assets/Cgq2xl6OuuyASdPvAAC2zb5yaHo183.png)
+  ![img](拉勾教育%20-%20即学即用的Spark实战44讲.assets/Cgq2xl6OuuyASdPvAAC2zb5yaHo183.png)
 
 MapReduce 认为，再复杂的数据处理流程也无非是这两种映射方式的组合
 
@@ -42,7 +42,7 @@ MapReduce 认为，再复杂的数据处理流程也无非是这两种映射方�
 
 附 Hadoop 生态图：
 
-![img](拉勾教育 - 即学即用的Spark实战44讲.assets/CgoCgV6WgFOATZoPAACvIAZfrpU328.png)
+![img](拉勾教育%20-%20即学即用的Spark实战44讲.assets/CgoCgV6WgFOATZoPAACvIAZfrpU328.png)
 
 - Sqoop 负责批量数据抽取
 - Flume 负责流式数据传输
@@ -85,7 +85,7 @@ MapReduce 认为，再复杂的数据处理流程也无非是这两种映射方�
 
 **RDD** 是 Spark 最核心的数据结构，RDD（Resilient Distributed Dataset）全称为**弹性分布式数据集**，是 Spark 对数据的核心抽象，它实质上是一组分布式的 JVM **不可变**对象集合，不可变决定了它是只读的，所以 RDD 在经过变换产生新的 RDD 时，（如下图中 A-B），原有 RDD 不会改变。
 
-![图片1.png](拉勾教育 - 即学即用的Spark实战44讲.assets/Ciqc1F6qfhyAEvFNAAIRggB-Gcs425.png)
+![图片1.png](拉勾教育%20-%20即学即用的Spark实战44讲.assets/Ciqc1F6qfhyAEvFNAAIRggB-Gcs425.png)
 
 **弹性**主要表现在两个方面：
 

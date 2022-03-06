@@ -38,7 +38,7 @@
 
 一般情况下不建议使用查询缓存，因为查询缓存的缓存失效非常频繁，只要对一个表进行更新操作，这个表上的所有查询缓存都会被清空。因此很可能我们很费劲地把结果存起来，还没使用就被一个更新操作给全清空了。对于更新压力大的数据库来说，查询缓存的命中率会非常低。而且 MySQL 8.0 版本直接将查询缓存的整块功能给删掉了，也就是说 8.0 开始彻底没有这个功能了。
 
-![img](面试题 - MySQL.assets/CgotOV14ySKAMxohAAH2VHcAzkE612.png)
+![img](面试题%20-%20MySQL.assets/CgotOV14ySKAMxohAAH2VHcAzkE612.png)
 
 
 
@@ -148,7 +148,7 @@ MySQL 的索引结构支持哈希表、B+树和R树（空间索引）。
 
 适合等值查询，不适合范围查询
 
-![img](面试题 - MySQL.assets\0c62b601afda86fe5d0fe57346ace957.png)
+![img](面试题%20-%20MySQL.assets\0c62b601afda86fe5d0fe57346ace957.png)
 
 ### 有序数组
 
@@ -156,7 +156,7 @@ MySQL 的索引结构支持哈希表、B+树和R树（空间索引）。
 
 使用二分查找法，算法复杂度是O(log(N))。但是插入性能低，所以适合存储静态数据。
 
-![img](面试题 - MySQL.assets\bfc907a92f99cadf5493cf0afac9ca49.png)
+![img](面试题%20-%20MySQL.assets\bfc907a92f99cadf5493cf0afac9ca49.png)
 
 ### B树
 
@@ -193,7 +193,7 @@ B树的特征：
 
 如图所示(这是B树，而不是B+树)，其中ID是主键索引字段，k是普通索引字段：
 
-![img](面试题 - MySQL.assets/dcda101051f28502bd5c4402b292e38d.png)
+![img](面试题%20-%20MySQL.assets/dcda101051f28502bd5c4402b292e38d.png)
 
 基于聚簇索引和辅助索引的查询有什么区别？
 
@@ -411,7 +411,7 @@ InnoDB 的行锁是加在索引上的，如果索引失效的话，就会升级�
 
 Redo Log 和 Undo Log 的流程图
 
-![image-20200721205142353](面试题 - MySQL.assets/image-20200721205142353.png)
+![image-20200721205142353](面试题%20-%20MySQL.assets/image-20200721205142353.png)
 
 参考：
 

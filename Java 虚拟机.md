@@ -6,7 +6,7 @@
 
 类加载过程主要分为三个阶段：加载、连接、初始化
 
-![image (9).png](Java 虚拟机.assets/CgqCHl7ORbmAQusYAABWJmj1sg8743.png)
+![image (9).png](Java%20虚拟机.assets/CgqCHl7ORbmAQusYAABWJmj1sg8743.png)
 
 - **加载(Loading)**：根据类的全限定名称将从**不同的数据源**读取**类的二进制数据**，然后通过 `ClassLoader.defineClass()` 转换成 **Class 对象**。这里的数据源包括 class 文件、jar 包、甚至是网络数据源等。
 
@@ -337,7 +337,7 @@ https://kaiwu.lagou.com/course/courseInfo.htm?courseId=59#/detail/pc?id=1784
 
   适合场景：死亡对象比较少的场景（不用清除那么多）
 
-  ![image (5).png](Java 虚拟机.assets/CgqCHl7Q3hOAHBq0AABM8DvzlGU761.png)
+  ![image (5).png](Java%20虚拟机.assets/CgqCHl7Q3hOAHBq0AABM8DvzlGU761.png)
 
 - 标记-复制算法：是标记-清除算法的一个升级，使用它可以有效地解决内存碎片化的问题。它是将内存分为大小相同的两块区域，每次只使用其中的一块区域，这样在进行垃圾回收时就可以将存活的对象直接复制到新的内存上，然后再把另一块内存全部清理掉。这样就不会产生内存碎片的问题了
 
@@ -345,7 +345,7 @@ https://kaiwu.lagou.com/course/courseInfo.htm?courseId=59#/detail/pc?id=1784
 
   适合场景：存活对象比较少的场景（不用复制那么多）
 
-  ![image (6).png](Java 虚拟机.assets/CgqCHl7Q3h6ATzDEAABQETkptLk639.png)
+  ![image (6).png](Java%20虚拟机.assets/CgqCHl7Q3h6ATzDEAABQETkptLk639.png)
 
 - 标记-整理|压缩算法（Mark-Compact）：它在标记-清除算法的基础上做了一些优化，不是直接对内存进行清除，而是**把所有存活对象整理（即移动）到内存的一端，然后把另一端的所有死亡对象清除**（类似于 Windows 的磁盘碎片整理）
 
@@ -353,7 +353,7 @@ https://kaiwu.lagou.com/course/courseInfo.htm?courseId=59#/detail/pc?id=1784
   
   
   
-  ![image (7).png](Java 虚拟机.assets/CgqCHl7Q3ieAYV5FAABLfGQH4UE403.png)
+  ![image (7).png](Java%20虚拟机.assets/CgqCHl7Q3ieAYV5FAABLfGQH4UE403.png)
 
 - 分代回收算法：分代收集算法就是目前虚拟机使用的回收算法，它将堆划分为新生代和老年代，在堆外还有一个永久代。**它在不同年代使用不同的算法**。新生代对象存活率低，则使用标记-复制算法；而老年代对象存活率高，则使用标记-清除或者标记-整理算法。
 
@@ -367,7 +367,7 @@ https://kaiwu.lagou.com/course/courseInfo.htm?courseId=59#/detail/pc?id=1784
 
 堆的分代内存分配如下：
 
-![直通BAT必考题系列：JVM的4种垃圾回收算法、垃圾回收机制与总结](Java 虚拟机.assets/15409744838080b79590351.png)
+![直通BAT必考题系列：JVM的4种垃圾回收算法、垃圾回收机制与总结](Java%20虚拟机.assets/15409744838080b79590351.png)
 
 新生代分为 Eden(亚当) 区和 Survivor 区（有两块，from 和 to），且 `Eden:from:to = 8:1:1`。
 

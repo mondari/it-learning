@@ -571,7 +571,7 @@ View 视图：根据 ModelAndView 中的 Model 渲染视图。
 
 流程图如下：
 
-![clipboard](面试题 - Spring.assets/clipboard.png)
+![clipboard](面试题%20-%20Spring.assets/clipboard.png)
 
 ## *请求映射
 

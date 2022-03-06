@@ -16,7 +16,7 @@
 
 - [runC](https://github.com/opencontainers/runc)：命令行工具，负责根据 [OCI](https://opencontainers.org/) 生成和运行容器。runC 的前身是 [Libcontainer](https://github.com/docker-archive/libcontainer) 项目，现已合并进 runC 仓库。Libcontainer 负责创建和管理容器的生命周期。
 
-  containerd 与 runc 的关系如图所示：![Screen Shot 2015-12-17 at 12.17.36 PM](面试题 - Docker.assets/containerd-arch.png)
+  containerd 与 runc 的关系如图所示：![Screen Shot 2015-12-17 at 12.17.36 PM](面试题%20-%20Docker.assets/containerd-arch.png)
 
 参考：
 
@@ -161,7 +161,7 @@ secret
 
 **Node**：工作节点。负责运行应用实例。每个工作节点都会有一个 Kubelet 代理和 Docker 环境，前者负责和 Master 通信并管理工作节点，后者是运行 Docker 容器的必要环境。
 
-![img](面试题 - Docker.assets/module_01_cluster.svg) 
+![img](面试题%20-%20Docker.assets/module_01_cluster.svg) 
 
 参考：https://kubernetes.io/docs/tutorials/kubernetes-basics/create-cluster/cluster-intro/
 
@@ -169,11 +169,11 @@ secret
 
 Pod：容器组，在容器的基础上**抽象**出来的概念，由一组容器、存储卷组成，每个 Pod 都有其独立的IP地址，Pod 内的所有容器共享其网络、存储卷。Pod 是 K8s 调度的最小单元，K8s是通过 Pod 来创建、运行和管理容器。
 
- ![img](面试题 - Docker.assets/module_03_pods.svg) 
+ ![img](面试题%20-%20Docker.assets/module_03_pods.svg) 
 
 Pod 是运行在 Node 上，默认只能在集群内访问，对外不暴露IP地址，宿主机也访问不了。但是可以通过 kubectl proxy 命令创建代理来转发请求或通过 Service 来开启外部访问。
 
- <img src="面试题 - Docker.assets/module_03_nodes.svg" height="450" />
+ <img src="面试题%20-%20Docker.assets/module_03_nodes.svg" height="450" />
 
 参考：https://kubernetes.io/docs/tutorials/kubernetes-basics/explore/explore-intro/ 
 
@@ -188,18 +188,18 @@ Deployment：部署控制器，可以确保任意时间都有指定数量的 Pod
 
 参考：https://kubernetes.io/docs/tutorials/kubernetes-basics/deploy-app/deploy-intro/
 
- ![img](面试题 - Docker.assets/module_02_first_app.svg) 
+ ![img](面试题%20-%20Docker.assets/module_02_first_app.svg) 
 
 
 ### Service
 
 Service：在 Pod 基础上**抽象**出来的概念，由一个 IP 地址（叫做 Cluster IP）和一组 Pod 组成，其通过标签来选择一组 Pod 来提供负载均衡功能。Service 默认只能在集群内访问，通过 Service 的 NodePort 方式也可以供集群外部应用访问。
 
- ![img](面试题 - Docker.assets/module_04_services.svg)
+ ![img](面试题%20-%20Docker.assets/module_04_services.svg)
 
 Service 通过 Pod 上的 Label（标签）来对 Pod 进行分组：
 
- <img src="面试题 - Docker.assets/module_04_labels.svg" alt="img" height="600" /> 
+ <img src="面试题%20-%20Docker.assets/module_04_labels.svg" alt="img" height="600" /> 
 
 参考：https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/expose-intro/
 

@@ -3391,11 +3391,11 @@ https://www.gnu.org/software/coreutils/manual/html_node/dd-invocation.html
 
 链（chains）：链是网络规则的集合。iptables 有5个规则链，分别是 PREROUTING、POSTROUTING、INPUT、OUTPUT、FORWARD。
 
-**网络包在规则链的走向示意图**：![table_subtraverse](运维笔记 - Centos.assets/table_subtraverse.jpg)
+**网络包在规则链的走向示意图**：![table_subtraverse](运维笔记%20-%20Centos.assets/table_subtraverse.jpg)
 
 
 
-**网络包在四表五链的走向示意图**：![tables_traverse](运维笔记 - Centos.assets/tables_traverse.jpg)
+**网络包在四表五链的走向示意图**：![tables_traverse](运维笔记%20-%20Centos.assets/tables_traverse.jpg)
 
 
 
@@ -3433,7 +3433,7 @@ https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html#DNATTARGET
 
 LVM 示意图：
 
-![img](运维笔记 - Centos.assets/lvm.png)
+![img](运维笔记%20-%20Centos.assets/lvm.png)
 
 参考：
 
