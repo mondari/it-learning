@@ -1,5 +1,3 @@
-[TOC]
-
 # 基础篇
 
 ## DQL、DML、DDL、DCL的概念与区别

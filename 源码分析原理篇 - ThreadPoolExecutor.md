@@ -1,7 +1,3 @@
-[TOC]
-
-
-
 ## 如何实现一个线程池
 
 参考优秀博文：https://blog.csdn.net/touch_2011/article/details/6914468

@@ -1,5 +1,3 @@
-[TOC]
-
 ## add 方法
 
 分析 ArrayList 源码先从 add 方法开始

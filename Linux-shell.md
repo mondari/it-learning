@@ -1,7 +1,3 @@
-[toc]
-
-
-
 # Shell 脚本入门
 
 建议使用 IDEA 来编辑 Shell 文件。
