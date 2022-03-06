@@ -43,10 +43,43 @@
               crossChapter: true,
               crossChapterText: true,
             },
-            // 在 Github 上编辑 插件（https://github.com/njleonzhang/docsify-edit-on-github）
-            // plugins: [
-            //   EditOnGithubPlugin.create('https://github.com/mondari/it-learning/blob/master/docs/')
-            // ]
+            // 在 Github 上编辑 插件
+            plugins: [
+                function (hook, vm) {
+                  hook.beforeEach(function (content) {
+                    const en = vm.route.file.indexOf("README_EN") > -1;
+                    if (/githubusercontent\.com/.test(vm.route.file)) {
+                      url = vm.route.file
+                        .replace("raw.githubusercontent.com", "github.com")
+                        .replace(/\/main/, "/blob/main");
+                    } else {
+                      url =
+                        "https://github.com/mondari/it-learning/blob/master/" +
+                        vm.route.file;
+                    }
+
+                    const github = `[GitHub](${url})`;
+                    const gitee = `[Gitee](${url.replace("github", "gitee")})`;
+
+                    const editHtml = en
+                      ? `:memo: Edit on ${github} / ${gitee}\n`
+                      : `:memo: 在 ${github} / ${gitee} 编辑\n`;
+
+                    if (vm.route.path == "/") {
+                      return editHtml + content;
+                    }
+                    // 这里可以添加页尾，支持Markdown语法
+                    const footer = ``;
+                    return editHtml + content + `\n` + footer;
+                  });
+
+                  hook.afterEach(function (html) {
+                    const currentYear = new Date().getFullYear()
+                    const footer = `<footer><span>Copyright © 2022-${currentYear} <a href="https://gitee.com/mondari" target="_blank">李元霸</a>. All Rights Reserved.</footer>`
+                    return html + footer;
+                  });
+                },
+              ],
         }
     </script>
     <script>
@@ -75,8 +108,13 @@
     <script src="//cdn.jsdelivr.net/npm/docsify-copy-code/dist/docsify-copy-code.min.js"></script>
     <!-- 分页导航插件 -->
     <script src="//cdn.jsdelivr.net/npm/docsify-pagination/dist/docsify-pagination.min.js"></script>
-    <!-- 在 Github 上编辑 -->
-    <script src="//cdn.jsdelivr.net/npm/docsify-edit-on-github"></script>
+    <!-- 语法高亮插件 -->
+    <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-c.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-bash.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-cpp.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-json.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-java.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-python.min.js"></script>
 </body>
 
 </html>
