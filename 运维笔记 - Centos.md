@@ -985,6 +985,8 @@ https://helm.sh/docs/intro/using_helm/
 
 参考：https://istio.io/latest/docs/setup/getting-started/
 
+# 服务安装
+
 ## MySQL
 
 ### 通过 k8s 安装
@@ -1633,6 +1635,10 @@ docker build -t rabbitmq:3.8.2-management .
 
 
 
+参考：
+
+https://hub.docker.com/_/rabbitmq
+
 ### 通过 yum 安装
 
 ```bash
@@ -2134,7 +2140,7 @@ cat /var/lib/docker/volumes/nexus-data/_data/admin.password
 
 参考：https://hub.docker.com/r/sonatype/nexus3
 
-## SonarQube
+## *SonarQube
 
 通过
 
@@ -2546,8 +2552,30 @@ $ docker run -d -p 9411:9411 openzipkin/zipkin --name zipkin
 ### 通过 docker 安装
 
 ```bash
-docker run --name zookeeper -p 2181:2181 -d zookeeper
+# 创建存储卷
+docker volume create zk-data
+docker volume create zk-datalog
+docker volume create zk-logs
+# 启动 Zookeeper
+docker run --name zookeeper -p 2181:2181 \
+-v zk-data:/data -v zk-datalog:/datalog -v zk-logs:/logs \
+-d zookeeper
+# 启动 ZooKeeper CLI 连接该服务
+docker run -it --rm --link zookeeper:zookeeper zookeeper zkCli.sh -server zookeeper
 ```
+
+该镜像暴露了 Zookeeper 以下端口
+
+- 2181：Client Port
+- 2888：Follower Port
+- 3888：Election Port
+- 8080：AdminServer Port
+
+另外该镜像有以下目录可挂载
+
+- `/data`：in-memory database snapshots
+- `/datalog`：transaction log
+- `/logs`：日志文件目录
 
 ### 通过 docker-compose 安装
 
@@ -2592,13 +2620,118 @@ services:
 
 
 
-参考：https://hub.docker.com/_/zookeeper
+参考：
+
+https://hub.docker.com/_/zookeeper
+
+https://hub.docker.com/r/bitnami/zookeeper
 
 ## Kafka
 
 **通过 docker-compose 安装**
 
-kafka-compose.yml
+使用 bitnami 镜像（单机模式）：
+
+```yaml
+# https://github.com/bitnami/bitnami-docker-kafka/blob/master/docker-compose.yml
+version: "2"
+
+services:
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:3.7
+    ports:
+      - "2181:2181"
+    volumes:
+      - "zookeeper_data:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka:
+    image: docker.io/bitnami/kafka:3
+    ports:
+      - "9092:9092"
+    volumes:
+      - "kafka_data:/bitnami"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+
+volumes:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local
+```
+
+
+
+使用 bitnami 镜像（伪集群模式）：
+
+```yaml
+# https://github.com/bitnami/bitnami-docker-kafka/blob/master/docker-compose-cluster.yml
+version: "2"
+
+services:
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:3.7
+    ports:
+      - "2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    volumes:
+      - zookeeper_data:/bitnami/zookeeper
+  kafka-0:
+    image: docker.io/bitnami/kafka:3
+    ports:
+      - "9092"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_BROKER_ID=0
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    volumes:
+      - kafka_0_data:/bitnami/kafka
+    depends_on:
+      - zookeeper
+  kafka-1:
+    image: docker.io/bitnami/kafka:3
+    ports:
+      - "9092"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_BROKER_ID=1
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    volumes:
+      - kafka_1_data:/bitnami/kafka
+    depends_on:
+      - zookeeper
+  kafka-2:
+    image: docker.io/bitnami/kafka:3
+    ports:
+      - "9092"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_BROKER_ID=2
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    volumes:
+      - kafka_2_data:/bitnami/kafka
+    depends_on:
+      - zookeeper
+
+volumes:
+  zookeeper_data:
+    driver: local
+  kafka_0_data:
+    driver: local
+  kafka_1_data:
+    driver: local
+  kafka_2_data:
+    driver: local
+```
+
+
+
+使用 wurstmeister 镜像：
 
 ```yaml
 version: '2'
@@ -2628,6 +2761,7 @@ services:
 
 参考：
 
+1. https://hub.docker.com/r/bitnami/kafka
 1. https://hub.docker.com/r/wurstmeister/kafka
 2. https://kafka.apache.org/quickstart
 3. https://www.jianshu.com/p/ac03f126980e
@@ -2771,9 +2905,53 @@ curl -L http://mirrors.host900.com:9090/snail007/proxy_admin_free/install_auto.s
 $ docker run -e PARAMS="--spring.datasource.username=root --spring.datasource.password=toor --spring.datasource.url=jdbc:mysql://centos-vm:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai" -p 8080:8080 -v /tmp:/data/applogs --name xxl-job-admin -d xuxueli/xxl-job-admin:2.2.0
 ```
 
+参考：
 
+[分布式任务调度平台XXL-JOB (xuxueli.com)](https://www.xuxueli.com/xxl-job/#其他：Docker 镜像方式搭建调度中心：)
 
-## 踩坑记录
+## Flink
+
+### 通过 docker-compose 安装
+
+flink-session-mode.yml
+
+```yaml
+version: "2.2"
+services:
+  jobmanager:
+    image: flink:latest
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager        
+
+  taskmanager:
+    image: flink:latest
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    scale: 1
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 2    
+```
+
+参考：
+
+https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/resource-providers/standalone/docker/#app-cluster-yml
+
+## [netcat](https://nmap.org/download.html#linux-rpm)
+
+```bash
+rpm -vhU https://nmap.org/dist/ncat-7.92-1.x86_64.rpm
+```
+
+# 踩坑记录
 
 ### *查看系统硬件配置
 
