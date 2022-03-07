@@ -17,7 +17,7 @@
 
 <body>
     <!-- 定义加载时候的动作 -->
-    <div id="app">加载中...</div>
+    <div id="app">🏃‍🏃‍🏃‍💨加载中...</div>
     <script>
         window.$docsify = {
             // 项目名称
@@ -36,12 +36,29 @@
             subMaxLevel: 4,
             // 小屏设备下合并导航栏到侧边栏
             mergeNavbar: true,
+            // 切换页面后是否自动跳转到页面顶部
+            auto2top: true,
             // 分页导航插件（https://github.com/imyelo/docsify-pagination）
             pagination: {
               previousText: '上一章节',
               nextText: '下一章节',
               crossChapter: true,
               crossChapterText: true,
+            },
+            // 回到顶部
+            scrollToTop: {
+                auto: true,
+                text: 'Top',
+                right: 15,
+                bottom: 15,
+                offset: 500
+            },
+            // 字数统计
+            count:{
+                countable:true,
+                fontsize:'0.9em',
+                color:'rgb(90,90,90)',
+                language:'chinese'
             },
             // 在 Github 上编辑 插件
             plugins: [
@@ -75,7 +92,7 @@
 
                   hook.afterEach(function (html) {
                     const currentYear = new Date().getFullYear()
-                    const footer = `<footer><span>Copyright © 2022-${currentYear} <a href="https://gitee.com/mondari" target="_blank">李元霸</a>. All Rights Reserved.</footer>`
+                    const footer = `<footer><span>Copyright © ${currentYear} 💖 <a href="https://gitee.com/mondari" target="_blank">李元霸</a>. All Rights Reserved.</footer>`
                     return html + footer;
                   });
                 },
@@ -115,6 +132,10 @@
     <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-json.min.js"></script>
     <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-java.min.js"></script>
     <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-python.min.js"></script>
+    <!-- 回到顶部 -->
+    <script src="//unpkg.com/docsify-scroll-to-top/dist/docsify-scroll-to-top.min.js"></script>
+    <!-- 字数统计 -->
+    <script src="//unpkg.com/docsify-count/dist/countable.js"></script>
 </body>
 
 </html>
