@@ -60,6 +60,12 @@
                 color:'rgb(90,90,90)',
                 language:'chinese'
             },
+            // 进度条
+            progress: {
+                position: "top",
+                color: "var(--theme-color,#42b983)",
+                height: "3px",
+            },
             // 在 Github 上编辑 插件
             plugins: [
                 function (hook, vm) {
@@ -136,6 +142,8 @@
     <script src="//unpkg.com/docsify-scroll-to-top/dist/docsify-scroll-to-top.min.js"></script>
     <!-- 字数统计 -->
     <script src="//unpkg.com/docsify-count/dist/countable.js"></script>
+    <!-- 进度条 -->
+    <script src="https://cdn.jsdelivr.net/npm/docsify-progress@latest/dist/progress.min.js"></script>
 </body>
 
 </html>
