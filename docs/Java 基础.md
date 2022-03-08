@@ -1,12 +1,38 @@
 ## *什么是面向对象？
 
-## 面向对象的三大基本特征（Fundamental Principles of OOP）
+> Object-Oriented Programming，简称 OOP
 
-继承(Inheritance)：子类继承父类的属性和方法。
 
-封装(Encapsulation)：隐藏对象的内部属性，对外只提供公开的方法。
 
-多态(Polymorphism)：不同对象的同一个行为具有多个不同表现形式。
+面向过程 - 步骤化
+
+面向对象 - 行为化
+
+
+
+类用于描述客观世界中同一种类对象(Real-world objects of the same kind)的共同特征和行为。
+
+对象是类的实例，是类的具体存在。
+
+
+
+参考：
+
+https://docs.oracle.com/javase/tutorial/java/concepts/index.html
+
+## 面向对象的三大基本特征
+
+> Fundamental Principles of OOP
+
+继承：子类继承父类的属性和方法。
+
+封装：隐藏对象的内部属性，对外只提供公开的方法。
+
+多态：不同对象的同一个行为具有多个不同表现形式。
+
+**抽象**：国内基本会遗漏这点，国外则会加上。抽象是将事物的共同特征和行为抽离出来，构造成类，而忽略不相关的其它方面
+
+> 继承 Inheritance；封装 Encapsulation；多态 Polymorphism；**抽象 Abstraction**
 
 
 
@@ -24,7 +50,13 @@ https://docs.oracle.com/javase/tutorial/java/concepts/index.html
 
 [聊聊 Go 语言中的面向对象编程](https://zhuanlan.zhihu.com/p/94625212)
 
-## *面向对象的五大基本原则
+https://www.jianshu.com/p/03ea25b3f4d9
+
+https://blog.csdn.net/wateronly/article/details/2880869
+
+## *面向对象的五大设计原则
+
+> Object-Oriented Design Principles
 
 - 单一职责原则（SRP，全称 Single Responsibility Principle）：一个类有且只有一项职责。
 
@@ -54,13 +86,21 @@ https://docs.oracle.com/javase/tutorial/java/concepts/index.html
 - 迪米特原则（LoD，全称 Law of Demeter）：只与朋友联系，不与朋友的朋友联系，由朋友（中介）来与朋友的朋友联系，从而实现低耦合，高内聚
 - 组合/聚合复用原则（CARP，全称 Composite/Aggregate Reuse Principle）
 
+
+
 参考：
+
+http://www.cs.utsa.edu/~cs3443/notes/designPrinciples/designPrinciples.html
+
+https://www.oodesign.com/design-principles.html
 
 [面向对象的三大基本特征，五大基本原则 - 风之之 - 博客园](https://www.cnblogs.com/fzz9/p/8973315.html)
 
 [面向对象设计的七大设计原则详解 - CSDN](https://blog.csdn.net/qq_34760445/article/details/82931002)
 
 ## 基本数据类型的大小
+
+> Primitive Data Type
 
 - byte/8
 - **char/16**
@@ -76,6 +116,12 @@ https://docs.oracle.com/javase/tutorial/java/concepts/index.html
 
 
 参考：[Primitive Data Types](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)
+
+## *访问修饰符
+
+> Access Modifier
+
+
 
 ## 静态代码块、普通代码块、构造方法执行顺序
 
