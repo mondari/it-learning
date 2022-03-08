@@ -1,14 +1,28 @@
 ## *什么是面向对象？
 
-## 面向对象的三大基本特征
+## 面向对象的三大基本特征（Fundamental Principles of OOP）
 
-继承：子类继承父类的属性和方法，或者重新定义、追加属性和方法等
+继承(Inheritance)：子类继承父类的属性和方法。
 
-封装：隐藏对象的内部状态和实现细节，只对外提供公共访问方法。
+封装(Encapsulation)：隐藏对象的内部属性，对外只提供公开的方法。
 
-多态：不同对象的同一个行为具有多个不同表现形式。Java 的多态主要体现在方法重写（override）、方法重载（overload）、抽象类和接口
+多态(Polymorphism)：不同对象的同一个行为具有多个不同表现形式。
 
-参考：[聊聊 Go 语言中的面向对象编程](https://zhuanlan.zhihu.com/p/94625212)
+
+
+Java 如何实现面向对象的三大基本特征？
+
+- 通过 extends 关键字来实现继承
+- 通过访问修饰符来实现封装
+- 通过 overload 重载、override 重写、抽象类和接口来实现多态
+
+
+
+参考：
+
+https://docs.oracle.com/javase/tutorial/java/concepts/index.html
+
+[聊聊 Go 语言中的面向对象编程](https://zhuanlan.zhihu.com/p/94625212)
 
 ## *面向对象的五大基本原则
 
