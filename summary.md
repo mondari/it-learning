@@ -13,6 +13,8 @@
     * [MongoDB](./docs/面试题%20-%20MongoDB.md)
     * [Nginx](./docs/面试题%20-%20Nginx.md)
     * [Docker](./docs/面试题%20-%20Docker.md)
+    * [分布式](./docs/面试题%20-%20分布式.md)
+    * [操作系统原理](./docs/面试题%20-%20操作系统.md)
 * 源码篇
     * [ArrayList](./docs/源码分析原理篇%20-%20ArrayList.md)
     * [HashMap](./docs/源码分析原理篇%20-%20HashMap.md)
