@@ -293,3 +293,61 @@ esac
 ```
 
 参考：http://c.biancheng.net/cpp/view/7006.html
+
+## Shell 快捷键
+
+`Ctrl+w`：删除光标到句首的内容，并将其保存至 **kill-ring**（剪切环，相当于剪切板，但数据结构是环）
+
+`Ctrl+d`：删除光标当前字符，相当于 `Delete`，这样可以不用将手挪到键盘右边功能区
+
+`Alt+d`：删除光标至单词末尾的内容
+
+`Ctrl+u`：清除光标至行首的所有内容
+
+`Ctrl+k`：清除光标至行尾的所有内容
+
+`Ctrl+t`：交换(**transpose**)光标前的两个字符
+
+`Alt+t` 或 `Esc+t`： 交换(**transpose**)光标位置前的两个单词
+
+
+
+**`Alt+f`**：将光标向右移动一个单词
+
+**`Alt+b`**：将光标向左移动一个单词
+
+`Ctrl+f`：将光标右移一个字符，相当于 `->`，这样可以不用将手挪到键盘方向键区
+
+`Ctrl+b`：将光标左移一个字符，相当于 `<-`，这样可以不用将手挪到键盘方向键区
+
+`Ctrl+a`：将光标移动到行首，相当于 `Home`，这样可以不用将手挪到键盘右边功能区
+
+`Ctrl+e`：将光标移动到行尾，相当于 `End`，这样可以不用将手挪到键盘右边功能区
+
+
+
+`Alt+u`：uppercase（转大写）光标至单词末尾的内容
+
+`Alt+l`：lowercase（转小写）光标至单词末尾的内容
+
+`Alt+c`：capitalize（首字母大写）光标至单词末尾的内容
+
+
+
+`Crtl+l` ：清屏，相当于执行 `clear` 命令
+
+`Shift+Insert`：将剪贴板内容复制到光标处
+
+
+
+`Crtl+y` ：粘贴 **kill-ring**（剪切环，相当于剪切板，但数据结构是环）第一项内容。常见使用场景是使用 `Ctrl+w` 误删命令行中的内容，按下 `Crtl+y` 可恢复。
+
+`Alt+y` ：将 **kill-ring**（剪切环，相当于剪切板，但数据结构是环）中第一项内容移到最后，再粘贴第一项内容。通常是在使用 `Crtl+y` 粘贴后，使用 `Alt+y` 切换第二项内容并粘贴。
+
+参考：
+
+https://www.gnu.org/software/bash/manual/html_node/Commands-For-Moving.html
+
+https://www.gnu.org/software/bash/manual/html_node/Commands-For-Text.html
+
+https://www.gnu.org/software/bash/manual/html_node/Commands-For-Killing.html
