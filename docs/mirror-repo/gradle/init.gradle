@@ -30,7 +30,7 @@ allprojects {
         all { ArtifactRepository repo ->
             if (repo instanceof MavenArtifactRepository) {
                 def url = repo.url.toString()
-                if (url.startsWith(ORIGIN_MAVEN_URL) || url.startsWith(ORIGIN_APACHE_MAVEN_URL)) {
+                if (url.startsWith(ORIGIN_MAVEN_URL)) {
                     project.logger.lifecycle "Repository ${repo.url} replaced by $MIRROR_MAVEN_URL."
                     remove repo
                 } else if (url.startsWith(ORIGIN_JCENTER_URL)) {
