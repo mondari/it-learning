@@ -3270,13 +3270,23 @@ firewall-cmd --remove-forward-port=port=6379:proto=tcp:toport=6379:toaddr=172.17
 使用 iptables 配置：
 
 ```bash
+# 设置要转发的容器IP和端口
+export DEST_IP=172.17.0.2
+export DEST_PORT=6379
+
 # 允许流量进入容器（该规则链在 FORWARD 规则链中）
-iptables -A DOCKER -p tcp -d 172.17.0.2 --dport 6379 -j ACCEPT
+iptables -A DOCKER -p tcp -d $DEST_IP --dport $DEST_PORT -j ACCEPT
 # 添加DNAT，外部网络才能访问容器（该规则链在 PREROUTING 规则链中）
-iptables -t nat -A DOCKER -p tcp --dport 6379 -j DNAT --to-destination 172.17.0.2:6379
+iptables -t nat -A DOCKER -p tcp --dport $DEST_PORT -j DNAT --to-destination $DEST_IP:$DEST_PORT
 # 添加MASQUERADE，容器才能访问外部网络
-iptables -t nat -A POSTROUTING -p tcp -s 172.17.0.2 -d 172.17.0.2 --dport 6379 -j MASQUERADE
+iptables -t nat -A POSTROUTING -p tcp -s $DEST_IP -d $DEST_IP --dport $DEST_PORT -j MASQUERADE
+
 # 删除上面的配置
+# 先查询规则序号
+iptables -t filter -vnL DOCKER --line-numbers | grep $DEST_PORT
+iptables -t nat -vnL DOCKER --line-numbers | grep $DEST_PORT
+iptables -t nat -vnL POSTROUTING --line-numbers | grep $DEST_PORT
+# 再根据对应的规则序号删除规则
 iptables -D DOCKER <number>
 iptables -t nat -D DOCKER <number>
 iptables -t nat -D POSTROUTING <number>
