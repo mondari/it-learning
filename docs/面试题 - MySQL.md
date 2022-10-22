@@ -746,7 +746,7 @@ insert into table values (v1, v2, ..., vN) on duplicate key update c1=v1, c2=v2,
 
 **不同点**
 
-replace into：不保留原记录的值。
+replace into：不保留原记录的值（**有丢失数据的风险**）。
 
 insert into on duplicate key update：保留除 update 语句字段外的值，然后把保留的值与需要更新的值合并，然后插入一条新记录。
 
