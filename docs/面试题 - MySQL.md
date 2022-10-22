@@ -681,9 +681,9 @@ SELECT INET6_NTOA(UNHEX('ABCDEF0123456789ABCDEF0123456789'));
 
 ## 流程控制语句
 
-### *条件语句
+SQL 也支持条件、循环和选择语句，不过这些语句一般只能用在存储过程、函数、触发器、事件中。
 
-
+参考：https://dev.mysql.com/doc/refman/5.7/en/flow-control-statements.html
 
 ### 循环语句
 
@@ -723,8 +723,6 @@ DELIMITER ;
 CALL dorepeat(10);
 SELECT @i;
 ```
-
-### *选择语句
 
 ## replace into 与 insert into on duplicate key update
 

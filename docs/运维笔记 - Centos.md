@@ -2197,7 +2197,7 @@ https://docs.docker.com/registry/deploying/
 // 安装必要的依赖
 yum install -y pcre-devel.x86_64 openssl-devel.x86_64
 // 配置
-./configure --prefix=/usr/local/nginx --with-debug
+./auto/configure --prefix=/usr/local/nginx --with-debug
 // 编译和安装
 make & make install
 ```

@@ -35,7 +35,7 @@ Go 代理设置方法：
 
 参考：https://goproxy.io/zh/docs/getting-started.html
 
-## 语言特性
+## 主要特性
 
 计算机软件经历了数十年的发展，形成了多种学术流派，有面向过程编程、面向对象编程、函数式编程、面向消息编程等，这些思想究竟孰优孰劣，众说纷纭。
 
@@ -50,9 +50,9 @@ Go 代理设置方法：
 - **并发编程**
 - 反射
 - 语言交互性（提供了与C语言交互的功能）
-- 官方提供单元测试支持，且支持 Example 和 Benchmark 测试
-- 官方提供代码格式化支持（提供 gofmt 工具统一代码格式化风格）
-- 文档齐全（这点 Java 比不了）
+- 官方提供单元测试库，且支持 Example 和 Benchmark 测试
+- 官方提供代码格式化工具 `gofmt`，统一了代码格式化风格
+- 库文档齐全，无论是官方库还是三方库，都能在 [Go Packages](https://pkg.go.dev/) 网站中查看文档
 
 参考：https://www.runoob.com/go/go-tutorial.html
 
@@ -1294,6 +1294,83 @@ func main() {
 
 ## *反射
 
+## Go Tour Exercise
+
+### [Exercise: Equivalent Binary Trees](https://golang.google.cn/tour/concurrency/7)
+
+```go
+package main
+
+import (
+	"golang.org/x/tour/tree"
+	"sort"
+)
+
+// Walk walks the tree t sending all values
+// from the tree to the channel ch.
+func Walk(t *tree.Tree, ch chan int) {
+	ch <- t.Value
+	if t.Left != nil {
+		Walk(t.Left, ch)
+	}
+	if t.Right != nil {
+		Walk(t.Right, ch)
+	}
+}
+
+// Same determines whether the trees
+// t1 and t2 contain the same values.
+func Same(t1, t2 *tree.Tree) bool {
+	c1 := make(chan int, 10)
+	c2 := make(chan int, 10)
+	go Walk(t1, c1)
+	go Walk(t2, c2)
+
+	println("==== t1 ====")
+	a1 := make([]int, 0)
+	for i := 0; i < 10; i++ {
+		v := <-c1
+		println(v)
+		a1 = append(a1, v)
+	}
+
+	a2 := make([]int, 0)
+	println("==== t2 ====")
+	for i := 0; i < 10; i++ {
+		v := <-c2
+		println(v)
+		a2 = append(a2, v)
+	}
+
+	sort.Ints(a1)
+	sort.Ints(a2)
+
+	if len(a1) != len(a2) {
+		return false
+	}
+
+	for i := range a1 {
+		if a1[i] != a2[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func main() {
+	same := Same(tree.New(1), tree.New(1))
+	println("==== result ====")
+	println(same)
+	same = Same(tree.New(1), tree.New(2))
+	println("==== result ====")
+	println(same)
+}
+
+```
+
+
+
 ## 刷题
 
 ### [Go支持给任意类型添加方法。这一说法是否正确？](https://www.nowcoder.com/questionTerminal/c894f2df2ef349c6bb92ea6efafbf3a3)
@@ -1310,20 +1387,21 @@ func(i int) test() {}
 
 **指针类型**： 
 
-```
-type integer *int func(i integer) test() {}
+```go
+type integer *int 
+func(i integer) test() {}
 ```
 
  报错：invalid receiver type integer (integer is a pointer type)
 
-### [`var x = nil` 和 `var x string = nil`](https://www.nowcoder.com/profile/9951268/test/50560060/138285)
+### [`var x = nil` 和 `var x string = nil` 表达式是否正确？](https://www.nowcoder.com/profile/9951268/test/50560060/138285)
 
 ```go
 var x = nil // Cannot assign nil without the explicit type
 var x string = nil // cannot use nil as type string in assignment
 ```
 
-总结：nil 不能赋值给没有声明类型的变量，且不能赋值给默认值不是 nil 的变量
+总结：nil 不能赋值给没有声明类型的变量，且不能赋值给默认值不是 nil 的变量（比如 string、struct 等）
 
 ### [cap 与 len 函数](https://www.nowcoder.com/profile/9951268/test/50560060/138308)
 
