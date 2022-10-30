@@ -900,6 +900,67 @@ kuboard-74c645f5df-zcq5c            0m           8Mi
 metrics-server-7dbf6c4558-4wbdx     1m           14Mi
 ```
 
+## Kubernetes Dashboard
+
+执行以下命令：
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.6.1/aio/deploy/recommended.yaml
+kubectl proxy
+```
+
+然后浏览器打开链接 http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+
+页面会提示输入 Token 或指定 Kubeconfig 路径才能登陆。这里示范一下如何生成 Token。
+
+新建一个文件 `dashboard-adminuser.yaml`，内容为：
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: kubernetes-dashboard
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: admin-user
+    namespace: kubernetes-dashboard
+```
+
+然后执行以下命令：
+
+```bash
+kubectl apply -f dashboard-adminuser.yaml
+kubectl -n kubernetes-dashboard create token admin-user
+```
+
+复制生成的 Token 进去就能登陆成功。
+
+
+
+注销登录后，执行以下命令删除创建 Token 时用到的 `ServiceAccount` 和 `ClusterRoleBinding` 。
+
+```bash
+kubectl -n kubernetes-dashboard delete serviceaccount admin-user
+kubectl -n kubernetes-dashboard delete clusterrolebinding admin-user
+```
+
+
+
+参考：
+
+https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard
+https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md
+
 ## Cockpit
 
 Cockpit 是 Linux 的 Web 控制台。Centos 8 在安装时可以选择安装该服务。
@@ -1016,15 +1077,18 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   local:
+    # 需要提前创建好该目录
     path: /mnt/disks/pv1
   nodeAffinity:
     required:
       nodeSelectorTerms:
         - matchExpressions:
+            # 筛选符合标签的node，需要根据实际情况填写
             - key: kubernetes.io/hostname
               operator: In
               values:
                 - kube-master
+                - docker-desktop
 ```
 
 **创建 MySQL 部署和服务**
@@ -1084,11 +1148,11 @@ spec:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key: password
                   name: mysql-secret
+                  key: password
           volumeMounts:
-            - mountPath: /var/lib/mysql
-              name: mysql-volume
+            - name: mysql-volume
+              mountPath: /var/lib/mysql
           args:
             - --character-set-server=utf8mb4
             - --collation-server=utf8mb4_unicode_ci
@@ -1107,6 +1171,83 @@ https://kubernetes.io/docs/concepts/configuration/secret/
 https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/
 
 https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#port-forward
+
+#### 单节点 hostpath 方式安装
+
+上面的部署方式可以简化，跳过创建`StorageClass` 、`PV` 、`PVC` 这些资源
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  type: NodePort
+  ports:
+    - port: 3306
+      nodePort: 30006
+  selector:
+    app: mysql
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: mysql-secret
+data:
+  password: toor
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: password
+          volumeMounts:
+            - name: mysql-volume
+              mountPath: /var/lib/mysql
+          args:
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_unicode_ci
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: false
+      volumes:
+        - name: mysql-volume
+          hostPath:
+            # 主机上的目录，按实际情况调整
+            path: /k8sdata/mysql
+            # 确保文件夹被创建
+            type: DirectoryOrCreate
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+  progressDeadlineSeconds: 600
+```
+
+参考：
+
+https://kubernetes.io/docs/concepts/storage/volumes/#hostpath
+
+https://www.cnblogs.com/worldinmyeyes/p/14514971.html
 
 ### 通过 docker-compose 安装
 
