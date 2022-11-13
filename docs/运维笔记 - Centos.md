@@ -1,13 +1,9 @@
-## 约定默认用户名和密码
+# 约定
 
 - 用户名：root
 - 密码：toor
 
-## 发行文档
-
-https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/
-
-## Linux 发行版对比
+# Linux 发行版对比
 
 |            | Centos 7                         | Centos 8                                    | Ubuntu Server 2018 LTS                                       | Ubuntu Server 2020 LTS | Arch Linux 2020.08.01 | 备注                            |
 | ---------- | -------------------------------- | ------------------------------------------- | ------------------------------------------------------------ | ---------------------- | --------------------- | ------------------------------- |
@@ -39,13 +35,15 @@ https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/
 
 参考：https://www.archlinux.org/releng/releases/
 
+# 安装后要做的事
+
 ## 配置 Bash
 
 **.inputrc**
 
 ```bash
 # 设置 bash 大小写不敏感
-echo "set completion-ignore-case on">>~/.inputrc
+echo "set completion-ignore-case on" >> ~/.inputrc
 ```
 
 **设置命令别名**
@@ -54,16 +52,16 @@ echo "set completion-ignore-case on">>~/.inputrc
 echo "alias ll='ls -alFh --color'" >> ~/.bashrc
 ```
 
-ls 命令的 -F 选项可以让目录在后面加 “/”的形式显示，方便区分
+ls 命令的 `-F` 选项可以让目录在后面加 `/` 显示，以区分目录和文件。
 
 ## 常用包
 
-yum groups install Development\ Tools（内含 gcc, git, cmake, perl）
-net-tools.x86_64（内含 netstat, ifconfig, route，注意，该工具包已经被 iproute 工具包代替）
-bridge-utils（内含 brctl 网桥管理工具）
-yum-cron
 bash-completion
 mlocate.x86_64
+yum groups install Development\ Tools（内含 gcc, git, cmake, perl）
+net-tools.x86_64（内含 netstat, ifconfig, route，注意该工具包已经被 iproute 工具包代替，所以这些命令也被 `ss` , `ip addr`, `ip route` 命令所代替）
+bridge-utils（内含 brctl 网桥管理工具）
+yum-cron（定时更新 yum 源）
 java-1.8.0-openjdk-devel.x86_64（内含 Java 诊断工具）
 epel-release（EPEL仓库有Python3）
 yum install python-pip（默认安装pyhon-pip2）
@@ -71,9 +69,21 @@ pip install --upgrade pip（更新pip）
 open-vm-tools.x86_64（[VMware 虚拟机包](https://github.com/vmware/open-vm-tools)）
 psmisc（内含 pstree）
 
+### Neofetch
+
+Neofetch 是一个命令行工具，能以愉悦美观的方式打印系统信息。
+
+```bash
+$ curl -o /etc/yum.repos.d/konimex-neofetch-epel-7.repo https://copr.fedorainfracloud.org/coprs/konimex/neofetch/repo/epel-7/konimex-neofetch-epel-7.repo
+
+$ yum install neofetch
+```
+
+参考：https://github.com/dylanaraps/neofetch/wiki/Installation#fedora--rhel--centos--mageia
+
 ## 设置网卡自动启动
 
-Centos 安装后本地网卡不会自动启动并获取IP地址，需要使用 `nmtui` 来配置，当然也可以用 `nmcli` 来配置
+Centos 在安装时如果不在安装界面设置网卡开机自启，则安装后需要手动设置。这里使用 `nmtui` 来配置，当然也可以用 `nmcli` 来配置
 
 ```bash
 nmcli connection modify ens33 connection.autoconnect yes
@@ -84,7 +94,7 @@ nmcli connection modify ens33 connection.autoconnect yes
 ## 设置静态IP地址
 
 ```bash
-nmcli connection modify ens33 ipv4.addresses 192.168.17.136/24 ipv4.gateway 192.168.17.2 ipv4.dns 114.114.114.114 ipv4.method manual connection.autoconnect yes
+nmcli connection modify ens33 ipv4.addresses 192.168.17.130/24 ipv4.gateway 192.168.17.2 ipv4.dns 114.114.114.114 ipv4.method manual connection.autoconnect yes
 nmcli connection up ens33
 ```
 
@@ -112,18 +122,6 @@ index-url = https://mirrors.aliyun.com/pypi/simple/
 [install]
 trusted-host=mirrors.aliyun.com
 ```
-
-## neofetch
-
-neofetch 是用来打印操作系统信息和 ASCII 版的操作系统 LOGO 图片
-
-```bash
-$ curl -o /etc/yum.repos.d/konimex-neofetch-epel-7.repo https://copr.fedorainfracloud.org/coprs/konimex/neofetch/repo/epel-7/konimex-neofetch-epel-7.repo
-
-$ yum install neofetch
-```
-
-参考：https://github.com/dylanaraps/neofetch/wiki/Installation#fedora--rhel--centos--mageia
 
 ## Docker
 
@@ -374,6 +372,31 @@ volumes:
   nacos_data:
 ```
 
+## 通过 Sealos 安装 Kubernetes
+
+```bash
+# 下载并安装 sealos
+curl -O https://github.com/labring/sealos/releases/download/v4.1.3/sealos_4.1.3_linux_amd64.tar.gz && tar zxvf sealos_4.1.3_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
+# 安装集群
+sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
+     --masters 192.168.17.131 \
+     --nodes 192.168.17.132 -p toor
+
+# 增加 node 节点
+# sealos add --nodes 192.168.17.133
+# 增加 master 节点
+# sealos add --masters 192.168.17.134
+# 删除 node 节点
+# sealos delete --nodes 192.168.17.133
+# 删除 master 节点
+# sealos delete --masters 192.168.17.134
+# 清理集群
+# sealos reset
+```
+
+参考：
+https://www.sealos.io/zh-Hans/docs/getting-started/installation
+
 ## Kubernetes
 
 ### 安装前步骤
@@ -419,29 +442,6 @@ cat /etc/fstab_bak |grep -v swap > /etc/fstab
 # 查看 Swap 是否为空
 free -h
 ```
-
-### 通过 sealos 秒装 K8s
-
-sealos 据称可以一条命令离线安装高可用 Kubernetes，3min 装完。试用了下，的确可以称得上是神器。
-
-安装前请先看一下官方文档的安装要求，以下是主要安装命令。
-
-```bash
-# 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
-curl -O https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && sudo install sealos /usr/bin/
-# 下载离线资源包
-curl -O https://sealyun.oss-cn-beijing.aliyuncs.com/05a3db657821277f5f3b92d834bbaf98-v1.22.0/kube1.22.0.tar.gz
-# 安装Kubernetes集群（单 Master 单 Node 集群）
-sealos init --passwd 'toor' \
-	--master 192.168.17.130 \
-	--node 192.168.17.131 \
-	--pkg-url /root/kube1.22.0.tar.gz \
-	--version v1.22.0	
-# 清理集群
-# sealos clean --all
-```
-
-参考：https://github.com/fanux/sealos
 
 ### 安装 Minikube
 
