@@ -163,16 +163,16 @@ sudo docker version
 
 参考：https://docs.docker.com/engine/install/centos/
 
-### 设置 Docker Hub 镜像加速器
+### 设置镜像加速
 
 ```bash
 sudo tee /etc/docker/daemon.json <<-'EOF'
 {
     "registry-mirrors": [
         "https://1nj0zren.mirror.aliyuncs.com",
-        "https://docker.mirrors.ustc.edu.cn",
         "http://f1361db2.m.daocloud.io",
-        "https://registry.docker-cn.com"
+        "https://reg-mirror.qiniu.com",
+        "https://dockerhub.azk8s.cn"
     ]
 }
 EOF
@@ -186,18 +186,26 @@ docker info
 
 **Docker Hub 镜像加速器列表**
 
-| 镜像加速器                                                   | 镜像加速器地址                       | 专属加速器       | 其它加速                                                     |
-| ------------------------------------------------------------ | ------------------------------------ | ---------------- | ------------------------------------------------------------ |
-| [Docker 中国官方镜像](https://links.jianshu.com/go?to=https%3A%2F%2Fdocker-cn.com%2Fregistry-mirror) | `https://registry.docker-cn.com`     |                  | Docker Hub                                                   |
-| [DaoCloud 镜像站](https://links.jianshu.com/go?to=https%3A%2F%2Fdaocloud.io%2Fmirror) | `http://f1361db2.m.daocloud.io`      | 可登录，系统分配 | Docker Hub                                                   |
-| [Azure 中国镜像](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2FAzure%2Fcontainer-service-for-azure-china%2Fblob%2Fmaster%2Faks%2FREADME.md%2322-container-registry-proxy) | `https://dockerhub.azk8s.cn`         |                  | Docker Hub、GCR、Quay                                        |
-| [科大镜像站](https://links.jianshu.com/go?to=https%3A%2F%2Fmirrors.ustc.edu.cn%2Fhelp%2Fdockerhub.html) | `https://docker.mirrors.ustc.edu.cn` |                  | Docker Hub、[GCR](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2Fustclug%2Fmirrorrequest%2Fissues%2F91)、[Quay](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2Fustclug%2Fmirrorrequest%2Fissues%2F135) |
-| [阿里云](https://links.jianshu.com/go?to=https%3A%2F%2Fcr.console.aliyun.com) | `https://xxx.mirror.aliyuncs.com`    | 需登录，系统分配 | Docker Hub                                                   |
-| [七牛云](https://links.jianshu.com/go?to=https%3A%2F%2Fkirk-enterprise.github.io%2Fhub-docs%2F%23%2Fuser-guide%2Fmirror) | `https://reg-mirror.qiniu.com`       |                  | Docker Hub、GCR、Quay                                        |
-| [网易云](https://links.jianshu.com/go?to=https%3A%2F%2Fc.163yun.com%2Fhub) | `https://hub-mirror.c.163.com`       |                  | Docker Hub                                                   |
-| [腾讯云](https://links.jianshu.com/go?to=https%3A%2F%2Fcloud.tencent.com%2Fdocument%2Fproduct%2F457%2F9113) | `https://mirror.ccs.tencentyun.com`  |                  | Docker Hub                                                   |
+| 镜像站                                                       | 加速地址                                                     | 备注             | 其它加速              |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ---------------- | --------------------- |
+| [七牛云](https://kirk-enterprise.github.io/hub-docs/#/user-guide/mirror
+) | https://reg-mirror.qiniu.com                                 |                  | Docker Hub、GCR、Quay |
+| [Azure 中国镜像](https://github.com/Azure/container-service-for-azure-china/blob/master/aks/README.md#22-container-registry-proxy) | https://dockerhub.azk8s.cn                                   |                  | Docker Hub、GCR、Quay |
+| [科大镜像](https://mirrors.ustc.edu.cn/help/dockerhub.html)  | https://docker.mirrors.ustc.edu.cn                           | 貌似只能校内用   | Docker Hub、GCR、Quay |
+| [DaoCloud 镜像站](https://www.daocloud.io/mirror)            | http://f1361db2.m.daocloud.io                                | 可登录，系统分配 | Docker Hub            |
+| 华为云                                                       | https://05f073ad3c0010ea0f4bc00b7105ec20.mirror.swr.myhuaweicloud.com |                  | Docker Hub            |
+| [阿里云](https://cr.console.aliyun.com)                      | https://xxx.mirror.aliyuncs.com                              | 需登录，系统分配 | Docker Hub            |
+| [网易云](https://c.163yun.com/hub)                           | https://hub-mirror.c.163.com                                 |                  | Docker Hub            |
+| [腾讯云](https://cloud.tencent.com/document/product/1141/50332) | https://mirror.ccs.tencentyun.com                            |                  | Docker Hub            |
+| [百度云](https://cloud.baidu.com/doc/CCE/s/Yjxppt74z#%E4%BD%BF%E7%94%A8dockerhub%E5%8A%A0%E9%80%9F%E5%99%A8) | https://mirror.baidubce.com                                  |                  | Docker Hub            |
 
-参考：[Docker Hub 镜像加速器](https://www.jianshu.com/p/5a911f20d93e)
+参考：
+
+[Docker Hub 镜像加速器](https://www.jianshu.com/p/5a911f20d93e)
+
+https://github.com/yeasy/docker_practice/blob/master/install/mirror.md
+
+https://docs.docker.com/registry/recipes/mirror/#configure-the-docker-daemon
 
 ### 设置 cgroup driver
 
@@ -215,8 +223,7 @@ sudo tee /etc/docker/daemon.json <<-'EOF'
   "registry-mirrors": [
       "https://1nj0zren.mirror.aliyuncs.com",
       "https://docker.mirrors.ustc.edu.cn",
-      "http://f1361db2.m.daocloud.io",
-      "https://registry.docker-cn.com"
+      "http://f1361db2.m.daocloud.io"
   ]
 }
 EOF
@@ -244,6 +251,8 @@ firewall-cmd --add-port=2375/tcp --permanent && firewall-cmd --reload
 # DOCKER_HOST=tcp://$REMOTE_DOCKER_IP:2375
 ```
 
+参考：https://docs.docker.com/engine/install/linux-postinstall
+
 ### 开启 IPv4 转发以访问外网
 
 **一般 Docker 安装后会自动开启 IPv4 转发功能，无需手动开启。**
@@ -264,6 +273,14 @@ $ sysctl -p /etc/sysctl.conf
 // 或者通过以下命令开启 IPv4 转发
 $ sysctl -w net.ipv4.ip_forward=1
 ```
+
+### 安装后要做的事、故障排除
+
+参考：
+
+https://docs.docker.com/engine/install/linux-postinstall/
+
+https://docs.docker.com/engine/install/troubleshoot/
 
 ## Docker Compose
 
@@ -1006,7 +1023,7 @@ docker run -dp 9000:9000 --name=portainer --restart=always -v /var/run/docker.so
 
 ## Rancher
 
-Rancher 是开源的企业级 Kubernetes 管理平台。Rancher 在安装时会自动创建一个 Kubernetes 集群，该集群需要登录进 Rancher 控制台才能看到。
+Rancher 是开源的企业级 Kubernetes 管理平台。Rancher 在安装时会自动创建一个 Kubernetes 集群，需要登录进 Rancher 控制台才能看到该集群。
 
 ```bash
 sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80 -p 443:443 -v /var/lib/rancher/:/var/lib/rancher/ rancher/rancher:stable
