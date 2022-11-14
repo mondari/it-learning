@@ -57,16 +57,17 @@ ls 命令的 `-F` 选项可以让目录在后面加 `/` 显示，以区分目录
 ## 常用包
 
 bash-completion
-mlocate.x86_64
+mlocate
+bind-utils（内含 nslookup）
 yum groups install Development\ Tools（内含 gcc, git, cmake, perl）
-net-tools.x86_64（内含 netstat, ifconfig, route，注意该工具包已经被 iproute 工具包代替，所以这些命令也被 `ss` , `ip addr`, `ip route` 命令所代替）
+net-tools（内含 netstat, ifconfig, route，注意该工具包已经被 iproute 工具包代替，所以这些命令也被 `ss` , `ip addr`, `ip route` 命令所代替）
 bridge-utils（内含 brctl 网桥管理工具）
 yum-cron（定时更新 yum 源）
-java-1.8.0-openjdk-devel.x86_64（内含 Java 诊断工具）
+java-1.8.0-openjdk-devel（内含 Java 诊断工具）
 epel-release（EPEL仓库有Python3）
 yum install python-pip（默认安装pyhon-pip2）
 pip install --upgrade pip（更新pip）
-open-vm-tools.x86_64（[VMware 虚拟机包](https://github.com/vmware/open-vm-tools)）
+open-vm-tools（[VMware 虚拟机包](https://github.com/vmware/open-vm-tools)）
 psmisc（内含 pstree）
 
 ### Neofetch
@@ -122,6 +123,24 @@ index-url = https://mirrors.aliyun.com/pypi/simple/
 [install]
 trusted-host=mirrors.aliyun.com
 ```
+
+## Cockpit
+
+Cockpit 是 Linux 的 Web 控制台。Centos 8 在安装时可以选择安装该服务。
+
+```bash
+# 安装 cockpit:
+yum install cockpit
+
+# 启动 cockpit 服务:
+systemctl enable --now cockpit.socket
+
+# 打开防火墙:
+firewall-cmd --permanent --zone=public --add-service=cockpit
+firewall-cmd --reload
+```
+
+访问  https://ip-address:9090，用户名和密码就是系统用户的账号和密码
 
 ## Docker
 
@@ -371,31 +390,6 @@ services:
 volumes:
   nacos_data:
 ```
-
-## 通过 Sealos 安装 Kubernetes
-
-```bash
-# 下载并安装 sealos
-curl -O https://github.com/labring/sealos/releases/download/v4.1.3/sealos_4.1.3_linux_amd64.tar.gz && tar zxvf sealos_4.1.3_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
-# 安装集群
-sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
-     --masters 192.168.17.131 \
-     --nodes 192.168.17.132 -p toor
-
-# 增加 node 节点
-# sealos add --nodes 192.168.17.133
-# 增加 master 节点
-# sealos add --masters 192.168.17.134
-# 删除 node 节点
-# sealos delete --nodes 192.168.17.133
-# 删除 master 节点
-# sealos delete --masters 192.168.17.134
-# 清理集群
-# sealos reset
-```
-
-参考：
-https://www.sealos.io/zh-Hans/docs/getting-started/installation
 
 ## Kubernetes
 
@@ -917,85 +911,6 @@ kuboard-74c645f5df-zcq5c            0m           8Mi
 metrics-server-7dbf6c4558-4wbdx     1m           14Mi
 ```
 
-## Kubernetes Dashboard
-
-执行以下命令：
-
-```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.6.1/aio/deploy/recommended.yaml
-kubectl proxy
-```
-
-然后浏览器打开链接 http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
-
-页面会提示输入 Token 或指定 Kubeconfig 路径才能登陆。这里示范一下如何生成 Token。
-
-新建一个文件 `dashboard-adminuser.yaml`，内容为：
-
-```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: admin-user
-  namespace: kubernetes-dashboard
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: admin-user
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-  - kind: ServiceAccount
-    name: admin-user
-    namespace: kubernetes-dashboard
-```
-
-然后执行以下命令：
-
-```bash
-kubectl apply -f dashboard-adminuser.yaml
-kubectl -n kubernetes-dashboard create token admin-user
-```
-
-复制生成的 Token 进去就能登陆成功。
-
-
-
-注销登录后，执行以下命令删除创建 Token 时用到的 `ServiceAccount` 和 `ClusterRoleBinding` 。
-
-```bash
-kubectl -n kubernetes-dashboard delete serviceaccount admin-user
-kubectl -n kubernetes-dashboard delete clusterrolebinding admin-user
-```
-
-
-
-参考：
-
-https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard
-https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md
-
-## Cockpit
-
-Cockpit 是 Linux 的 Web 控制台。Centos 8 在安装时可以选择安装该服务。
-
-```bash
-# 安装 cockpit:
-yum install cockpit
-
-# 启动 cockpit 服务:
-systemctl enable --now cockpit.socket
-
-# 打开防火墙:
-firewall-cmd --permanent --zone=public --add-service=cockpit
-firewall-cmd --reload
-```
-
-访问  https://ip-address:9090，用户名和密码就是系统用户的账号和密码
-
 ## Portainer
 
 Portainer 是 Docker 的 Web 控制台。
@@ -1021,250 +936,9 @@ docker run -dp 9000:9000 --name=portainer --restart=always -v /var/run/docker.so
 2. http://www.senra.me/docker-management-panel-series-portainer/
 3. https://docs.kvasirsg.com/centos-7/prefilight-configuration/how-to-enable-ip-forwarding
 
-## Rancher
-
-Rancher 是开源的企业级 Kubernetes 管理平台。Rancher 在安装时会自动创建一个 Kubernetes 集群，需要登录进 Rancher 控制台才能看到该集群。
-
-```bash
-sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80 -p 443:443 -v /var/lib/rancher/:/var/lib/rancher/ rancher/rancher:stable
-```
-
-用户名默认为 admin，安装后会提示设置密码，这里设置为 admin
-
-参考：https://www.rancher.cn/quick-start/
-
-## Helm
-
-Helm 是 K8s 的包管理工具。
-
-```bash
-# 二进制方式安装
-curl -O https://repo.huaweicloud.com/helm/v3.7.2/helm-v3.7.2-linux-amd64.tar.gz
-tar -zxvf helm-v3.7.2-linux-amd64.tar.gz
-sudo install linux-amd64/helm /usr/local/bin/helm
-# 添加命令补全
-echo "source <(helm completion bash)" >> ~/.bashrc
-# 添加仓库
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm repo update
-```
-
-参考：
-
-https://helm.sh/docs/intro/install/
-
-https://helm.sh/docs/intro/using_helm/
-
-## Istio
-
-参考：https://istio.io/latest/docs/setup/getting-started/
-
 # 服务安装
 
 ## MySQL
-
-### 通过 k8s 安装
-
-**创建本地存储 StorageClass**
-
-```yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: local-storage
-provisioner: kubernetes.io/no-provisioner
-volumeBindingMode: WaitForFirstConsumer
-```
-
-**创建 PV**
-
-添加本地存储 PV，并通过 storageClassName 属性与 StorageClass 绑定。PVC 绑定 StorageClass 后，会由 StorageClass 动态分配 PV 与 PVC 绑定。注意，PV 一旦与某个 PVC 绑定后，即使该 PVC 删除了，也不会再与其它 PVC 绑定，需要手动删除 PV 及其数据并重新创建 PV 才行。
-
-```yaml
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: local-pv1
-spec:
-  capacity:
-    storage: 2Gi
-  volumeMode: Filesystem
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
-  local:
-    # 需要提前创建好该目录
-    path: /mnt/disks/pv1
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            # 筛选符合标签的node，需要根据实际情况填写
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - kube-master
-                - docker-desktop
-```
-
-**创建 MySQL 部署和服务**
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: mysql
-spec:
-  type: NodePort
-  ports:
-    - port: 3306
-      nodePort: 30006
-  selector:
-    app: mysql
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mysql-pv-claim
-spec:
-  storageClassName: local-storage
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 2Gi
----
-kind: Secret
-apiVersion: v1
-metadata:
-  name: mysql-secret
-data:
-  password: toor
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: mysql
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: mysql
-  template:
-    metadata:
-      labels:
-        app: mysql
-    spec:
-      containers:
-        - name: mysql
-          image: mysql:8.0
-          ports:
-            - containerPort: 3306
-          env:
-            - name: MYSQL_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mysql-secret
-                  key: password
-          volumeMounts:
-            - name: mysql-volume
-              mountPath: /var/lib/mysql
-          args:
-            - --character-set-server=utf8mb4
-            - --collation-server=utf8mb4_unicode_ci
-      volumes:
-        - name: mysql-volume
-          persistentVolumeClaim:
-            claimName: mysql-pv-claim
-```
-
-参考：
-
-https://kubernetes.io/docs/tutorials/stateful-application/mysql-wordpress-persistent-volume/
-
-https://kubernetes.io/docs/concepts/configuration/secret/
-
-https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/
-
-https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#port-forward
-
-#### 单节点 hostpath 方式安装
-
-上面的部署方式可以简化，跳过创建`StorageClass` 、`PV` 、`PVC` 这些资源
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: mysql
-spec:
-  type: NodePort
-  ports:
-    - port: 3306
-      nodePort: 30006
-  selector:
-    app: mysql
----
-kind: Secret
-apiVersion: v1
-metadata:
-  name: mysql-secret
-data:
-  password: toor
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: mysql
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: mysql
-  template:
-    metadata:
-      labels:
-        app: mysql
-    spec:
-      containers:
-        - name: mysql
-          image: mysql:8.0
-          ports:
-            - containerPort: 3306
-          env:
-            - name: MYSQL_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mysql-secret
-                  key: password
-          volumeMounts:
-            - name: mysql-volume
-              mountPath: /var/lib/mysql
-          args:
-            - --character-set-server=utf8mb4
-            - --collation-server=utf8mb4_unicode_ci
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: false
-      volumes:
-        - name: mysql-volume
-          hostPath:
-            # 主机上的目录，按实际情况调整
-            path: /k8sdata/mysql
-            # 确保文件夹被创建
-            type: DirectoryOrCreate
-      restartPolicy: Always
-      terminationGracePeriodSeconds: 30
-      dnsPolicy: ClusterFirst
-  progressDeadlineSeconds: 600
-```
-
-参考：
-
-https://kubernetes.io/docs/concepts/storage/volumes/#hostpath
-
-https://www.cnblogs.com/worldinmyeyes/p/14514971.html
 
 ### 通过 docker-compose 安装
 
@@ -1466,16 +1140,16 @@ mysql> reset master;
 1. [借力 Docker ，三分钟搞定 MySQL 主从复制！](https://cloud.tencent.com/developer/article/1533955)
 2. [MySQL的binlog日志](https://www.cnblogs.com/martinzhang/p/3454358.html)
 
-### MySQL PXC 集群搭建
+### Percona XtraDB Cluster
 
 #### percona-xtradb-cluster:8.0
 
 这里以创建3个 PXC 节点（分别为 pxc-node1、pxc-node2、pxc-node3）为例：
 
 ```bash
-// 创建一个文件夹
+# 创建一个文件夹
 mkdir -p ~/pxc-docker/config
-// 在新建的文件夹中创建配置文件
+# 在新建的文件夹中创建配置文件
 cat > ~/pxc-docker/config/custom.cnf <<EOF
 [mysqld]
 ssl-ca = /cert/ca.pem
@@ -1494,16 +1168,16 @@ ssl-cert = /cert/server-cert.pem
 ssl-key = /cert/server-key.pem
 EOF
 
-// 再创建一个存放证书的文件夹
+# 再创建一个存放证书的文件夹
 mkdir -m 777 -p ~/pxc-docker/cert
-// 创建证书
+# 创建证书
 docker run --name pxc-cert --rm -v ~/pxc-docker/cert:/cert \
 percona/percona-xtradb-cluster:8.0 mysql_ssl_rsa_setup -d /cert
 
-// 创建 docker 网络
+# 创建 docker 网络
 docker network create pxc-network
 
-// 启动第一个节点（注意在官方教程的基础上加了“-v ~/pxc-docker/cert:/cert”参数，不加会报错）
+# 启动第一个节点（注意在官方教程的基础上加了“-v ~/pxc-docker/cert:/cert”参数，不加会报错）
 docker run -d \
   -e MYSQL_ROOT_PASSWORD=toor \
   -e CLUSTER_NAME=pxc-cluster \
@@ -1513,7 +1187,7 @@ docker run -d \
   -v ~/pxc-docker/config:/etc/percona-xtradb-cluster.conf.d \
   -p 33061:3306 \
   percona/percona-xtradb-cluster:8.0
-// 启动其它节点（注意加了“-e CLUSTER_JOIN=pxc-node1”参数）
+# 启动其它节点（注意加了“-e CLUSTER_JOIN=pxc-node1”参数）
 docker run -d \
   -e MYSQL_ROOT_PASSWORD=toor \
   -e CLUSTER_NAME=pxc-cluster \
@@ -1536,37 +1210,34 @@ docker run -d \
   percona/percona-xtradb-cluster:8.0  
 ```
 
-
-
 #### percona-xtradb-cluster:5.7
 
 这里以创建3个 PXC 节点（分别为 node1、node2、node3）为例：
 
 ```bash
-// 拉取镜像，注意不能是8.0，因为8.0安装方式变了
+# 拉取镜像，注意不能是8.0，因为8.0安装方式变了
 docker pull percona/percona-xtradb-cluster:5.7
-// 镜像名称太长，重命名一下
+# 镜像名称太长，重命名一下
 docker tag percona/percona-xtradb-cluster:5.7 pxc
-// 创建子网
+# 创建子网
 docker network create --subnet=172.20.0.0/24 pxc-network
-// 创建数据卷
+# 创建数据卷
 docker volume create --name v1
 docker volume create --name v2
 docker volume create --name v3
-// 启动第一个节点
+# 启动第一个节点
 docker run -d -p 33061:3306 -e MYSQL_ROOT_PASSWORD=toor -e CLUSTER_NAME=PXC -e XTRABACKUP_PASSWORD=toor -v v1:/var/lib/mysql --name=node1 --network=pxc-network --ip 172.20.0.2 pxc
-// 第一个节点启动完后再启动其它节点（注意参数加了“-e CLUSTER_JOIN=node1”）
+# 第一个节点启动完后再启动其它节点（注意参数加了“-e CLUSTER_JOIN=node1”）
 docker run -d -p 33062:3306 -e MYSQL_ROOT_PASSWORD=toor -e CLUSTER_NAME=PXC -e XTRABACKUP_PASSWORD=toor -e CLUSTER_JOIN=node1 -v v2:/var/lib/mysql --name=node2 --network=pxc-network --ip 172.20.0.3 pxc
 docker run -d -p 33063:3306 -e MYSQL_ROOT_PASSWORD=toor -e CLUSTER_NAME=PXC -e XTRABACKUP_PASSWORD=toor -e CLUSTER_JOIN=node1 -v v3:/var/lib/mysql --name=node3 --network=pxc-network --ip 172.20.0.4 pxc
 ```
 
-
-
 参考：
 
-1. https://www.cnblogs.com/wanglei957/p/11819547.html
-2. https://www.percona.com/doc/percona-xtradb-cluster/LATEST/install/docker.html#pxc-docker-container-running
-3. https://www.percona.com/doc/percona-xtradb-cluster/5.7/install/docker.html#pxc-docker-container-running
+- https://www.cnblogs.com/wanglei957/p/11819547.html
+
+- https://docs.percona.com/percona-xtradb-cluster/8.0/install/docker.html
+- https://docs.percona.com/percona-xtradb-cluster/5.7/install/docker.html
 
 ### 安装后配置
 
