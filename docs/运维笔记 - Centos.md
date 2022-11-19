@@ -1292,19 +1292,6 @@ mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'pass4wOrd!';
 
 参考：https://dev.mysql.com/doc/refman/8.0/en/linux-installation-yum-repo.html
 
-## MariaDB
-
-**通过 yum 安装**
-
-Centos 7 默认不带 MySQL，但是有 MariaDB 替代
-
-```bash
-$ yum install mariadb-server.x86_64
-$ systemctl enable --now mariadb
-```
-
-安装后配置同 MySQL
-
 ## PostgreSQL
 
 ### 通过 docker-compose 安装
@@ -1798,9 +1785,35 @@ docker run --name influxdb -p 8086:8086 influxdb:2.0.4
 
 参考：https://docs.influxdata.com/influxdb/v2.0/get-started
 
-## GitLab
+## OpenLDAP
 
-gitlab-ce 的镜像大概 1GB 左右，而 Gogs 为 100MB 左右，占用的CPU资源也比 Gogs 高。
+**osixia/openldap**
+
+```bash
+# 启动
+docker run -p 389:389 -p 636:636 --name ldap-service -e LDAP_ORGANISATION="Example Inc" -e LDAP_DOMAIN="example.org" -e LDAP_ADMIN_PASSWORD="admin" -d osixia/openldap:1.5.0
+# 连接
+docker exec ldap-service ldapsearch -x -H ldap://localhost -b dc=example,dc=org -D "cn=admin,dc=example,dc=org" -w admin
+```
+
+其中 `-x` 表示简单认证，`-H` 指定连接 URI，`-b` 指定 `BaseDN` ，`-D` 是 `Bind DN or user` ，相当于用户名 ，`-w` 指定密码。
+
+参考：https://github.com/osixia/docker-openldap
+
+
+
+**bitnami/openldap**
+
+```bash
+# 启动
+docker run -d --rm --name openldap -p 1389:1389 -p 1636:1636 -e LDAP_ROOT=dc=example,dc=org -e LDAP_ADMIN_USERNAME=admin -e LDAP_ADMIN_PASSWORD=adminpassword -e LDAP_USERS=customuser -e LDAP_PASSWORDS=custompassword bitnami/openldap:latest
+# 连接
+docker exec openldap ldapsearch -x -H ldap://localhost:1389 -b dc=example,dc=org -D "cn=admin,dc=example,dc=org" -w adminpassword
+```
+
+参考：https://hub.docker.com/r/bitnami/openldap
+
+## GitLab
 
 ### 通过 docker 安装
 
@@ -1853,67 +1866,6 @@ services:
 
 参考：https://docs.gitlab.com/omnibus/docker/#set-up-the-volumes-location
 
-## Gogs
-
-**硬件要求**
-
-至少双核CPU、512MB内存。Gogs 要求安装 MySQL、PostgreSQL、SQLite3、MSSQL 或 TiDB。
-
-**通过 docker 安装**
-
-```
-mkdir -p /var/gogs
-docker run -d --rm --name=gogs -p 10022:22 -p 10080:3000 -v /var/gogs:/data gogs/gogs
-// 浏览器打开 Gogs 的 Web 页面，一定要设置好域名，不要设置为 localhost，会影响 git clone
-// 建议设置域名为 gogs.example.com，应用URL设置为 http://gogs.example.com:10080/
-// 具体配置也可以到容器里更改
-```
-
-参考：
-
-https://github.com/gogs/gogs
-
-https://github.com/gogs/gogs/tree/main/docker
-
-## Gitea
-
-**通过 docker-compose 安装**
-
-deploy-gitea.yml
-
-```bash
-version: '2'
-services:
-  web:
-    image: gitea/gitea:1.12.4
-    volumes:
-      - /data/gitea:/data
-    ports:
-      - "3000:3000"
-      - "8022:22"
-    depends_on:
-      - db
-    restart: always
-  db:
-    image: mariadb:10
-    restart: always
-    environment:
-      - MYSQL_ROOT_PASSWORD=gitea
-      - MYSQL_DATABASE=gitea
-      - MYSQL_USER=gitea
-      - MYSQL_PASSWORD=gitea
-    volumes:
-      - /data/gitea-db/:/var/lib/mysql
-```
-
-安装后的配置跟 gogs 一样。系统界面也跟 gogs 相似，应该是基于 gogs。
-
-参考：
-
-https://hub.docker.com/r/gitea/gitea
-
-https://docs.gitea.io/en-us/install-with-docker/
-
 ## Jenkins
 
 **通过 docker 安装**
@@ -1965,10 +1917,6 @@ cat /var/lib/docker/volumes/nexus-data/_data/admin.password
 
 参考：https://hub.docker.com/r/sonatype/nexus3
 
-## *SonarQube
-
-通过
-
 ## Docker Registry
 
 **通过 docker 安装**
@@ -2011,7 +1959,7 @@ https://hub.docker.com/_/registry
 
 https://docs.docker.com/registry/deploying/
 
-
+## *SonarQube
 
 ## Nginx
 
@@ -2769,12 +2717,6 @@ services:
 参考：
 
 https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/resource-providers/standalone/docker/#app-cluster-yml
-
-## [netcat](https://nmap.org/download.html#linux-rpm)
-
-```bash
-rpm -vhU https://nmap.org/dist/ncat-7.92-1.x86_64.rpm
-```
 
 # 踩坑记录
 

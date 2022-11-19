@@ -2,17 +2,35 @@
 
 ## 前提条件
 
-## Using Sealos
+- 每台机器内存 2 GB 及以上。
+- 每台机器 CPU 2 核心及以上。
+- 集群中的节点不允许有重复的主机名、MAC 地址、product_uuid。
+- 集群中的节点网络要互通。
+- 集群中的节点时间要同步。
+- 安装时建议禁用防火墙，否则需要开通相应端口。
+- 禁用交换分区。
+
+参考：
+
+https://kubernetes.io/zh-cn/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+
+## 通过 Sealos 安装
 
 ```bash
 # 下载并安装 sealos
 curl -O https://github.com/labring/sealos/releases/download/v4.1.3/sealos_4.1.3_linux_amd64.tar.gz && tar zxvf sealos_4.1.3_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
 # 添加命令补全
 echo "source <(sealos completion bash)" >> ~/.bashrc
-# 安装集群
+# 安装集群（containerd 容器运行时）
 sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
      --masters 192.168.17.131 \
      --nodes 192.168.17.132 -p toor
+# 安装集群（cri-docker 容器运行时）
+# sealos run labring/kubernetes-docker:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
+     --masters 192.168.17.131 \
+     --nodes 192.168.17.132 -p toor
+# 安装其它
+sealos run labring/openebs:v3.3.0 labring/ingress-nginx:4.1.0
 
 # 增加 node 节点
 # sealos add --nodes 192.168.17.133
@@ -29,7 +47,7 @@ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1
 参考：
 https://www.sealos.io/zh-Hans/docs/getting-started/installation
 
-## Using Sealer
+## 通过 Sealer 安装
 
 ```bash
 # 下载并安装sealer
@@ -57,12 +75,28 @@ sealer delete --all
 参考：
 https://github.com/sealerio/sealer/blob/main/docs/README_zh.md
 
+## [cri-dockerd](https://github.com/Mirantis/cri-dockerd)
+
+## 后置操作
+
+```bash
+# 在 Kubernetes 中是使用 crictl 替代 docker 命令来操作镜像、容器和Pod
+# 添加 crictl 命令补全
+echo "source <(crictl completion bash)" >> ~/.bashrc
+```
+
+参考：
+
+https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/
+
 # Kubernetes Dashboard
 
 执行以下命令：
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.6.1/aio/deploy/recommended.yaml
+export DASHBOARD_VERSION=v2.6.1
+curl -o dashboard-${DASHBOARD_VERSION}.yaml https://raw.githubusercontent.com/kubernetes/dashboard/${DASHBOARD_VERSION}/aio/deploy/recommended.yaml
+kubectl apply -f recommended.yaml
 kubectl proxy
 ```
 
@@ -120,19 +154,23 @@ https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/cre
 
 # Metrics Server
 
+参考：https://github.com/kubernetes-sigs/metrics-server
+
 # Helm
 
 Helm 是 K8s 的包管理工具。
 
 ```bash
+export HELM_VERSION=v3.10.2
 # 二进制方式安装
-curl -O https://repo.huaweicloud.com/helm/v3.7.2/helm-v3.7.2-linux-amd64.tar.gz
-tar -zxvf helm-v3.7.2-linux-amd64.tar.gz
+curl -O https://repo.huaweicloud.com/helm/${HELM_VERSION}/helm-${HELM_VERSION}-linux-amd64.tar.gz
+tar -zxvf helm-${HELM_VERSION}-linux-amd64.tar.gz 
 sudo install linux-amd64/helm /usr/local/bin/helm
 # 添加命令补全
 echo "source <(helm completion bash)" >> ~/.bashrc
 # 添加仓库
 helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add azure http://mirror.azure.cn/kubernetes/charts
 helm repo update
 ```
 
@@ -146,11 +184,43 @@ https://helm.sh/docs/intro/using_helm/
 
 OpenEBS is Kubernetes native Container Attached Storage solution
 
-参考：https://openebs.io/
+**通过 Helm 安装**
+
+```bash
+helm repo add openebs https://openebs.github.io/charts
+helm repo update
+helm install --namespace openebs --name openebs openebs/openebs
+```
+
+**通过 kubectl 安装**
+
+```bash
+curl -O https://openebs.github.io/charts/openebs-operator.yaml
+kubectl apply -f openebs-operator.yaml
+```
+
+**安装后**
+
+```bash
+# 设置 openebs-hostpath 为默认 storageclass
+kubectl patch storageclass openebs-hostpath -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+```
+
+
+
+参考：
+
+https://openebs.io/docs/user-guides/localpv-hostpath
+
+https://kubernetes.io/zh-cn/docs/tasks/administer-cluster/change-default-storage-class/
+
+# Ingress
 
 # Istio
 
 参考：https://istio.io/latest/docs/setup/getting-started/
+
+# Envoy
 
 # Rancher
 
@@ -166,7 +236,7 @@ sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80
 
 # MySQL
 
-## 单节点 StorageClass
+## 单节点 Local Volume
 
 **创建本地存储 StorageClass**
 
@@ -284,6 +354,10 @@ spec:
 
 参考：
 
+https://kubernetes.io/docs/concepts/storage/volumes/#local
+
+https://kubernetes.io/docs/concepts/storage/storage-classes/#local
+
 https://kubernetes.io/docs/tutorials/stateful-application/mysql-wordpress-persistent-volume/
 
 https://kubernetes.io/docs/concepts/configuration/secret/
@@ -309,13 +383,6 @@ spec:
   selector:
     app: mysql
 ---
-kind: Secret
-apiVersion: v1
-metadata:
-  name: mysql-secret
-data:
-  password: toor
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -337,19 +404,14 @@ spec:
             - containerPort: 3306
           env:
             - name: MYSQL_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mysql-secret
-                  key: password
+              # 不知道为啥使用 Secret 时登录老是提示密码不对，所以索性不用
+              value: toor
           volumeMounts:
             - name: mysql-volume
               mountPath: /var/lib/mysql
           args:
             - --character-set-server=utf8mb4
             - --collation-server=utf8mb4_unicode_ci
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: false
       volumes:
         - name: mysql-volume
           hostPath:
@@ -357,11 +419,9 @@ spec:
             path: /k8sdata/mysql
             # 确保文件夹被创建
             type: DirectoryOrCreate
-      restartPolicy: Always
-      terminationGracePeriodSeconds: 30
-      dnsPolicy: ClusterFirst
-  progressDeadlineSeconds: 600
 ```
+
+HostPath volume 是有很多安全问题的，官方建议不要用，硬要用的话推荐以只读的方式使用。
 
 参考：
 
@@ -372,3 +432,30 @@ https://www.cnblogs.com/worldinmyeyes/p/14514971.html
 ## MySQL Operator
 
 参考：https://github.com/mysql/mysql-operator
+
+## Bitnami MySQL
+
+部署 MySQL 主从复制集群
+
+```bash
+# 添加 bitnami helm 仓库
+helm repo add bitnami https://charts.bitnami.com/bitnami
+# 安装
+helm install mysql-release bitnami/mysql
+# 查看状态
+kubectl get pods -w --namespace default
+# 查看 MySQL ROOT 密码
+MYSQL_ROOT_PASSWORD=$(kubectl get secret --namespace default mysql-release -o jsonpath="{.data.mysql-root-password}" | base64 -d)
+echo $MYSQL_ROOT_PASSWORD
+# 连接数据库
+kubectl exec -it mysql-release-0 -- mysql -uroot -p"$MYSQL_ROOT_PASSWORD"
+# 连接主数据库
+kubectl exec -it mysql-release-0 -- mysql -h mysql-release.default.svc.cluster.local -uroot -p"$MYSQL_ROOT_PASSWORD"
+
+# 卸载
+helm uninstall mysql-release
+```
+
+参考：
+
+https://artifacthub.io/packages/helm/bitnami/mysql
