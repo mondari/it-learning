@@ -18,7 +18,8 @@ https://kubernetes.io/zh-cn/docs/setup/production-environment/tools/kubeadm/inst
 
 ```bash
 # 下载并安装 sealos
-curl -O https://github.com/labring/sealos/releases/download/v4.1.3/sealos_4.1.3_linux_amd64.tar.gz && tar zxvf sealos_4.1.3_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
+curl -O https://github.com/labring/sealos/releases/download/v4.1.3/sealos_4.1.3_linux_amd64.tar.gz
+tar zxvf sealos_4.1.3_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
 # 添加命令补全
 echo "source <(sealos completion bash)" >> ~/.bashrc
 # 安装集群（containerd 容器运行时）
@@ -51,33 +52,41 @@ https://www.sealos.io/zh-Hans/docs/getting-started/installation
 
 ```bash
 # 下载并安装sealer
-curl -O https://github.com/sealerio/sealer/releases/download/v0.8.6/sealer-v0.8.6-linux-amd64.tar.gz &&
+curl -O https://github.com/sealerio/sealer/releases/download/v0.8.6/sealer-v0.8.6-linux-amd64.tar.gz
 tar zxvf sealer-v0.8.6-linux-amd64.tar.gz && mv sealer /usr/bin
 # 添加命令补全
 echo "source <(sealer completion bash)" >> ~/.bashrc
+# 查看可用的kubernetes镜像
+sealer search kubernetes
 # 安装kubernetes集群
-sealer run kubernetes:v1.19.8 --masters 192.168.17.133 --nodes 192.168.17.134 --passwd toor
+# sealer pull kubernetes:v1.23.8
+sealer run kubernetes:v1.23.8 --masters 192.168.17.133 --nodes 192.168.17.134 --passwd toor
 
 # 增加master节点
-sealer join --masters 192.168.0.2
+# sealer join --masters 192.168.0.2
 # 增加node节点
-sealer join --nodes 192.168.0.3
+# sealer join --nodes 192.168.0.3
 # 删除master节点
-sealer delete --masters 192.168.0.2
+# sealer delete --masters 192.168.0.2
 # 删除node节点
-sealer delete --nodes 192.168.0.3
+# sealer delete --nodes 192.168.0.3
 # 释放集群
-sealer delete -f /root/.sealer/[cluster-name]/Clusterfile
+# sealer delete -f /root/.sealer/my-cluster/Clusterfile
 # 或
-sealer delete --all
+# sealer delete --all
+# 升级集群（升级失败。。。不支持跨版本升级）
+# sealer upgrade kubernetes:v1.24.6 -c my-cluster
 ```
 
 参考：
-https://github.com/sealerio/sealer/blob/main/docs/README_zh.md
+
+https://github.com/sealerio/sealer
 
 ## [cri-dockerd](https://github.com/Mirantis/cri-dockerd)
 
-## 后置操作
+由于 Kubernetes 1.24+ 已经删除 `dockershim` 这个 CRI 兼容层，所以要想继续使用 Docker 作为容器运行时，需要安装这个。cri-dockerd 前身就是 dockershim。
+
+## 配置 [crictl](https://github.com/kubernetes-sigs/cri-tools)
 
 ```bash
 # 在 Kubernetes 中是使用 crictl 替代 docker 命令来操作镜像、容器和Pod
@@ -89,20 +98,56 @@ echo "source <(crictl completion bash)" >> ~/.bashrc
 
 https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/
 
+# Helm
+
+Helm 是 K8s 的包管理工具。
+
+```bash
+export HELM_VERSION=v3.10.2
+# 二进制方式安装
+curl -O https://repo.huaweicloud.com/helm/${HELM_VERSION}/helm-${HELM_VERSION}-linux-amd64.tar.gz
+tar -zxvf helm-${HELM_VERSION}-linux-amd64.tar.gz 
+sudo install linux-amd64/helm /usr/local/bin/helm
+# 添加命令补全
+echo "source <(helm completion bash)" >> ~/.bashrc
+# 添加仓库
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add azure http://mirror.azure.cn/kubernetes/charts
+helm repo add stable https://charts.ost.ai
+helm repo update
+```
+
+参考：
+
+https://helm.sh/docs/intro/install/
+
+https://helm.sh/docs/intro/using_helm/
+
+https://charts.ost.ai/
+
 # Kubernetes Dashboard
 
 执行以下命令：
 
 ```bash
-export DASHBOARD_VERSION=v2.6.1
+# 根据 Kubernetes 版本选择对应的 Dashboard 版本
+# Dashboard v2.7.0 for Kubernetes 1.25
+# Dashboard v2.6.1 for Kubernetes 1.24
+# Dashboard v2.5.1 for Kubernetes 1.23
+export DASHBOARD_VERSION=v2.7.0
 curl -o dashboard-${DASHBOARD_VERSION}.yaml https://raw.githubusercontent.com/kubernetes/dashboard/${DASHBOARD_VERSION}/aio/deploy/recommended.yaml
-kubectl apply -f recommended.yaml
-kubectl proxy
+kubectl apply -f dashboard-${DASHBOARD_VERSION}.yaml
+
+# 暴露集群外端口
+kubectl -n kubernetes-dashboard patch service kubernetes-dashboard -p '{"spec":{"type":"NodePort"}}'
+# 查看集群外端口
+echo `kubectl -n kubernetes-dashboard get svc kubernetes-dashboard  -o jsonpath="{.spec.ports[0].nodePort}"`
+# 访问 https://{nodeIp}:{nodePort}
 ```
 
-然后浏览器打开链接 http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+访问后页面会提示输入 Token 或指定 Kubeconfig 路径才能登陆。这里示范一下如何生成 Token。
 
-页面会提示输入 Token 或指定 Kubeconfig 路径才能登陆。这里示范一下如何生成 Token。
+
 
 新建一个文件 `dashboard-adminuser.yaml`，内容为：
 
@@ -131,7 +176,12 @@ subjects:
 
 ```bash
 kubectl apply -f dashboard-adminuser.yaml
+
+# 生成登录 TOKEN
+# Dashboard v2.6+ and Kubernetes 1.24+
 kubectl -n kubernetes-dashboard create token admin-user
+# Dashboard v2.5- and Kubernetes 1.23-
+kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
 ```
 
 复制生成的 Token 进去就能登陆成功。
@@ -150,35 +200,52 @@ kubectl -n kubernetes-dashboard delete clusterrolebinding admin-user
 参考：
 
 https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard
-https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md
+https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.mdhttps://github.com/kubernetes/dashboard/blob/v2.5.1/docs/user/access-control/creating-sample-user.md
 
 # Metrics Server
 
-参考：https://github.com/kubernetes-sigs/metrics-server
+Metrics Server 通过 Metrics API 暴露 Kubernetes Metrics，以支持 Horizontal Pod Autoscaler 和 `kubectl top` 功能。
 
-# Helm
+缺点是 Metrics Server 只支持每个集群节点最多 30 个 Pod，超过的话会导致 OOM。
 
-Helm 是 K8s 的包管理工具。
+
+
+通过 YAML 文件安装：
+
+```basn
+curl -o metrics-server.yaml https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl apply -f metrics-server.yaml
+```
+
+安装后，可以通过 `kubectl top nodes` / `kubectl top pods` 指令查看节点/容器组的资源利用率。执行结果示例：
 
 ```bash
-export HELM_VERSION=v3.10.2
-# 二进制方式安装
-curl -O https://repo.huaweicloud.com/helm/${HELM_VERSION}/helm-${HELM_VERSION}-linux-amd64.tar.gz
-tar -zxvf helm-${HELM_VERSION}-linux-amd64.tar.gz 
-sudo install linux-amd64/helm /usr/local/bin/helm
-# 添加命令补全
-echo "source <(helm completion bash)" >> ~/.bashrc
-# 添加仓库
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm repo add azure http://mirror.azure.cn/kubernetes/charts
-helm repo update
+[root@centos-vm ~]# kubectl top nodes
+NAME        CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+c8          107m         5%     723Mi           19%
+centos-vm   440m         22%    1424Mi          38%
+
+[root@centos-vm ~]# kubectl top pods -n kube-system
+NAME                                CPU(cores)   MEMORY(bytes)
+coredns-68b9d7b887-fn2cq            4m           12Mi
+coredns-68b9d7b887-nsh8d            4m           12Mi
+etcd-centos-vm                      39m          64Mi
+kube-apiserver-centos-vm            128m         411Mi
+kube-controller-manager-centos-vm   22m          53Mi
+kube-proxy-mpx47                    1m           18Mi
+kube-proxy-plggp                    1m           23Mi
+kube-scheduler-centos-vm            4m           22Mi
+kuboard-74c645f5df-zcq5c            0m           8Mi
+metrics-server-7dbf6c4558-4wbdx     1m           14Mi
 ```
 
 参考：
 
-https://helm.sh/docs/intro/install/
+https://github.com/kubernetes-sigs/metrics-server
 
-https://helm.sh/docs/intro/using_helm/
+https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/
+
+https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/metrics-server
 
 # OpenEBS
 
@@ -216,6 +283,44 @@ https://kubernetes.io/zh-cn/docs/tasks/administer-cluster/change-default-storage
 
 # Ingress
 
+Nginx 社区维护的 Ingress Controller：
+
+```bash
+helm repo add nginx-stable https://helm.nginx.com/stable
+helm repo update
+helm install nginx-release nginx-stable/nginx-ingress
+```
+
+参考：
+
+https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-helm/
+
+https://www.nginx.com/blog/guide-to-choosing-ingress-controller-part-4-nginx-ingress-controller-options/
+
+https://github.com/nginxinc/kubernetes-ingress
+
+
+
+Kubernetes 社区维护基于 Nginx 的 Ingress Controller（要翻墙）：
+
+```bash
+# Using helm
+helm upgrade --install ingress-nginx ingress-nginx \
+  --repo https://kubernetes.github.io/ingress-nginx \
+  --namespace ingress-nginx --create-namespace
+
+# Using YAML config
+export INGRESS_VERSION=v1.5.1
+curl -o ingress-nginx-${INGRESS_VERSION}.yaml https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
+kubectl apply -f ingress-nginx-${INGRESS_VERSION}.yaml
+```
+
+参考：
+
+https://kubernetes.github.io/ingress-nginx/deploy/
+
+https://github.com/kubernetes/ingress-nginx/
+
 # Istio
 
 参考：https://istio.io/latest/docs/setup/getting-started/
@@ -233,6 +338,22 @@ sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80
 默认用户名为 admin，安装后会提示设置密码，这里设置为 admin
 
 参考：https://www.rancher.cn/quick-start/
+
+# kube-prometheus-stack
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus-release prometheus-community/kube-prometheus-stack
+```
+
+参考：https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack
+
+# EFK
+
+Elasticsearch+Fluentd+Kibana
+
+
 
 # MySQL
 
@@ -421,7 +542,7 @@ spec:
             type: DirectoryOrCreate
 ```
 
-HostPath volume 是有很多安全问题的，官方建议不要用，硬要用的话推荐以只读的方式使用。
+HostPath volume 是有很多安全问题的，官方建议不要用，一定要用的话推荐以只读的方式使用。
 
 参考：
 
@@ -459,3 +580,5 @@ helm uninstall mysql-release
 参考：
 
 https://artifacthub.io/packages/helm/bitnami/mysql
+
+# Redis

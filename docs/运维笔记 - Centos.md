@@ -884,33 +884,6 @@ kubectl taint nodes centos-vm node-role.kubernetes.io/master=true:NoSchedule
 1. https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#%E6%8E%A7%E5%88%B6%E5%B9%B3%E9%9D%A2%E8%8A%82%E7%82%B9%E9%9A%94%E7%A6%BB
 2. https://docker_practice.gitee.io/zh-cn/kubernetes/setup/kubeadm.html#master-%E8%8A%82%E7%82%B9%E9%BB%98%E8%AE%A4%E4%B8%8D%E8%83%BD%E8%BF%90%E8%A1%8C-pod
 
-
-### 安装 metrics-server
-
-metrics-server 是 Kubernetes 中的一个重要组件，但是却不是内置组件。Kubernetes 许多特性都依赖于 metrics server。
-
-安装了 metrics-server 后，就可以通过 `kubectl top nodes` / `kubectl top pods` 指令，查看节点/容器组的资源利用率。执行结果如下：
-
-```bash
-[root@centos-vm ~]# kubectl top nodes
-NAME        CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
-c8          107m         5%     723Mi           19%
-centos-vm   440m         22%    1424Mi          38%
-
-[root@centos-vm ~]# kubectl top pods -n kube-system
-NAME                                CPU(cores)   MEMORY(bytes)
-coredns-68b9d7b887-fn2cq            4m           12Mi
-coredns-68b9d7b887-nsh8d            4m           12Mi
-etcd-centos-vm                      39m          64Mi
-kube-apiserver-centos-vm            128m         411Mi
-kube-controller-manager-centos-vm   22m          53Mi
-kube-proxy-mpx47                    1m           18Mi
-kube-proxy-plggp                    1m           23Mi
-kube-scheduler-centos-vm            4m           22Mi
-kuboard-74c645f5df-zcq5c            0m           8Mi
-metrics-server-7dbf6c4558-4wbdx     1m           14Mi
-```
-
 ## Portainer
 
 Portainer 是 Docker 的 Web 控制台。
@@ -2223,6 +2196,8 @@ https://hub.docker.com/_/kong
 https://hub.docker.com/r/pantsel/konga
 
 https://github.com/pantsel/konga
+
+## APISIX
 
 ## Nacos
 
