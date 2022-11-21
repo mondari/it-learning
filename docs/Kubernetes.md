@@ -208,12 +208,16 @@ Metrics Server 通过 Metrics API 暴露 Kubernetes Metrics，以支持 Horizont
 
 缺点是 Metrics Server 只支持每个集群节点最多 30 个 Pod，超过的话会导致 OOM。
 
+请先查看[安装要求](https://github.com/kubernetes-sigs/metrics-server#requirements)，再进行安装。
+
 
 
 通过 YAML 文件安装：
 
-```basn
+```bash
 curl -o metrics-server.yaml https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+# 替换一下镜像，不然下载不了
+sed "s|k8s.gcr.io/metrics-server/metrics-server|registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server|g" metrics-server.yaml
 kubectl apply -f metrics-server.yaml
 ```
 
@@ -289,6 +293,10 @@ Nginx 社区维护的 Ingress Controller：
 helm repo add nginx-stable https://helm.nginx.com/stable
 helm repo update
 helm install nginx-release nginx-stable/nginx-ingress
+
+# 遇到部分镜像下载不了
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0
+docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0 k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.3.0
 ```
 
 参考：
@@ -345,6 +353,20 @@ sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 helm install prometheus-release prometheus-community/kube-prometheus-stack
+
+# 遇到镜像下载不了
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0
+docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0 k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.3.0
+
+docker pull bitnami/kube-state-metrics:2.6.0
+docker tag bitnami/kube-state-metrics:2.6.0 registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.6.0
+
+# 暴露集群端口
+kubectl patch service prometheus-release-grafana -p '{"spec":{"type":"NodePort"}}'
+# 查看集群外端口
+echo `kubectl get svc prometheus-release-grafana -o jsonpath="{.spec.ports[0].nodePort}"`
+# 访问 https://{nodeIp}:{nodePort}
+# 密码暂时不清楚
 ```
 
 参考：https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack
