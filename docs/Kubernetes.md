@@ -349,6 +349,15 @@ sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80
 
 # kube-prometheus-stack
 
+**前提条件**
+
+查看 `/var/lib/kubelet/config.yaml` 文件，确保以下几点：
+
+- `--authentication-token-webhook=true` 或 `authentication.webhook.enabled=true` 
+- `--authorization-mode=Webhook` 
+
+**开始安装**
+
 ```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
