@@ -292,7 +292,7 @@ Nginx 社区维护的 Ingress Controller：
 ```bash
 helm repo add nginx-stable https://helm.nginx.com/stable
 helm repo update
-helm install nginx-release nginx-stable/nginx-ingress
+helm install nginx-release nginx-stable/nginx-ingress --set controller.service.type=NodePort
 
 # 遇到部分镜像下载不了
 docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0
