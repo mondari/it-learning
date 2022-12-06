@@ -217,7 +217,7 @@ Metrics Server 通过 Metrics API 暴露 Kubernetes Metrics，以支持 Horizont
 ```bash
 curl -o metrics-server.yaml https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 # 替换一下镜像，不然下载不了
-sed "s|k8s.gcr.io/metrics-server/metrics-server|registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server|g" metrics-server.yaml
+sed -i "s|k8s.gcr.io/metrics-server/metrics-server|registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server|g" metrics-server.yaml
 kubectl apply -f metrics-server.yaml
 ```
 
