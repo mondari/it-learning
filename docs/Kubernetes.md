@@ -204,32 +204,30 @@ https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/cre
 
 # Metrics Server
 
-Metrics Server 通过 Metrics API 暴露 Kubernetes Metrics，以支持 Horizontal Pod Autoscaler 和 `kubectl top` 功能。
-
-缺点是 Metrics Server 只支持每个集群节点最多 30 个 Pod，超过的话会导致 OOM。
-
-请先查看[安装要求](https://github.com/kubernetes-sigs/metrics-server#requirements)，再进行安装。
+Metrics Server 通过 Metrics API 暴露 Kubernetes Metrics，以支持 Horizontal Pod Autoscaler 和 `kubectl top` 功能。缺点是 Metrics Server 只支持每个集群节点最多 30 个 Pod，超过的话会导致 OOM。
 
 
 
 通过 YAML 文件安装：
 
 ```bash
-curl -o metrics-server.yaml https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+curl -o metrics.yaml https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 # 替换一下镜像，不然下载不了
-sed -i "s|k8s.gcr.io/metrics-server/metrics-server|registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server|g" metrics-server.yaml
-kubectl apply -f metrics-server.yaml
+sed -i "s|k8s.gcr.io/metrics-server/metrics-server|registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server|g" metrics.yaml
+# 添加 --kubelet-insecure-tls 参数到 Metrics Server 中以跳过证书校验，否则无法正常运行
+sed -i -e '/metric-resolution/p' -e 's/metric-resolution=15s/kubelet-insecure-tls/' metrics.yaml
+kubectl apply -f metrics.yaml
 ```
 
 安装后，可以通过 `kubectl top nodes` / `kubectl top pods` 指令查看节点/容器组的资源利用率。执行结果示例：
 
 ```bash
-[root@centos-vm ~]# kubectl top nodes
+# kubectl top nodes
 NAME        CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
 c8          107m         5%     723Mi           19%
 centos-vm   440m         22%    1424Mi          38%
 
-[root@centos-vm ~]# kubectl top pods -n kube-system
+# kubectl top pods -n kube-system
 NAME                                CPU(cores)   MEMORY(bytes)
 coredns-68b9d7b887-fn2cq            4m           12Mi
 coredns-68b9d7b887-nsh8d            4m           12Mi
@@ -242,6 +240,10 @@ kube-scheduler-centos-vm            4m           22Mi
 kuboard-74c645f5df-zcq5c            0m           8Mi
 metrics-server-7dbf6c4558-4wbdx     1m           14Mi
 ```
+
+如果执行命令报错，则请查看 [安装前提条件](https://github.com/kubernetes-sigs/metrics-server#requirements) 排查一下有哪些条件没满足导致的。
+
+
 
 参考：
 
@@ -294,7 +296,7 @@ helm repo add nginx-stable https://helm.nginx.com/stable
 helm repo update
 helm install nginx-release nginx-stable/nginx-ingress --set controller.service.type=NodePort
 
-# 遇到部分镜像下载不了
+# 解决部分镜像下载不了的问题
 docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0
 docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0 k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.3.0
 ```
@@ -363,7 +365,7 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update
 helm install prometheus-release prometheus-community/kube-prometheus-stack
 
-# 遇到镜像下载不了
+# 解决部分镜像下载不了的问题
 docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0
 docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0 k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.3.0
 
