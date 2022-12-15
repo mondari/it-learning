@@ -136,9 +136,10 @@ https://charts.ost.ai/
 # v2.7.0 for Kubernetes 1.25
 # v2.6.1 for Kubernetes 1.24
 # v2.5.1 for Kubernetes 1.23
-export DASHBOARD_VERSION=v2.7.0
-curl -o dashboard-${DASHBOARD_VERSION}.yaml https://raw.githubusercontent.com/kubernetes/dashboard/${DASHBOARD_VERSION}/aio/deploy/recommended.yaml
-kubectl apply -f dashboard-${DASHBOARD_VERSION}.yaml
+VERSION=v2.7.0
+curl -o kubernetes-dashboard-$VERSION.yaml https://raw.githubusercontent.com/kubernetes/dashboard/$VERSION/aio/deploy/recommended.yaml
+
+kubectl apply -f kubernetes-dashboard-$VERSION.yaml
 
 # 暴露集群外端口
 kubectl -n kubernetes-dashboard patch service kubernetes-dashboard -p '{"spec":{"type":"NodePort"}}'
@@ -202,7 +203,10 @@ kubectl -n kubernetes-dashboard delete clusterrolebinding admin-user
 参考：
 
 https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard
-https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.mdhttps://github.com/kubernetes/dashboard/blob/v2.5.1/docs/user/access-control/creating-sample-user.md
+
+https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md
+
+https://github.com/kubernetes/dashboard/blob/v2.5.1/docs/user/access-control/creating-sample-user.md
 
 # Metrics Server
 
@@ -213,12 +217,13 @@ Metrics Server 通过 Metrics API 暴露 Kubernetes Metrics，以支持 Horizont
 通过 YAML 文件安装：
 
 ```bash
-curl -o metrics.yaml https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+curl -o kubernetes-metrics-server.yaml https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 # 替换一下镜像，不然下载不了
-sed -i "s|k8s.gcr.io/metrics-server/metrics-server|registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server|g" metrics.yaml
+sed -i "s|k8s.gcr.io/metrics-server/metrics-server|registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server|g" kubernetes-metrics-server.yaml
 # 添加 --kubelet-insecure-tls 参数到 Metrics Server 中以跳过证书校验，否则无法正常运行
-sed -i -e '/metric-resolution/p' -e 's/metric-resolution=15s/kubelet-insecure-tls/' metrics.yaml
-kubectl apply -f metrics.yaml
+sed -i -e '/metric-resolution/p' -e 's/metric-resolution=15s/kubelet-insecure-tls/' kubernetes-metrics-server.yaml
+
+kubectl apply -f kubernetes-metrics-server.yaml
 ```
 
 安装后，可以通过 `kubectl top nodes` / `kubectl top pods` 指令查看节点/容器组的资源利用率。执行结果示例：
@@ -296,7 +301,7 @@ https://kubernetes.io/zh-cn/docs/tasks/administer-cluster/change-default-storage
 **Installation with Manifests**
 
 ```bash
-git clone https://github.com/nginxinc/kubernetes-ingress.git --branch v2.4.2
+git clone https://ghproxy.com/https://github.com/nginxinc/kubernetes-ingress.git --branch v2.4.2
 cd kubernetes-ingress/deployments
 
 # 1. Configure RBAC
@@ -329,10 +334,16 @@ cd ../examples/ingress-resources/complete-example
 kubectl create -f cafe.yaml
 kubectl create -f cafe-secret.yaml
 kubectl create -f cafe-ingress.yaml
-# visit
+
 IC_IP=192.168.17.132
 IC_HTTPS_PORT=443
 curl --resolve cafe.example.com:$IC_HTTPS_PORT:$IC_IP https://cafe.example.com:$IC_HTTPS_PORT/coffee --insecure
+
+# 6. Uninstall
+kubectl delete namespace nginx-ingress
+kubectl delete clusterrole nginx-ingress
+kubectl delete clusterrolebinding nginx-ingress
+kubectl delete -f common/crds/
 ```
 
 
@@ -371,11 +382,11 @@ https://github.com/nginxinc/kubernetes-ingress
 # Using YAML manifests
 # v1.5.1 for Kubernetes 1.23+
 # download baremetal/deploy.yaml, not cloud/deploy.yaml
-export INGRESS_VERSION=v1.5.1
-curl -o ingress-nginx-${INGRESS_VERSION}.yaml https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-${INGRESS_VERSION}/deploy/static/provider/baremetal/deploy.yaml
+INGRESS_VERSION=v1.5.1
+curl -o ingress-nginx-$INGRESS_VERSION.yaml https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-$INGRESS_VERSION/deploy/static/provider/baremetal/deploy.yaml
 
 # apply
-kubectl apply -f ingress-nginx-${INGRESS_VERSION}.yaml
+kubectl apply -f ingress-nginx-$INGRESS_VERSION.yaml
 
 # wait for ready
 kubectl wait --namespace ingress-nginx \
@@ -419,29 +430,56 @@ sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80
 - `--authentication-token-webhook=true` 或 `authentication.webhook.enabled=true` 
 - `--authorization-mode=Webhook` 
 
-**开始安装**
+**Installation with Manifests**
 
 ```bash
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm install prometheus-release prometheus-community/kube-prometheus-stack
+# Download
+VERSION=0.10.0
+curl -o kube-prometheus-$VERSION.tar.gz https://ghproxy.com/https://github.com/prometheus-operator/kube-prometheus/archive/refs/tags/v$VERSION.tar.gz
 
-# 解决部分镜像下载不了的问题
-docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0
-docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0 k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.3.0
+tar xvzf kube-prometheus-$VERSION.tar.gz && cd kube-prometheus-$VERSION
 
-docker pull bitnami/kube-state-metrics:2.6.0
-docker tag bitnami/kube-state-metrics:2.6.0 registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.6.0
+# Pull images
+docker pull v5cn/prometheus-adapter:v0.9.1
+docker tag v5cn/prometheus-adapter:v0.9.1 k8s.gcr.io/prometheus-adapter/prometheus-adapter:v0.9.1
 
-# 暴露集群端口
-kubectl patch service prometheus-release-grafana -p '{"spec":{"type":"NodePort"}}'
-# 查看集群外端口
-echo `kubectl get svc prometheus-release-grafana -o jsonpath="{.spec.ports[0].nodePort}"`
-# 访问 https://{nodeIp}:{nodePort}
-# 密码暂时不清楚
+docker pull zhengsenlin/kube-state-metrics:v2.3.0
+docker tag zhengsenlin/kube-state-metrics:v2.3.0 k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.3.0
+
+# Create the namespace and CRDs, and then wait for them to be available before creating the remaining resources
+kubectl create -f manifests/setup
+kubectl wait \
+	--for condition=Established \
+	--all CustomResourceDefinition \
+	--namespace=monitoring
+
+# Create remaining resources and wait for them to be available
+kubectl create -f manifests/
+kubectl wait \
+	--for condition=Ready \
+	--all Pods \
+	--timeout=120s \
+	--namespace=monitoring
+
+# Expose NodePort
+# the default grafana user:password is admin:admin.
+kubectl -n monitoring patch service grafana -p '{"spec":{"type":"NodePort"}}'
+kubectl -n monitoring patch service prometheus-k8s -p '{"spec":{"type":"NodePort"}}'
+kubectl -n monitoring patch service alertmanager-main -p '{"spec":{"type":"NodePort"}}'
+
+echo `kubectl -n monitoring get svc grafana -o jsonpath="{.spec.ports[0].nodePort}"`
+echo `kubectl -n monitoring get svc prometheus-k8s -o jsonpath="{.spec.ports[0].nodePort}"`
+echo `kubectl -n monitoring get svc alertmanager-main -o jsonpath="{.spec.ports[0].nodePort}"`
+
+# Uninstall
+# kubectl delete --ignore-not-found=true -f manifests/ -f manifests/setup
 ```
 
-参考：https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack
+
+
+参考：
+
+https://github.com/prometheus-operator/kube-prometheus
 
 # EFK
 
