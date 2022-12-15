@@ -23,16 +23,16 @@ tar zxvf sealos_4.1.3_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos 
 # 添加命令补全
 echo "source <(sealos completion bash)" >> ~/.bashrc
 # 安装集群（containerd 容器运行时）
-sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 labring/openebs:v3.3.0 labring/ingress-nginx:4.1.0 \
+# sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 labring/openebs:v3.3.0 \
      --masters 192.168.17.131 \
      --nodes 192.168.17.132 -p toor
 # 安装集群（cri-docker 容器运行时）
-# sealos run labring/kubernetes-docker:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 labring/openebs:v3.3.0 labring/ingress-nginx:4.1.0 \
+sealos run labring/kubernetes-docker:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 labring/openebs:v3.3.0 \
      --masters 192.168.17.131 \
      --nodes 192.168.17.132 -p toor
 # 安装其它
-sealos run labring/metrics-server:v0.6.1
-# 卸载示例
+sealos run labring/ingress-nginx:4.1.0 labring/metrics-server:v0.6.1
+# 卸载 metrics-server
 kubectl delete -f /var/lib/sealos/data/default/rootfs/manifests/metrics-server.yaml
 
 # 增加 node 节点
@@ -133,9 +133,9 @@ https://charts.ost.ai/
 
 ```bash
 # 根据 Kubernetes 版本选择对应的 Dashboard 版本
-# Dashboard v2.7.0 for Kubernetes 1.25
-# Dashboard v2.6.1 for Kubernetes 1.24
-# Dashboard v2.5.1 for Kubernetes 1.23
+# v2.7.0 for Kubernetes 1.25
+# v2.6.1 for Kubernetes 1.24
+# v2.5.1 for Kubernetes 1.23
 export DASHBOARD_VERSION=v2.7.0
 curl -o dashboard-${DASHBOARD_VERSION}.yaml https://raw.githubusercontent.com/kubernetes/dashboard/${DASHBOARD_VERSION}/aio/deploy/recommended.yaml
 kubectl apply -f dashboard-${DASHBOARD_VERSION}.yaml
@@ -289,7 +289,55 @@ https://kubernetes.io/zh-cn/docs/tasks/administer-cluster/change-default-storage
 
 # Ingress
 
-Nginx 社区维护的 Ingress Controller：
+## NGINX Ingress Controller
+
+> Nginx 社区维护的 Ingress Controller
+
+**Installation with Manifests**
+
+```bash
+git clone https://github.com/nginxinc/kubernetes-ingress.git --branch v2.4.2
+cd kubernetes-ingress/deployments
+
+# 1. Configure RBAC
+kubectl apply -f common/ns-and-sa.yaml
+kubectl apply -f rbac/rbac.yaml
+# 2. Create Common Resources
+kubectl apply -f common/default-server-secret.yaml
+kubectl apply -f common/nginx-config.yaml
+kubectl apply -f common/ingress-class.yaml
+
+kubectl apply -f common/crds/k8s.nginx.org_virtualservers.yaml
+kubectl apply -f common/crds/k8s.nginx.org_virtualserverroutes.yaml
+kubectl apply -f common/crds/k8s.nginx.org_transportservers.yaml
+kubectl apply -f common/crds/k8s.nginx.org_policies.yaml
+kubectl apply -f common/crds/k8s.nginx.org_globalconfigurations.yaml
+
+# 3. Deploy the Ingress Controller
+# DaemonSet. Use a DaemonSet for deploying the Ingress Controller on every node or a subset of nodes.
+kubectl apply -f daemon-set/nginx-ingress.yaml
+# Deployment. Use a Deployment if you plan to dynamically change the number of Ingress Controller replicas.
+# kubectl apply -f deployment/nginx-ingress.yaml
+
+# 4. Get Access to the Ingress Controller
+# 如果选择部署 DaemonSet，则直接访问部署了 DaemonSet 的节点的 80 和 443 端口
+# 如果选择部署 Deployment，则使用下面的 NodePort Service 来访问
+# kubectl create -f service/nodeport.yaml
+
+# 5. Testing
+cd ../examples/ingress-resources/complete-example
+kubectl create -f cafe.yaml
+kubectl create -f cafe-secret.yaml
+kubectl create -f cafe-ingress.yaml
+# visit
+IC_IP=192.168.17.132
+IC_HTTPS_PORT=443
+curl --resolve cafe.example.com:$IC_HTTPS_PORT:$IC_IP https://cafe.example.com:$IC_HTTPS_PORT/coffee --insecure
+```
+
+
+
+**Installation with Helm**
 
 ```bash
 helm repo add nginx-stable https://helm.nginx.com/stable
@@ -301,33 +349,46 @@ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-cer
 docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0 k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.3.0
 ```
 
+
+
 参考：
+
+https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests/
 
 https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-helm/
 
-https://www.nginx.com/blog/guide-to-choosing-ingress-controller-part-4-nginx-ingress-controller-options/
+https://github.com/nginxinc/kubernetes-ingress/tree/main/examples/ingress-resources/complete-example
 
 https://github.com/nginxinc/kubernetes-ingress
 
+## Kubernetes Ingress Controller
 
+> Kubernetes 社区维护基于 Nginx 的 Ingress Controller
 
-Kubernetes 社区维护基于 Nginx 的 Ingress Controller（要翻墙）：
+不推荐，因为镜像要翻墙，而且还要检验SHA256。
 
 ```bash
-# Using helm
-helm upgrade --install ingress-nginx ingress-nginx \
-  --repo https://kubernetes.github.io/ingress-nginx \
-  --namespace ingress-nginx --create-namespace
-
-# Using YAML config
+# Using YAML manifests
+# v1.5.1 for Kubernetes 1.23+
+# download baremetal/deploy.yaml, not cloud/deploy.yaml
 export INGRESS_VERSION=v1.5.1
-curl -o ingress-nginx-${INGRESS_VERSION}.yaml https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
+curl -o ingress-nginx-${INGRESS_VERSION}.yaml https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-${INGRESS_VERSION}/deploy/static/provider/baremetal/deploy.yaml
+
+# apply
 kubectl apply -f ingress-nginx-${INGRESS_VERSION}.yaml
+
+# wait for ready
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=120s
 ```
 
 参考：
 
 https://kubernetes.github.io/ingress-nginx/deploy/
+
+https://kubernetes.github.io/ingress-nginx/deploy/baremetal/
 
 https://github.com/kubernetes/ingress-nginx/
 
