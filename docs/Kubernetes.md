@@ -115,7 +115,6 @@ echo "source <(helm completion bash)" >> ~/.bashrc
 # 添加仓库
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo add azure http://mirror.azure.cn/kubernetes/charts
-helm repo add stable https://charts.ost.ai
 helm repo update
 ```
 
@@ -124,8 +123,6 @@ helm repo update
 https://helm.sh/docs/intro/install/
 
 https://helm.sh/docs/intro/using_helm/
-
-https://charts.ost.ai/
 
 # Kubernetes Dashboard
 
@@ -352,12 +349,19 @@ kubectl delete -f common/crds/
 
 ```bash
 helm repo add nginx-stable https://helm.nginx.com/stable
-helm repo update
-helm install nginx-release nginx-stable/nginx-ingress --set controller.service.type=NodePort
+helm pull nginx-stable/nginx-ingress --version 0.15.1 --untar
+# helm install nginx-release ./nginx-ingress --set controller.service.create=false,controller.kind=daemonset,controller.setAsDefaultIngress=true
+helm install nginx-release ./nginx-ingress --set controller.service.type=NodePort,controller.kind=deployment,controller.setAsDefaultIngress=true
 
-# 解决部分镜像下载不了的问题
-docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0
-docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0 k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.3.0
+# Testing Service
+kubectl create deployment demo --image=httpd --port=80
+kubectl expose deployment demo
+kubectl create ingress demo-localhost --class=nginx \
+  --rule="demo.localdev.me/*=demo:80"
+
+IC_IP=192.168.17.131
+IC_HTTP_PORT=`kubectl get svc nginx-release-nginx-ingress -o jsonpath="{.spec.ports[0].nodePort}"`
+curl --resolve demo.localdev.me:$IC_HTTP_PORT:$IC_IP http://demo.localdev.me:$IC_HTTP_PORT/
 ```
 
 
@@ -411,7 +415,11 @@ https://github.com/kubernetes/ingress-nginx/
 
 # Rancher
 
-Rancher 是开源的企业级 Kubernetes 管理平台。Rancher 在安装时会自动创建一个 Kubernetes 集群，需要登录进 Rancher 控制台才能看到该集群。
+Rancher 是开源的企业级 Kubernetes 管理平台。
+
+**Installation with docker**
+
+安装时会自动创建一个 Kubernetes 集群，需要登录进 Rancher 控制台才能看到该集群。
 
 ```bash
 sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80 -p 443:443 -v /var/lib/rancher/:/var/lib/rancher/ rancher/rancher:stable
@@ -419,9 +427,57 @@ sudo docker run --privileged -d --name rancher --restart=unless-stopped -p 80:80
 
 默认用户名为 admin，安装后会提示设置密码，这里设置为 admin
 
-参考：https://www.rancher.cn/quick-start/
+**Installation with helm**
 
-# kube-prometheus-stack
+安装条件：Kubernetes < v1.25.0，Ingress（建议以 DaemonSet 方式安装）
+
+```bash
+# Install cert-manager First
+VERSION=v1.7.1
+curl -o cert-manager.crds-$VERSION.yaml https://ghproxy.com/https://github.com/cert-manager/cert-manager/releases/download/$VERSION/cert-manager.crds.yaml
+kubectl apply -f cert-manager.crds-$VERSION.yaml
+
+helm repo add jetstack https://charts.jetstack.io
+helm pull jetstack/cert-manager --version $VERSION --untar
+helm install cert-manager ./cert-manager \
+  --namespace cert-manager \
+  --create-namespace
+
+# Install Rancher
+helm repo add rancher-stable https://releases.rancher.com/server-charts/stable
+helm search repo rancher-stable/rancher --versions
+helm pull rancher-stable/rancher --version=2.7.0 --untar
+helm install rancher ./rancher \
+  --namespace cattle-system \
+  --create-namespace \
+  --set hostname=rancher.my.org \
+  --set ingress.ingressClassName=nginx \
+  --set bootstrapPassword=admin
+
+# Verify that the Rancher Server is Successfully Deployed
+kubectl -n cattle-system rollout status deploy/rancher
+
+# 浏览器访问以下链接
+echo https://rancher.my.org/dashboard/?setup=$(kubectl get secret --namespace cattle-system bootstrap-secret -o go-template='{{.data.bootstrapPassword|base64decode}}')
+# 如果访问不了，查看 Ingress 是否已被 AddedOrUpdated，如果不是，说明规则有问题，需要修复一下
+kubectl -n cattle-system describe ingress rancher
+
+# Uninstall Rancher
+curl -O https://raw.githubusercontent.com/rancher/rancher-cleanup/main/deploy/rancher-cleanup.yaml
+kubectl create -f rancher-cleanup.yaml
+```
+
+
+
+参考：
+
+https://www.rancher.com/quick-start
+
+https://ranchermanager.docs.rancher.com/pages-for-subheaders/install-upgrade-on-a-kubernetes-cluster
+
+https://github.com/rancher/rancher-cleanup
+
+# kube-prometheus
 
 **前提条件**
 
@@ -475,17 +531,30 @@ echo `kubectl -n monitoring get svc alertmanager-main -o jsonpath="{.spec.ports[
 # kubectl delete --ignore-not-found=true -f manifests/ -f manifests/setup
 ```
 
+**Installation with Helm**
 
+```bash
+# 解决部分镜像下载不了的问题
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0
+docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-webhook-certgen:v1.3.0 k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.3.0
+
+docker pull bitnami/kube-state-metrics:2.6.0
+docker tag bitnami/kube-state-metrics:2.6.0 registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.6.0
+
+# 下载并安装
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm pull prometheus-community/kube-prometheus-stack --version 41.9.1 --untar
+helm install --set grafana.adminPassword=admin prometheus-release ./kube-prometheus-stack
+
+# Expose Grafana NodePort
+kubectl patch service prometheus-release-grafana -p '{"spec":{"type":"NodePort"}}'
+echo `kubectl get svc prometheus-release-grafana -o jsonpath="{.spec.ports[0].nodePort}"`
+# Grafana default adminPassword: prom-operator
+```
 
 参考：
 
 https://github.com/prometheus-operator/kube-prometheus
-
-# EFK
-
-Elasticsearch+Fluentd+Kibana
-
-
 
 # MySQL
 
@@ -684,19 +753,33 @@ https://www.cnblogs.com/worldinmyeyes/p/14514971.html
 
 ## MySQL Operator
 
+```bash
+# MySQL Operator for Kubernetes Installation
+helm repo add mysql-operator https://mysql.github.io/mysql-operator/
+helm pull mysql-operator/mysql-operator --untar
+helm install mysql-operator ./mysql-operator --namespace mysql-operator --create-namespace
+
+# MySQL InnoDB Cluster Installation
+helm pull mysql-operator/mysql-innodbcluster --version 2.0.7 --untar
+helm install mysql-cluster ./mysql-innodbcluster \
+        --set credentials.root.user='root' \
+        --set credentials.root.password='toor' \
+        --set credentials.root.host='%' \
+        --set serverInstances=3 \
+        --set routerInstances=1 \
+        --set tls.useSelfSigned=true
+```
+
 参考：https://github.com/mysql/mysql-operator
 
-## Bitnami MySQL
-
-部署 MySQL 主从复制集群
+## Bitnami MySQL Replication
 
 ```bash
 # 添加 bitnami helm 仓库
 helm repo add bitnami https://charts.bitnami.com/bitnami
 # 安装
-helm install mysql-release bitnami/mysql
-# 查看状态
-kubectl get pods -w --namespace default
+helm pull bitnami/mysql --untar
+helm install --set auth.rootPassword=toor,auth.database=app_database mysql-release ./mysql
 # 查看 MySQL ROOT 密码
 MYSQL_ROOT_PASSWORD=$(kubectl get secret --namespace default mysql-release -o jsonpath="{.data.mysql-root-password}" | base64 -d)
 echo $MYSQL_ROOT_PASSWORD
@@ -709,8 +792,12 @@ kubectl exec -it mysql-release-0 -- mysql -h mysql-release.default.svc.cluster.l
 helm uninstall mysql-release
 ```
 
-参考：
-
-https://artifacthub.io/packages/helm/bitnami/mysql
+参考：https://artifacthub.io/packages/helm/bitnami/mysql
 
 # Redis
+
+参考：
+
+https://github.com/bitnami/charts/tree/main/bitnami/redis
+
+https://github.com/bitnami/charts/tree/main/bitnami/redis-cluster
