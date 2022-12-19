@@ -18,7 +18,7 @@ https://kubernetes.io/zh-cn/docs/setup/production-environment/tools/kubeadm/inst
 
 ```bash
 # 下载并安装 sealos
-curl -O https://github.com/labring/sealos/releases/download/v4.1.3/sealos_4.1.3_linux_amd64.tar.gz
+curl -O https://ghproxy.com/https://github.com/labring/sealos/releases/download/v4.1.3/sealos_4.1.3_linux_amd64.tar.gz
 tar zxvf sealos_4.1.3_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
 # 添加命令补全
 echo "source <(sealos completion bash)" >> ~/.bashrc
@@ -54,14 +54,14 @@ https://www.sealos.io/zh-Hans/docs/getting-started/installation
 
 ```bash
 # 下载并安装sealer
-curl -O https://github.com/sealerio/sealer/releases/download/v0.8.6/sealer-v0.8.6-linux-amd64.tar.gz
+curl -O https://ghproxy.com/https://github.com/sealerio/sealer/releases/download/v0.8.6/sealer-v0.8.6-linux-amd64.tar.gz
 tar zxvf sealer-v0.8.6-linux-amd64.tar.gz && mv sealer /usr/bin
 # 添加命令补全
 echo "source <(sealer completion bash)" >> ~/.bashrc
 # 查看可用的kubernetes镜像
 sealer search kubernetes
 # 安装kubernetes集群
-# sealer pull kubernetes:v1.23.8
+sealer pull kubernetes:v1.23.8
 sealer run kubernetes:v1.23.8 --masters 192.168.17.133 --nodes 192.168.17.134 --passwd toor
 
 # 增加master节点
@@ -263,8 +263,8 @@ OpenEBS is Kubernetes native Container Attached Storage solution
 
 ```bash
 helm repo add openebs https://openebs.github.io/charts
-helm repo update
-helm install --namespace openebs --name openebs openebs/openebs
+helm pull openebs/openebs --untar
+helm install --namespace openebs openebs ./openebs --create-namespace
 ```
 
 **通过 kubectl 安装**
@@ -351,7 +351,7 @@ kubectl delete -f common/crds/
 helm repo add nginx-stable https://helm.nginx.com/stable
 helm pull nginx-stable/nginx-ingress --version 0.15.1 --untar
 # helm install nginx-release ./nginx-ingress --set controller.service.create=false,controller.kind=daemonset,controller.setAsDefaultIngress=true
-helm install nginx-release ./nginx-ingress --set controller.service.type=NodePort,controller.kind=deployment,controller.setAsDefaultIngress=true
+helm install nginx-release ./nginx-ingress --set controller.service.type=LoadBalancer,controller.kind=deployment,controller.setAsDefaultIngress=true
 
 # Testing Service
 kubectl create deployment demo --image=httpd --port=80
@@ -413,6 +413,77 @@ https://github.com/kubernetes/ingress-nginx/
 
 # Envoy
 
+# KubeSphere
+
+```bash
+VERSION=v3.3.1
+curl https://ghproxy.com/https://github.com/kubesphere/ks-installer/releases/download/v3.3.1/kubesphere-installer.yaml -o kubesphere-installer-$VERSION.yaml
+curl https://ghproxy.com/https://github.com/kubesphere/ks-installer/releases/download/v3.3.1/cluster-configuration.yaml -o cluster-configuration-$VERSION.yaml
+kubectl apply -f kubesphere-installer-$VERSION.yaml
+kubectl apply -f cluster-configuration-$VERSION.yaml
+
+# 查看安装日志，安装成功后会打印控制台地址，浏览器访问即可
+kubectl logs -n kubesphere-system $(kubectl get pod -n kubesphere-system -l 'app in (ks-install, ks-installer)' -o jsonpath='{.items[0].metadata.name}') -f
+# Account: admin
+# Password: P@88w0rd
+
+```
+
+参考：https://kubesphere.io/docs/v3.3/quick-start/minimal-kubesphere-on-k8s/
+
+# Rainbond
+
+```bash
+# 所有节点都要执行这个命令
+yum -y install nfs-utils
+
+# 开始安装
+helm repo add rainbond https://openchart.goodrain.com/goodrain/rainbond
+helm pull rainbond/rainbond-cluster --untar
+helm install rainbond ./rainbond-cluster -n rbd-system --create-namespace
+
+# 访问平台
+kubectl get rainbondcluster rainbondcluster -n rbd-system -o go-template --template='{{range.spec.gatewayIngressIPs}}{{.}}:7070{{printf "\n"}}{{end}}'
+```
+
+卸载
+
+```bash
+helm uninstall rainbond -n rbd-system
+
+# Delete PVC
+kubectl get pvc -n rbd-system | grep -v NAME | awk '{print $1}' | xargs kubectl delete pvc -n rbd-system
+
+# Delete PV
+kubectl get pv | grep rbd-system | grep -v NAME | awk '{print $1}' | xargs kubectl delete pv
+
+# Delete CRD
+kubectl delete crd componentdefinitions.rainbond.io \
+helmapps.rainbond.io \
+rainbondclusters.rainbond.io \
+rainbondpackages.rainbond.io \
+rainbondvolumes.rainbond.io \
+rbdcomponents.rainbond.io \
+servicemonitors.monitoring.coreos.com \
+thirdcomponents.rainbond.io \
+-n rbd-system
+
+# Delete NAMESPACE
+kubectl delete ns rbd-system
+
+# 删除 Rainbond 数据目录
+rm -rf /opt/rainbond
+```
+
+
+
+
+
+参考：
+
+https://www.rainbond.com/docs/installation/install-with-helm/install-from-kubernetes
+
+https://www.rainbond.com/docs/installation/uninstall
 
 # Kuboard
 
