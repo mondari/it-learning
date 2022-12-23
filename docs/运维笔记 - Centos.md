@@ -2199,6 +2199,38 @@ https://github.com/pantsel/konga
 
 ## APISIX
 
+## Caddy
+
+```bash
+# HTTPS
+docker run --rm -d -p 80:80 -p 443:443 -p 443:443/udp \
+    -v caddy_site:/srv \
+    -v caddy_data:/data \
+    -v caddy_config:/config \
+	--name caddy \
+    caddy caddy file-server --domain example.local
+
+echo "hello world" > /var/lib/docker/volumes/caddy_site/_data/index.html
+curl --resolve example.local:443:192.168.204.129 https://example.local/ --insecure
+
+
+# HTTP
+echo "hello world" > index.html
+docker run --rm -d -p 80:80 \
+	-v $PWD/index.html:/usr/share/caddy/index.html \
+    -v caddy_data:/data \
+	--name caddy \
+    caddy
+
+curl http://localhost/
+```
+
+参考：
+
+https://hub.docker.com/_/caddy
+
+[Automatic HTTPS — Caddy Documentation (caddyserver.com)](https://caddyserver.com/docs/automatic-https)
+
 ## Nacos
 
 ### 通过源码包安装
