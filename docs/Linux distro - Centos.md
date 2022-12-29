@@ -1841,6 +1841,47 @@ services:
 
 ## Jenkins
 
+**通过 yum 安装**
+
+```bash
+sudo curl -o /etc/yum.repos.d/jenkins.repo \
+    https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+sudo yum upgrade -y
+# Add required dependencies for the jenkins package
+sudo yum install java-11-openjdk -y
+sudo yum install jenkins -y
+sudo systemctl daemon-reload
+
+# enable 'start at boot'
+sudo systemctl enable jenkins
+# start
+sudo systemctl start jenkins
+
+# If you have a firewall installed, you must add Jenkins as an exception. 
+# You must change YOURPORT in the script below to the port you want to use. 
+# Port 8080 is the most common.
+YOURPORT=8080
+PERM="--permanent"
+SERV="$PERM --service=jenkins"
+
+firewall-cmd $PERM --new-service=jenkins
+firewall-cmd $SERV --set-short="Jenkins ports"
+firewall-cmd $SERV --set-description="Jenkins port exceptions"
+firewall-cmd $SERV --add-port=$YOURPORT/tcp
+firewall-cmd $PERM --add-service=jenkins
+firewall-cmd --zone=public --add-service=http --permanent
+firewall-cmd --reload
+
+# 浏览器访问 IP:8080，按照提示找到初始密码，默认用户名是admin
+cat /var/lib/jenkins/secrets/initialAdminPassword
+# 提示创建新用户，可以选择继续使用默认用户admin
+```
+
+参考：https://www.jenkins.io/doc/book/installing/linux/#red-hat-centos
+
+
+
 **通过 docker 安装**
 
 1. ```bash
@@ -1860,6 +1901,8 @@ services:
 3. note the admin password dumped on log: d844e5d059554c85b1012f942109226c
 
 4. open a browser on http://localhost:8080 or http://localhost:8080/blue
+
+
 
 ## Nexus3
 
