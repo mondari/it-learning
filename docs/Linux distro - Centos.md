@@ -169,13 +169,15 @@ sudo yum-config-manager \
 sudo sed -i 's+download.docker.com+mirrors.tuna.tsinghua.edu.cn/docker-ce+' /etc/yum.repos.d/docker-ce.repo
     
 # Install the latest version of Docker Engine - Community and containerd    
-sudo yum install -y docker-ce docker-ce-cli containerd.io
+sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
-# 启动服务设为开机启动
-sudo systemctl enable --now docker
+# 启动服务并设为开机启动
+sudo systemctl enable --now docker.service
+sudo systemctl enable containerd.service
 
 # Verify
 sudo docker version
+sudo docker compose version
 ```
 
 参考：https://docs.docker.com/engine/install/centos/
@@ -205,8 +207,7 @@ docker info
 
 | 镜像站                                                       | 加速地址                                                     | 备注             | 其它加速              |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ---------------- | --------------------- |
-| [七牛云](https://kirk-enterprise.github.io/hub-docs/#/user-guide/mirror
-) | https://reg-mirror.qiniu.com                                 |                  | Docker Hub、GCR、Quay |
+|[七牛云](https://kirk-enterprise.github.io/hub-docs/#/user-guide/mirror) | https://reg-mirror.qiniu.com                                 |                  | Docker Hub、GCR、Quay |
 | [Azure 中国镜像](https://github.com/Azure/container-service-for-azure-china/blob/master/aks/README.md#22-container-registry-proxy) | https://dockerhub.azk8s.cn                                   |                  | Docker Hub、GCR、Quay |
 | [科大镜像](https://mirrors.ustc.edu.cn/help/dockerhub.html)  | https://docker.mirrors.ustc.edu.cn                           | 貌似只能校内用   | Docker Hub、GCR、Quay |
 | [DaoCloud 镜像站](https://www.daocloud.io/mirror)            | http://f1361db2.m.daocloud.io                                | 可登录，系统分配 | Docker Hub            |
@@ -324,7 +325,7 @@ docker-compose -f docker-compose.yml up -d
 
 ### 部署 ELK
 
-elk.yaml
+> elk.yaml
 
 ```bash
 version: '3'
@@ -358,7 +359,7 @@ volumes:
 
 ### 部署微服务
 
-microservice.yml
+> microservice.yaml
 
 ```yaml
 version: '3'
@@ -628,7 +629,7 @@ yum install -y kubelet kubeadm kubectl
 # 确保 kubelet 的 cgroupDriver 为 systemd
 sed -i "s/cgroupfs/systemd/g" /var/lib/kubelet/config.yaml
 # 设置开机启动并启动 kubelet 服务
-systemctl enable kubelet && systemctl start kubelet
+systemctl enable --now kubelet
 
 # 安装 kubectl、kubeadm 命令补全
 echo "source <(kubectl completion bash)" >> ~/.bashrc
@@ -1855,9 +1856,7 @@ sudo yum install jenkins -y
 sudo systemctl daemon-reload
 
 # enable 'start at boot'
-sudo systemctl enable jenkins
-# start
-sudo systemctl start jenkins
+sudo systemctl enable --now jenkins
 
 # If you have a firewall installed, you must add Jenkins as an exception. 
 # You must change YOURPORT in the script below to the port you want to use. 
@@ -1874,11 +1873,12 @@ firewall-cmd $PERM --add-service=jenkins
 firewall-cmd --zone=public --add-service=http --permanent
 firewall-cmd --reload
 
-# 浏览器访问 IP:8080，按照提示找到初始密码，默认用户名是admin
+# 浏览器访问 http://127.0.0.1:8080
+# 查看 admin 账户的初始密码
 cat /var/lib/jenkins/secrets/initialAdminPassword
-# 提示创建新用户，可以选择继续使用默认用户admin
 
-# 提示选择安装插件时，建议额外安装以下插件
+# 根据提示创建新用户，可选择继续使用 admin 账户
+# 根据提示选择安装插件，建议额外安装以下插件
 # Config File Provider
 # Conditional BuildStep
 # GitLab
@@ -1891,8 +1891,10 @@ cat /var/lib/jenkins/secrets/initialAdminPassword
 **通过 docker 安装**
 
 ```bash
+# 下面的 50000 端口是给 Jenkins Agent 连接 Jenkins 用的，如果是使用 SSH Build Agent，则可去掉该端口
 docker run -d -v jenkins_home:/var/jenkins_home -p 8080:8080 -p 50000:50000 --restart=on-failure --name jenkins jenkins/jenkins:lts-jdk11
-# 查看初始账号admin的密码
+# 浏览器访问 http://127.0.0.1:8080
+# 查看 admin 账户的初始密码
 docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
 ```
 
@@ -2028,7 +2030,87 @@ https://hub.docker.com/_/registry
 
 https://docs.docker.com/registry/deploying/
 
-## *SonarQube
+## SonarQube
+
+**前提条件**
+
+```bash
+# SonarQube 内置的 SearchServer 基于 ElasticSearch，以下设置不能低于推荐值
+
+# 查询
+sysctl vm.max_map_count
+sysctl fs.file-max
+ulimit -n
+ulimit -u
+
+# 临时设置
+# sysctl -w vm.max_map_count=524288
+# sysctl -w fs.file-max=131072
+# ulimit -n 131072
+# ulimit -u 8192
+
+# 永久设置
+cat > /etc/sysctl.d/99-sonarqube.conf <<EOF
+vm.max_map_count	=	262144
+fs.file-max			=	131072
+EOF
+
+sysctl --system
+
+cat > /etc/security/limits.d/99-sonarqube.conf <<EOF
+*   -   nofile   131072
+*   -   nproc    8192
+EOF
+```
+
+参考：https://docs.sonarqube.org/latest/requirements/prerequisites-and-overview/
+
+**通过 docker-compose 安装**
+
+> sonarqube.yaml
+
+```yaml
+version: "3"
+
+services:
+  sonarqube:
+    image: sonarqube:community
+    depends_on:
+      - db
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    ports:
+      - "9000:9000"
+  db:
+    image: postgres:12
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+    volumes:
+      - postgresql:/var/lib/postgresql
+      - postgresql_data:/var/lib/postgresql/data
+
+volumes:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  postgresql:
+  postgresql_data:
+```
+
+浏览器访问 [http://localhost:9000](http://localhost:9000/)，默认账号和密码为 admin/admin。
+
+首次登录会提示修改密码，这里改成相同的密码 admin。
+
+
+
+参考：https://docs.sonarqube.org/latest/setup-and-upgrade/install-the-server/
 
 ## Nginx
 
