@@ -1849,6 +1849,7 @@ sudo curl -o /etc/yum.repos.d/jenkins.repo \
 sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
 sudo yum upgrade -y
 # Add required dependencies for the jenkins package
+# 如果有 java-8，记得设置好环境变量，不然无法启动 Jenkins
 sudo yum install java-11-openjdk -y
 sudo yum install jenkins -y
 sudo systemctl daemon-reload
@@ -1876,6 +1877,11 @@ firewall-cmd --reload
 # 浏览器访问 IP:8080，按照提示找到初始密码，默认用户名是admin
 cat /var/lib/jenkins/secrets/initialAdminPassword
 # 提示创建新用户，可以选择继续使用默认用户admin
+
+# 提示选择安装插件时，建议额外安装以下插件
+# Config File Provider
+# Conditional BuildStep
+# GitLab
 ```
 
 参考：https://www.jenkins.io/doc/book/installing/linux/#red-hat-centos
@@ -1884,25 +1890,72 @@ cat /var/lib/jenkins/secrets/initialAdminPassword
 
 **通过 docker 安装**
 
-1. ```bash
-   $ docker volume create jenkins-data
-   $ docker run \
-     -u root \
-     -d \
-     -p 8080:8080 \
-     -p 50000:50000 \
-     -v jenkins-data:/var/jenkins_home \
-     -v /var/run/docker.sock:/var/run/docker.sock \
-     --name jenkins-blueocean \
-     jenkinsci/blueocean:
-   
-   ```
-   
-3. note the admin password dumped on log: d844e5d059554c85b1012f942109226c
+```bash
+docker run -d -v jenkins_home:/var/jenkins_home -p 8080:8080 -p 50000:50000 --restart=on-failure --name jenkins jenkins/jenkins:lts-jdk11
+# 查看初始账号admin的密码
+docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+```
 
-4. open a browser on http://localhost:8080 or http://localhost:8080/blue
+参考：https://github.com/jenkinsci/docker
 
 
+
+**Jenkinsfile**
+
+浅尝一下 pipeline
+
+```groovy
+pipeline {
+    agent any
+
+    triggers {
+        cron '@midnight'
+    }
+
+    options {
+        buildDiscarder logRotator(artifactNumToKeepStr: '10', numToKeepStr: '10')
+        timestamps()
+        parallelsAlwaysFailFast()
+    }
+
+    stages {
+        stage('Environment') {
+            steps {
+                sh "printenv"
+            }
+        }
+        stage('Build') {
+            steps {
+                echo 'Building..'
+            }
+        }
+        stage('Test') {
+            parallel {
+                stage('Test A') {
+                    steps {
+                        echo 'Testing A...'
+                    }
+                }
+                stage('Test B') {
+                    steps {
+                        echo 'Testing B...'
+                    }
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploying....'
+            }
+        }
+    }
+}
+```
+
+参考：
+
+https://www.jenkins.io/doc/book/pipeline/syntax/
+https://github.com/jenkinsci/pipeline-examples
 
 ## Nexus3
 
