@@ -56,28 +56,54 @@ ls 命令的 `-F` 选项可以让目录在后面加 `/` 显示，以区分目录
 
 ## 常用包
 
-bash-completion
-mlocate
-bind-utils（内含 nslookup）
-yum groups install Development\ Tools（内含 gcc, git, cmake, perl）
-net-tools（内含 netstat, ifconfig, route，注意该工具包已经被 iproute 工具包代替，所以这些命令也被 `ss` , `ip addr`, `ip route` 命令所代替）
-bridge-utils（内含 brctl 网桥管理工具）
-yum-cron（定时更新 yum 源）
-java-1.8.0-openjdk-devel（内含 Java 诊断工具）
-epel-release（EPEL仓库有Python3）
-yum install python-pip（默认安装pyhon-pip2）
-pip install --upgrade pip（更新pip）
-open-vm-tools（[VMware 虚拟机包](https://github.com/vmware/open-vm-tools)）
-psmisc（内含 pstree）
+```bash
+yum install -y bash-completion
+# 安装 locate、updatedb
+yum install -y mlocate
+# 安装 gcc, git, cmake, perl
+yum groups install Development\ Tools
+# 安装 nslookup
+yum install -y bind-utils
+# 安装 brctl 网桥管理工具
+yum install -y bridge-utils
+# 安装 netstat, ifconfig, route，注意该工具包已经被 iproute 工具包代替
+# 所以这些命令也被 `ss` , `ip addr`, `ip route` 命令所代替
+# yum install -y net-tools
+# 定时更新 yum 源
+yum install -y yum-cron
+# 内含 pstree
+yum install -y psmisc
+# 安装 netcat
+yum install -y nmap-ncat
+# Java 开发工具包，即 JDK，内含 Java 诊断工具
+yum install -y java-1.8.0-openjdk-devel
+# EPEL仓库，这样可以安装 Python3
+yum install -y epel-release
+# 默认安装是 pyhon-pip2
+# yum install python-pip
+# 更新 pip
+# pip install --upgrade pip
 
-### Neofetch
+```
+
+**open-vm-tools**
+
+> VMware 虚拟机包
+
+```bash
+yum install -y open-vm-tools
+```
+
+参考：https://github.com/vmware/open-vm-tools
+
+**Neofetch**
 
 Neofetch 是一个命令行工具，能以愉悦美观的方式打印系统信息。
 
 ```bash
-$ curl -o /etc/yum.repos.d/konimex-neofetch-epel-7.repo https://copr.fedorainfracloud.org/coprs/konimex/neofetch/repo/epel-7/konimex-neofetch-epel-7.repo
+curl -o /etc/yum.repos.d/konimex-neofetch-epel-7.repo https://copr.fedorainfracloud.org/coprs/konimex/neofetch/repo/epel-7/konimex-neofetch-epel-7.repo
 
-$ yum install neofetch
+yum install -y neofetch
 ```
 
 参考：https://github.com/dylanaraps/neofetch/wiki/Installation#fedora--rhel--centos--mageia
@@ -102,26 +128,28 @@ nmcli connection up ens33
 ## 配置EPEL镜像
 
 ```bash
-// 备份(如有配置其他epel源)
+# 备份(如有配置其他epel源)
 
-$ mv /etc/yum.repos.d/epel.repo /etc/yum.repos.d/epel.repo.backup
-$ mv /etc/yum.repos.d/epel-testing.repo /etc/yum.repos.d/epel-testing.repo.backup
+mv /etc/yum.repos.d/epel.repo /etc/yum.repos.d/epel.repo.backup
+mv /etc/yum.repos.d/epel-testing.repo /etc/yum.repos.d/epel-testing.repo.backup
 
-// 下载新repo 到/etc/yum.repos.d/
-$ curl -o /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo
+# 下载新repo 到/etc/yum.repos.d/
+curl -o /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo
 
 ```
 
 ## 配置PyPi镜像
 
 ```bash
-$ mkdir ~/.pip
-$ cat > ~/.pip/pip.conf <<EOF
+mkdir ~/.pip
+
+cat > ~/.pip/pip.conf <<EOF
 [global]
 index-url = https://mirrors.aliyun.com/pypi/simple/
 
 [install]
 trusted-host=mirrors.aliyun.com
+EOF
 ```
 
 ## Cockpit
@@ -325,7 +353,7 @@ docker-compose -f docker-compose.yml up -d
 
 ### 部署 ELK
 
-> elk.yaml
+> elk.yml
 
 ```bash
 version: '3'
@@ -359,7 +387,7 @@ volumes:
 
 ### 部署微服务
 
-> microservice.yaml
+> microservice.yml
 
 ```yaml
 version: '3'
@@ -429,11 +457,9 @@ setenforce 0
 K8s 不支持交换分区，必须关闭
 
 ```bash
-# 关闭所有的 Swap
-swapoff -a
-# 注释掉 Swap 行
 cp /etc/fstab /etc/fstab_bak
-cat /etc/fstab_bak |grep -v swap > /etc/fstab
+swapoff -a && sed -i '/ swap / s/^/#/' /etc/fstab
+
 # 查看 Swap 是否为空
 free -h
 ```
@@ -1270,7 +1296,7 @@ mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'pass4wOrd!';
 
 ### 通过 docker-compose 安装
 
-deploy-postgres.yml
+> deploy-postgres.yml
 
 ```bash
 # Use postgres/example user/password credentials
@@ -1498,7 +1524,7 @@ mongo:latest
 
 ### 通过 docker-compose 安装
 
-deploy-mongo.yml
+> deploy-mongo.yml
 
 ```yaml
 # Use mongo/mongo as user/password credentials
@@ -1809,7 +1835,7 @@ sudo docker run --detach \
 
 ### 通过 docker-compose 安装
 
-deploy-gitlab.yml
+> deploy-gitlab.yml
 
 ```bash
 version: '3.1'
@@ -2067,7 +2093,7 @@ EOF
 
 **通过 docker-compose 安装**
 
-> sonarqube.yaml
+> sonarqube.yml
 
 ```yaml
 version: "3"
@@ -2134,7 +2160,7 @@ make & make install
 
 ### 通过 docker-compose 安装
 
-创建文件 deploy-nginx.yml
+> deploy-nginx.yml
 
 ```yaml
 nginx:
@@ -2728,7 +2754,7 @@ services:
 
 **配置示例**
 
-prometheus.yml
+> prometheus.yml
 
 ```yaml
 global:
@@ -2871,7 +2897,7 @@ $ docker run -e PARAMS="--spring.datasource.username=root --spring.datasource.pa
 
 ### 通过 docker-compose 安装
 
-flink-session-mode.yml
+> flink-session-mode.yml
 
 ```yaml
 version: "2.2"
