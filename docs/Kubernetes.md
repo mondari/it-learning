@@ -14,7 +14,68 @@
 
 https://kubernetes.io/zh-cn/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
 
+
+
+**设置主机名**
+
+集群中节点的主机名不允许有重复，也不允许为 localhost，且需要确保主机名能 ping 通。
+
+```bash
+# 设置主机名
+hostnamectl set-hostname k1
+# 设置域名解析
+echo "`hostname -I | awk '{print $1}'`    $(hostname)" >> /etc/hosts
+# 验证
+ping `hostname`
+```
+
+如果不设置主机名到本地 hosts 中，集群初始化时会报
+
+> [WARNING Hostname]: hostname "k1" could not be reached
+> [WARNING Hostname]: hostname "k1": lookup k1 on 114.114.114.114:53: no such host
+
+
+
+**关闭防火墙**
+
+建议先关闭所有节点的防火墙，安装成功后再开放相应的端口
+
+```bash
+systemctl disable firewalld.service --now
+systemctl status firewalld.service
+```
+
+如果不关闭防火墙，集群初始化时会报
+
+> [WARNING Firewalld]: firewalld is active, please ensure ports [6443 10250] are open or your cluster may not function correctly
+
+
+
+**关闭交换分区**
+
+集群中所有节点都要关闭交换分区，因为在交换分区开启时，无法准确计算 Pod 的内存利用率。
+
+```bash
+cp /etc/fstab /etc/fstab_bak
+swapoff -a && sed -i '/ swap / s/^/#/' /etc/fstab
+
+# 查看 Swap 是否为空
+free -h
+```
+
+如果不关闭防火墙，集群初始化时会报
+
+> [WARNING Swap]: swap is enabled; production deployments should disable swap unless testing the NodeSwap feature gate of the kubelet
+
+参考：
+
+[New in Kubernetes v1.22: alpha support for using swap memory | Kubernetes](https://kubernetes.io/blog/2021/08/09/run-nodes-with-swap-alpha/)
+
+[Swap Off - why is it necessary? - General Discussions - Discuss Kubernetes](https://discuss.kubernetes.io/t/swap-off-why-is-it-necessary/6879)
+
 ## 通过 Sealos 安装
+
+安装前，需要确保 `~/.bashrc` 文件没有 `kubectl` 、`crictl` 命令。
 
 ```bash
 # 下载并安装 sealos
@@ -84,9 +145,379 @@ sealer run kubernetes:v1.23.8 --masters 192.168.17.133 --nodes 192.168.17.134 --
 
 https://github.com/sealerio/sealer
 
-## [cri-dockerd](https://github.com/Mirantis/cri-dockerd)
+## 安装容器运行时
 
-由于 Kubernetes 1.24+ 已经删除 `dockershim` 这个 CRI 兼容层，所以要想继续使用 Docker 作为容器运行时，需要安装这个。cri-dockerd 前身就是 dockershim。
+集群的所有节点都要安装容器运行时。主要步骤如下：
+
+1. 处理好前提条件
+2. 安装支持 CNI 的容器运行时，如 containerd、cri-o、cri-dockerd（需要先安装 docker）
+3. 配置 systemd 取代 cgroupfs 为 cgroup driver
+4. 配置 pause 镜像，不然下载不了 `registry.k8s.io/pause` 镜像
+
+参考：https://kubernetes.io/docs/setup/production-environment/container-runtimes
+
+### 前提条件
+
+**转发 IPv4 并让 iptables 看到桥接流量**
+
+> 如果选择安装 Docker，则可省去这步，因为 Docker 已经帮忙配置了
+
+```bash
+cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+overlay
+br_netfilter
+EOF
+
+sudo modprobe overlay
+sudo modprobe br_netfilter
+
+# 设置所需的 sysctl 参数，参数在重新启动后保持不变
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+
+# 使 sysctl 参数无需启动就能生效
+sudo sysctl --system
+
+# 验证
+lsmod | grep br_netfilter
+lsmod | grep overlay
+
+sysctl net.bridge.bridge-nf-call-iptables net.bridge.bridge-nf-call-ip6tables net.ipv4.ip_forward
+```
+
+
+
+参考：https://kubernetes.io/docs/setup/production-environment/container-runtimes/#forwarding-ipv4-and-letting-iptables-see-bridged-traffic
+
+### cri-dockerd
+
+> 由于 Kubernetes 1.24+ 已经删除 `dockershim` 这个 CRI 兼容层，所以要想继续使用 Docker 作为容器运行时，需要安装这个。cri-dockerd 前身就是 dockershim。
+
+```bash
+# 安装前需要先安装 Docker，并设置 systemd 为 cgroup driver，再进行以下操作
+
+# 下载和安装
+curl -O https://ghproxy.com/https://github.com/Mirantis/cri-dockerd/releases/download/v0.3.0/cri-dockerd-0.3.0-3.el7.x86_64.rpm
+rpm -ivh cri-dockerd-0.3.0-3.el7.x86_64.rpm
+
+# 配置 Pause 镜像
+PAUSE_IMAGE_VERSION=`cri-dockerd -h | grep -Eo '"registry.k8s.io/pause:.*"' | grep -Eo '[0-9]+.[0-9]+'`
+echo $PAUSE_IMAGE_VERSION
+sed -i "s,ExecStart=/usr/bin/cri-dockerd,ExecStart=/usr/bin/cri-dockerd --pod-infra-container-image=registry.aliyuncs.com/google_containers/pause:$PAUSE_IMAGE_VERSION," /usr/lib/systemd/system/cri-docker.service
+
+systemctl daemon-reload
+systemctl restart cri-docker.service
+systemctl status cri-docker.service
+
+# 开机启动
+systemctl enable cri-docker.service
+systemctl enable --now cri-docker.socket
+```
+
+
+
+参考：https://github.com/Mirantis/cri-dockerd
+
+## 安装三件套
+
+集群的所有节点都要安装 kubeadm、kubelet 和 kubectl 三件套。这里以安装 Kubernetes 1.25.0 为例。
+
+```bash
+# 这里使用阿里的镜像
+cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-\$basearch
+enabled=1
+gpgcheck=1
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+exclude=kubelet kubeadm kubectl
+EOF
+
+# 将 SELinux 设置为 permissive 模式（相当于将其禁用）
+sudo setenforce 0
+sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+# 统一 Kubernetes 版本号
+VERSION=1.25.0
+sudo yum install -y kubelet-$VERSION kubeadm-$VERSION kubectl-$VERSION --disableexcludes=kubernetes
+
+sudo systemctl enable --now kubelet
+
+# 添加 kubectl、kubeadm 命令补全
+echo "source <(kubectl completion bash)" >> ~/.bashrc
+echo "source <(kubeadm completion bash)" >> ~/.bashrc
+```
+
+
+
+参考：https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#installing-kubeadm-kubelet-and-kubectl
+
+## 初始化控制平面节点
+
+集群中所有节点都要添加集群域名解析，否则连不上集群：
+
+```bash
+CLUSTER_ENDPOINT=apiserver.cluster.local
+echo "192.168.17.135    $CLUSTER_ENDPOINT" >> /etc/hosts
+```
+
+在控制平面节点执行以下命令：
+
+```bash
+# 不同的容器运行时，CRI 套接字不同
+CRI_SOCKET=unix:///var/run/cri-dockerd.sock
+#CRI_SOCKET=unix:///run/containerd/containerd.sock
+#CRI_SOCKET=unix:///run/crio/crio.sock
+
+IMAGE_REGISTRY=registry.aliyuncs.com/google_containers
+
+# 生成配置文件（以Kubernetes 1.25.0 为例）
+# 完整配置见 https://pkg.go.dev/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3
+POD_NETWORK=10.244.0.0/16
+
+cat > kubeadm-config.yaml <<EOF
+kind: ClusterConfiguration
+apiVersion: kubeadm.k8s.io/v1beta3
+imageRepository: $IMAGE_REGISTRY
+controlPlaneEndpoint: "$CLUSTER_ENDPOINT:6443"
+networking:
+  podSubnet: "$POD_NETWORK"
+apiServer:
+  timeoutForControlPlane: 2m0s
+---
+kind: KubeletConfiguration
+apiVersion: kubelet.config.k8s.io/v1beta1
+cgroupDriver: systemd
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+nodeRegistration:
+  criSocket: "$CRI_SOCKET"
+EOF
+
+# 下载镜像
+kubeadm config images pull --config kubeadm-config.yaml
+# 查看下载的镜像
+crictl --runtime-endpoint $CRI_SOCKET images
+
+# 初始化集群
+kubeadm init --config kubeadm-config.yaml --dry-run
+# 这里只是 dry-run 测试一下看看有无错误，如果没有的话就去掉上面的 --dry-run 真正执行
+```
+
+若初始化过程中出现问题，则到[集群清理](##集群清理)这步进行重置和清理
+
+## 配置 kubectl
+
+```bash
+# 控制平面节点配置
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+# 验证
+kubectl cluster-info
+
+# 工作节点配置
+# 将控制平面节点的配置复制到工作节点，如下面的k2节点
+# scp -r ~/.kube root@k2:~/
+```
+
+参考：
+
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#optional-controlling-your-cluster-from-machines-other-than-the-control-plane-node
+
+## 安装 CNI 插件
+
+安装 CNI 插件后，集群中的 Pod 才能互相通信，CoreDNS 的状态才会由 `Pending` 变成 `Running` 。
+
+参考：https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#pod-network
+
+### Calico
+
+```bash
+# 配置NetworkManager，集群中所有节点都要配置
+cat > /etc/NetworkManager/conf.d/calico.conf <<EOF
+[keyfile]
+unmanaged-devices=interface-name:cali*;interface-name:tunl*;interface-name:vxlan.calico;interface-name:vxlan-v6.calico;interface-name:wireguard.cali;interface-name:wg-v6.cali
+EOF
+
+# 注意POD_NETWORK要和上面的保持一致，否则 CoreDNS 不正常
+POD_NETWORK=10.244.0.0/16
+curl -O https://ghproxy.com/https://raw.githubusercontent.com/projectcalico/calico/v3.24.5/manifests/tigera-operator.yaml
+kubectl create -f tigera-operator.yaml
+
+curl -o calico-custom-resources.yaml https://raw.githubusercontent.com/projectcalico/calico/v3.24.5/manifests/custom-resources.yaml
+sed -i "s#192.168.0.0/16#${POD_NETWORK}#" calico-custom-resources.yaml
+kubectl create -f calico-custom-resources.yaml
+
+# Wait until each pod has the STATUS of Running.
+watch kubectl get pods -n calico-system
+```
+
+参考：
+
+https://projectcalico.docs.tigera.io/getting-started/kubernetes/quickstart
+
+### Flannel
+
+```bash
+# 注意POD_NETWORK要和上面的保持一致，否则 CoreDNS 不正常
+POD_NETWORK=10.244.0.0/16
+
+curl -O kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/v0.20.2/Documentation/kube-flannel.yml
+sed -i "s#10.244.0.0/16#${POD_NETWORK}#" kube-flannel.yml
+kubectl apply -f kube-flannel.yml
+```
+
+参考：
+
+https://github.com/flannel-io/flannel
+
+## 添加节点
+
+```bash
+# 打印集群添加节点要执行的命令
+kubeadm token create --print-join-command
+
+# 添加工作节点
+kubeadm join apiserver.cluster.local:6443 --token qz8jew.4uvg8na1m3gd1s3p --discovery-token-ca-cert-hash sha256:8c51c5a570b182a6b4ca01eba0aa576ab229ebfa0753a890c0f34178d4026b8e
+
+# 添加控制平面节点（比添加工作节点多了个 --control-plane）
+kubeadm join apiserver.cluster.local:6443 --token qz8jew.4uvg8na1m3gd1s3p --discovery-token-ca-cert-hash sha256:8c51c5a570b182a6b4ca01eba0aa576ab229ebfa0753a890c0f34178d4026b8e --control-plane
+
+# 查看节点列表
+kubectl get nodes
+```
+
+参考：
+
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#join-nodes
+
+[kubeadm join | Kubernetes](https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-join/)
+
+## CoreDNS 高可用
+
+由于集群节点通常是按顺序初始化的，因此 CoreDNS 很可能只在第一个控制平面节点上运行。为了提供更高的可用性，需要在至少加入一个新节点后重新启动部署 CoreDNS。
+
+```bash
+kubectl -n kube-system rollout restart deployment coredns
+```
+
+参考：
+
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#join-nodes
+
+## 问题排查
+
+在[初始化控制平面节点](##初始化控制平面节点)时出现过以下报错：
+
+```bash
+Unfortunately, an error has occurred:
+        timed out waiting for the condition
+
+This error is likely caused by:
+        - The kubelet is not running
+        - The kubelet is unhealthy due to a misconfiguration of the node in some way (required cgroups disabled)
+
+If you are on a systemd-powered system, you can try to troubleshoot the error with the following commands:
+        - 'systemctl status kubelet'
+        - 'journalctl -xeu kubelet'
+
+Additionally, a control plane component may have crashed or exited when started by the container runtime.
+To troubleshoot, list all containers using your preferred container runtimes CLI.
+Here is one example how you may list all running Kubernetes containers by using crictl:
+        - 'crictl --runtime-endpoint unix:///var/run/cri-dockerd.sock ps -a | grep kube | grep -v pause'
+        Once you have found the failing container, you can inspect its logs with:
+        - 'crictl --runtime-endpoint unix:///var/run/cri-dockerd.sock logs CONTAINERID'
+error execution phase wait-control-plane: couldn't initialize a Kubernetes cluster
+To see the stack trace of this error execute with --v=5 or higher
+```
+
+根据上面信息，执行以下命令查看，没得到有用的信息：
+
+```bash
+systemctl status kubelet
+journalctl -xeu kubelet -f
+# 一直报以下错误：
+# "Error getting node" err="node \"k1\" not found"
+```
+
+执行以下命令查看，发现没有任何容器在运行：
+
+```bash
+crictl --runtime-endpoint unix:///var/run/cri-dockerd.sock ps -a | grep kube | grep -v pause
+```
+
+以为是 cri-dockerd 出问题，执行以下命令查看：
+
+```bash
+systemctl status cri-docker.service
+# 一直在刷以下信息：
+# level=info msg="Pulling the image without credentials. Image: registry.k8s.io/pause:3.6"
+```
+
+结合上面信息，最后得知是下载不了 `registry.k8s.io/pause:3.6` 镜像导致的。
+
+解决方法：
+
+```bash
+docker pull registry.aliyuncs.com/google_containers/pause:3.6
+docker tag registry.aliyuncs.com/google_containers/pause:3.6 registry.k8s.io/pause:3.6
+```
+
+或者配置容器运行时的 pause 镜像，具体参考：[Container Runtimes | Kubernetes](https://v1-25.docs.kubernetes.io/docs/setup/production-environment/container-runtimes/)
+
+## 集群清理
+
+**移除节点**
+
+```bash
+kubectl drain <node name> --delete-emptydir-data --force --ignore-daemonsets
+kubeadm reset
+iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
+ipvsadm -C
+kubectl delete node <node name>
+```
+
+**重置控制平面节点**
+
+```bash
+# 重置控制平面节点
+kubeadm reset -f
+# 删除CNI插件配置信息
+# rm -rf /etc/cni/net.d/
+# 删除 kubelet 配置文件（kubeadm 1.21.x 版本会自动清理）
+# rm -rf /etc/kubernetes/ /var/lib/kubelet
+# 删除 kubectl 配置文件
+rm -rf $HOME/.kube/config
+```
+
+
+
+参考：
+
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#tear-down
+
+[kubeadm reset | Kubernetes](https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-reset/)
+
+## 设置控制平面节点能被调度
+
+```bash
+# remove the node-role.kubernetes.io/control-plane:NoSchedule taint
+kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+
+# add the NoSchedule taint back
+# kubectl taint nodes centos-vm node-role.kubernetes.io/master=true:NoSchedule
+```
+
+参考：
+
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#control-plane-node-isolation
 
 ## 配置 [crictl](https://github.com/kubernetes-sigs/cri-tools)
 
@@ -94,6 +525,14 @@ https://github.com/sealerio/sealer
 # 在 Kubernetes 中是使用 crictl 替代 docker 命令来操作镜像、容器和Pod
 # 添加 crictl 命令补全
 echo "source <(crictl completion bash)" >> ~/.bashrc
+
+# 配置 runtime-endpoint
+crictl config --set runtime-endpoint=unix:///var/run/cri-dockerd.sock
+#crictl config --set runtime-endpoint=unix:///run/containerd/containerd.sock
+#crictl config --set runtime-endpoint=unix:///run/crio/crio.sock
+
+# 验证
+crictl images
 ```
 
 参考：
@@ -474,8 +913,6 @@ kubectl delete ns rbd-system
 # 删除 Rainbond 数据目录
 rm -rf /opt/rainbond
 ```
-
-
 
 
 
