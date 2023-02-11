@@ -297,7 +297,31 @@ firewall-cmd --add-port=2375/tcp --permanent && firewall-cmd --reload
 # DOCKER_HOST=tcp://$REMOTE_DOCKER_IP:2375
 ```
 
-参考：https://docs.docker.com/engine/install/linux-postinstall
+参考：
+
+https://docs.docker.com/config/daemon/remote-access/
+
+https://docs.docker.com/engine/install/linux-postinstall
+
+### 设置Docker Daemon挂掉后容器仍能正常运行
+
+编辑 /etc/docker/daemon.json
+
+```json
+{
+  "live-restore": true
+}
+```
+
+重启 Docker Daemon
+
+```sh
+systemctl reload docker
+```
+
+参考：
+
+https://docs.docker.com/config/containers/live-restore/
 
 ### 开启 IPv4 转发以访问外网
 
