@@ -365,3 +365,94 @@ https://www.fluentd.org/guides/recipes/rsyslogd-aggregation
 
 
 
+# DevStack
+
+DevStack 是一套快速部署 OpenStack 的脚本和工具。
+
+
+
+安装前先配置全局 PyPi 镜像地址，配置文件为：/etc/pip.conf
+
+```conf
+[global]
+index-url = https://mirrors.aliyun.com/pypi/simple/
+
+[install]
+trusted-host=mirrors.aliyun.com
+```
+
+
+
+以下为在 Ubuntu 22.04.1 LTS 系统上安装的命令：
+
+```bash
+git clone https://ghproxy.com/https://github.com/openstack/devstack.git --branch stable/zed
+cd devstack
+
+# create a local.conf
+ADMIN_PASSWORD=openstack
+cat > local.conf <<EOF
+[[local|localrc]]
+ADMIN_PASSWORD=$ADMIN_PASSWORD
+DATABASE_PASSWORD=$ADMIN_PASSWORD
+RABBIT_PASSWORD=$ADMIN_PASSWORD
+SERVICE_PASSWORD=$ADMIN_PASSWORD
+### download mirror
+GIT_BASE=https://ghproxy.com/https://github.com
+NOVNC_REPO=https://ghproxy.com/https://github.com/novnc/novnc.git
+ETCD_DOWNLOAD_URL=https://ghproxy.com/https://github.com/etcd-io/etcd/releases/download
+### swift
+SWIFT_HASH=66a3d6b56c1f479c8b4e70ab5c2000f5
+SWIFT_REPLICAS=1
+EOF
+
+# create folder
+DEST=${DEST:-/opt/stack}
+STACK_USER=$(whoami)
+sudo mkdir -p $DEST
+sudo chown -R $STACK_USER $DEST
+sudo chmod 0755 $DEST
+
+# download images
+curl -o /home/ubuntu/devstack/files/cirros-0.5.2-x86_64-disk.img https://ghproxy.com/https://github.com/cirros-dev/cirros/releases/download/0.5.2/cirros-0.5.2-x86_64-disk.img
+
+# fix start_ovn problem（only exists in branch stable/zed）
+sed -i '715,727s/OVS_RUNDIR/OVN_RUNDIR/' lib/neutron_plugins/ovn_agent
+
+# start the install
+./stack.sh
+
+# uninstall
+# ./unstack.sh
+```
+
+最后终端输出以下信息表示安装成功
+
+```bash
+This is your host IP address: 192.168.204.141
+This is your host IPv6 address: ::1
+Horizon is now available at http://192.168.204.141/dashboard
+Keystone is serving at http://192.168.204.141/identity/
+The default users are: admin and demo
+The password: openstack
+
+Services are running under systemd unit files.
+For more information see:
+https://docs.openstack.org/devstack/latest/systemd.html
+
+DevStack Version: zed
+Change: 30a7d790b6bf45bbcc6333008621b093c84055d1 Fix setting the tempest virtual env constraints env var 2023-01-26 22:38:37 -0600
+OS Version: Ubuntu 22.04 jammy
+
+2023-02-12 12:37:32.260 | stack.sh completed in 1030 seconds.
+```
+
+
+
+
+
+参考：
+
+https://opendev.org/openstack/devstack
+
+https://docs.openstack.org/devstack/latest/configuration.htm
