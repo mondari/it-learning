@@ -449,10 +449,10 @@ OS Version: Ubuntu 22.04 jammy
 
 
 
-
-
 参考：
 
 https://opendev.org/openstack/devstack
 
 https://docs.openstack.org/devstack/latest/configuration.htm
+
+http://git.trystack.cn/cgit
