@@ -2009,16 +2009,23 @@ pipeline {
 https://www.jenkins.io/doc/book/pipeline/syntax/
 https://github.com/jenkinsci/pipeline-examples
 
-## Nexus3
+## Nexus Repository Manager
 
-Nexus3 用于搭建Maven私有仓库
+Nexus Repository Manager（简称 NXRM）可用于搭建 Maven、Docker、Nuget、NPM 私有仓库。
+
+由于 NXRM 是用 Java 开发的，比较吃内存，其内存要求如下：
+
+| Memory              | JVM Heap | JVM Direct                               | Host Physical/RAM |
+| :------------------ | :------- | :--------------------------------------- | ----------------- |
+| Minimum ( default ) | 2703MB   | 2703MB                                   | 8GB               |
+| Maximum             | 4GB      | (host physical/RAM * 2/3) - JVM max heap | *no limit*        |
+
+官方建议 JVM 堆内存设置在 2703MB~4GB 之间，宿主机内存至少8GB以上。
 
 **通过 docker 安装**
 
 ```bash
-$ docker volume create --name nexus-data
-$ docker run -d -p 8083:8081 --name nexus -v nexus-data:/nexus-data sonatype/nexus3:3.23.0
-$ curl http://localhost:8083/
+docker run -d -p 8081:8081 --name nexus -e INSTALL4J_ADD_VM_PARAMS="-Xms2703m -Xmx2703m -XX:MaxDirectMemorySize=2703m" -v nexus-data:/nexus-data sonatype/nexus3:3.23.0
 ```
 
 默认用户名为 admin，密码存在 admin.password 文件中
@@ -2036,7 +2043,27 @@ cat /var/lib/docker/volumes/nexus-data/_data/admin.password
 1. 开启**匿名访问**私有仓库。这样不用用户名和密码也可以下载私仓的 jar 包。
 2. maven-central 要配置阿里云镜像。默认是从 maven 官方下载，速度很慢。
 
-参考：https://hub.docker.com/r/sonatype/nexus3
+参考：
+
+https://hub.docker.com/r/sonatype/nexus3
+
+https://help.sonatype.com/repomanager3/product-information/system-requirements
+
+## JFrog’s Artifactory
+
+JFrog’s Artifactory 社区版提供 Generic、Maven、Gradle、Ivy、SBT 私有仓库，至于 Docker、NPM 等私仓则需要付费。
+
+**通过 docker 安装**
+
+```bash
+docker run -d -p 8081:8081 -p 8082:8082 --name artifactory -v artifactory-data:/var/opt/jfrog/artifactory releases-docker.jfrog.io/jfrog/artifactory-oss:latest
+```
+
+启动后浏览器访问 http://localhost:8081，用户名和密码为：admin/password，首次登录会提示修改密码。
+
+参考：
+
+https://jfrog.com/community/download-artifactory-oss/
 
 ## Docker Registry
 
