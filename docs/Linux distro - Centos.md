@@ -2944,6 +2944,26 @@ $ docker run -e PARAMS="--spring.datasource.username=root --spring.datasource.pa
 
 [分布式任务调度平台XXL-JOB (xuxueli.com)](https://www.xuxueli.com/xxl-job/#其他：Docker 镜像方式搭建调度中心：)
 
+## vsftpd
+
+```bash
+# 只启动主动模式
+docker run -d -p 21:21 -v ftp-data:/home/vsftpd -e FTP_USER=admin -e FTP_PASS=admin --name vsftpd --rm fauria/vsftpd
+
+# 启动主动和被动模式，注意环境变量“PASV_ADDRESS”的值为宿主机的IP
+docker run -d -v ftp-data:/home/vsftpd --rm \
+-p 20:20 -p 21:21 \
+-p 21100-21110:21100-21110 \
+-e FTP_USER=admin -e FTP_PASS=admin \
+-e PASV_ADDRESS=192.168.17.130 \
+-e PASV_MIN_PORT=21100 -e PASV_MAX_PORT=21110 \
+--name vsftpd fauria/vsftpd
+```
+
+参考：
+
+https://hub.docker.com/r/fauria/vsftpd
+
 ## Flink
 
 ### 通过 docker-compose 安装
