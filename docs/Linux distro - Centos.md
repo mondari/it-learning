@@ -3000,6 +3000,129 @@ services:
 
 https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/resource-providers/standalone/docker/#app-cluster-yml
 
+## GLPI
+
+**通过 docker 安装**
+
+```bash
+# Deploy MariaDB
+docker run -d --name mariadb-glpi \
+-e MYSQL_DATABASE=glpi \
+-e MYSQL_USER=glpi \
+-e MYSQL_PASSWORD=glpi \
+-e MYSQL_RANDOM_ROOT_PASSWORD=1 \
+-p 3306:3306 \
+fametec/glpi:mariadb
+
+# Deploy GLPI
+docker run -d --name glpi \
+--link mariadb-glpi:mariadb-glpi \
+-e GLPI_LANG=pt_BR \
+-e MARIADB_HOST=mariadb-glpi \
+-e MARIADB_PORT=3306 \
+-e MARIADB_DATABASE=glpi \
+-e MARIADB_USER=glpi \
+-e MARIADB_PASSWORD=glpi \
+-e VERSION="9.5.6" \
+-e PLUGINS="all" \
+-p 80:80 \
+-p 443:443 \
+fametec/glpi:latest
+
+# Deploy Cron to Schedule jobs
+docker run -d --name crond-glpi --link mariadb-glpi:mariadb --volume glpi:/var/www/html/glpi fametec/glpi:crond
+```
+
+启动后浏览器访问 http://localhost，默认用户名和密码为 glpi/glpi
+
+
+
+**通过 docker-compose 安装**
+
+docker-compose.yaml
+
+```yaml
+version: "3.5"
+services:
+    mariadb-glpi: 
+        image: fametec/glpi:mariadb
+        restart: unless-stopped
+        volumes: 
+          - mariadb-glpi-volume:/var/lib/mysql:rw
+        environment: 
+          MYSQL_DATABASE: glpi
+          MYSQL_USER: glpi-user 
+          MYSQL_PASSWORD: glpi-pass 
+          MYSQL_RANDOM_ROOT_PASSWORD: 1 
+        ports: 
+          - 3306:3306
+        networks: 
+          - glpi-backend
+    glpi: 
+        image: fametec/glpi:latest
+        restart: unless-stopped
+        volumes: 
+          - glpi-volume-files:/var/www/html/files:rw
+          - glpi-volume-plugins:/var/www/html/plugins:rw
+        environment: 
+          GLPI_LANG: pt_BR
+          MARIADB_HOST: mariadb-glpi
+          MARIADB_PORT: 3306
+          MARIADB_DATABASE: glpi
+          MARIADB_USER: glpi-user
+          MARIADB_PASSWORD: glpi-pass
+          VERSION: "9.5.6"
+          PLUGINS: "all"
+        depends_on: 
+          - mariadb-glpi
+          - php-fpm
+        ports: 
+          - 30080:80
+        networks: 
+          - glpi-frontend
+          - glpi-backend
+#
+# CRON
+#
+    crond: 
+        image: fametec/glpi:crond
+        restart: unless-stopped
+        volumes:
+          - glpi-volume:/usr/share/nginx/html/glpi:rw
+        depends_on:
+          - mariadb-glpi
+        environment: 
+          MARIADB_HOST: mariadb-glpi
+          MARIADB_PORT: 3306
+          MARIADB_DATABASE: glpi
+          MARIADB_USER: glpi-user
+          MARIADB_PASSWORD: glpi-pass
+        volumes: 
+          - glpi-volume-files:/var/www/html/files:rw
+          - glpi-volume-plugins:/var/www/html/plugins:rw
+        networks: 
+          - glpi-backend
+#
+# VOLUMES
+#
+volumes: 
+  glpi-volume-files:
+  glpi-volume-plugins:
+  mariadb-glpi-volume: 
+#
+# NETWORKS
+#
+networks: 
+  glpi-frontend: 
+  glpi-backend:
+```
+
+
+
+参考：
+
+https://hub.docker.com/r/fametec/glpi
+
 # 踩坑记录
 
 ### *查看系统硬件配置
