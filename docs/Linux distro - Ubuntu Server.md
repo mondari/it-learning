@@ -5,9 +5,9 @@
 
 ## 发行日志
 
-Ubuntu 20.04 LTS：https://wiki.ubuntu.com/FocalFossa/ReleaseNotes
+Ubuntu 22.04 LTS：https://wiki.ubuntu.com/JammyJellyfish/ReleaseNotes
 
-Ubuntu 18.04 LTS：https://wiki.ubuntu.com/BionicBeaver/ReleaseNotes
+Ubuntu 20.04 LTS：https://wiki.ubuntu.com/FocalFossa/ReleaseNotes
 
 ## Bash 配置
 
@@ -50,6 +50,12 @@ network:
 
 如果没安装 NetworkManager，使用自带的 networkd 也行
 
+
+
+参考：
+
+https://ubuntu.com/server/docs/network-configuration
+
 ## 防火墙配置
 
 Ubuntu 使用 ufw 来简化防火墙的配置，默认 ufw 是不开启的，需要打开：
@@ -68,6 +74,10 @@ sudo ufw app info OpenSSH #查看 OpenSSH 服务允许的端口
 sudo ufw status # ufw 状态
 sudo ufw disable # 关闭 ufw
 ```
+
+参考：
+
+https://ubuntu.com/server/docs/security-firewall
 
 ## Docker
 
@@ -203,10 +213,6 @@ sudo rabbitmqctl delete_vhost <vhost>
 
 1. https://blog.csdn.net/kk185800961/article/details/55214474
 2. https://github.com/rabbitmq/rabbitmq-server/blob/master/docs/rabbitmq.conf.example
-
-## MongoDB
-
-Ubuntu 官方支持的包版本是 3.6，而当前最新版本是 4.2
 
 ## Fluentd
 
@@ -356,14 +362,6 @@ https://docs.fluentd.org/configuration/config-file
 https://www.fluentd.org/datasources
 
 https://www.fluentd.org/guides/recipes/rsyslogd-aggregation
-
-## *ZooKeeper
-
-版本 3.4
-
-## *etcd
-
-
 
 # DevStack
 
