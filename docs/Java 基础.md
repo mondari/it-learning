@@ -117,11 +117,13 @@ https://www.oodesign.com/design-principles.html
 
 参考：[Primitive Data Types](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)
 
-## *访问修饰符
+## 访问修饰符
 
 > Access Modifier
 
+参考：
 
+[Controlling Access to Members of a Class (The Java™ Tutorials > Learning the Java Language > Classes and Objects) (oracle.com)](https://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html)
 
 ## 静态代码块、普通代码块、构造方法执行顺序
 
