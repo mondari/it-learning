@@ -6,8 +6,11 @@
 - 负载均衡（核心指令 upstream）
 - HTTP 服务器
 - 正向代理
+- 缓存服务
 
-## *架构
+## 架构
+
+![img](面试题 - Nginx.assets/architecture.png)
 
 参考：http://www.aosabook.org/en/nginx.html
 
@@ -44,7 +47,7 @@
 
 注意：前缀匹配时，如果有包含关系时，按最大匹配原则进行匹配。比如在前缀匹配：location /dir01 与 location /dir01/dir02，如有请求 http://localhost/dir01/dir02/file 将最终匹配到 location /dir01/dir02
 
-### 大神实例：
+### 大神实例
 
 例子，有如下匹配规则：
 
@@ -172,7 +175,64 @@ server_name 的匹配顺序如下：
    }
    ```
 
-参考：http://nginx.org/en/docs/http/server_names.html
+参考：
+
+https://nginx.org/en/docs/http/server_names.html
+
+https://nginx.org/en/docs/http/request_processing.html#mixed_name_ip_based_servers
+
+## 虚拟服务器
+
+通过虚拟服务器，可以实现不同域名都由同一个 Nginx 转发，即使端口都相同。Nginx 是通过 `server` 块和 `server_name` 指令来定义不同的虚拟服务器。
+
+比如希望 `nexus.domain.com`、`git.domain.com`、`jenkins.domain.com` 这三个域名都能通过同一台 Nginx 的 80 端口转发，首先要配置好域名解析或本地 host 文件，然后参考以下 Nginx 配置：
+
+```nginx
+server {
+    listen       80;
+    server_name  nexus.domain.com;
+
+    location / {
+        root   html-nexus;#nexus html文件夹
+        index  index.html index.htm;
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   html;
+    }
+}
+server {
+    listen       80;
+    server_name  git.domain.com;
+
+    location / {
+        root   html-git;#git html文件夹
+        index  index.html index.htm;
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   html;
+    }
+}
+server {
+    listen       80;
+    server_name  jenkins.domain.com;
+
+    location / {
+        root   html-jenkins;#jenkins html文件夹
+        index  index.html index.htm;
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   html;
+    }
+}
+```
+
+参考：https://nginx.org/en/docs/http/server_names.html
 
 ## 指令和变量
 
@@ -303,7 +363,7 @@ https://nginx.org/en/docs/stream/ngx_stream_proxy_module.html
 
 https://nginx.org/en/docs/stream/ngx_stream_upstream_module.html
 
-### 负载均衡策略
+## 负载均衡策略
 
 Nginx 负载均衡是通过 upstream 模块来实现的，内置了三种负载策略。
 
