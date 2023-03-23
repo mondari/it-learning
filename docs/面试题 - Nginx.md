@@ -4,7 +4,7 @@
 
 - 反向代理（核心指令 proxy_pass）
 - 负载均衡（核心指令 upstream）
-- HTTP 服务器
+- HTTP 服务器（静态资源、MP4、FLV）
 - 正向代理
 - 缓存服务
 
@@ -120,8 +120,9 @@ location / {
 
 参考：
 
-1. https://moonbingbing.gitbooks.io/openresty-best-practices/content/ngx/nginx_local_pcre.html
-2. http://nginx.org/en/docs/http/ngx_http_core_module.html#location
+[location 匹配规则 · OpenResty最佳实践 (gitbooks.io)](https://moonbingbing.gitbooks.io/openresty-best-practices/content/ngx/nginx_local_pcre.html)
+
+http://nginx.org/en/docs/http/ngx_http_core_module.html#location
 
 ## server_name 匹配顺序
 
@@ -363,23 +364,41 @@ https://nginx.org/en/docs/stream/ngx_stream_proxy_module.html
 
 https://nginx.org/en/docs/stream/ngx_stream_upstream_module.html
 
-## 负载均衡策略
+## 负载均衡方法
 
-Nginx 负载均衡是通过 upstream 模块来实现的，内置了三种负载策略。
+> load balancing method
 
-- 轮循（round-robin）（默认） 
+Nginx 负载均衡是通过 upstream 模块来实现的。
 
-Nginx 根据请求次数，将每个请求均匀分配到每台服务器。如果设置了权重的话，会按照权重均匀分配给每台服务器。
+- 轮循（Round Robin）（默认负载均衡算法） 
 
-- 最少连接（least-connected）
+将每个请求均匀分配到每台服务器。如果设置了权重的话，会按照权重均匀分配给每台服务器。
 
-Nginx 会统计哪些服务器的连接数最少，然后将请求优先分配给连接数最少的服务器。
+- 最少连接数（Least Connections）
+
+将请求分配给连接数最少的服务器。指令是 least_conn。
 
 - IP Hash
 
-第一次请求时，Nginx 会将客户端IP地址的哈希值绑定集群中的某台服务器，后续该客户端的所有请求都会转发给集群中绑定的那台服务器去处理。
+使用客户端IP地址来计算哈希值。第一次请求时，Nginx 会将客户端IP地址的哈希值绑定集群中的某台服务器，后续该客户端的所有请求都会转发给集群中绑定的那台服务器去处理。
 
-参考：https://nginx.org/en/docs/http/load_balancing.html
+- Hash
+
+使用指定 Key 来计算哈希值，且支持一致性哈希。指令是 hash。
+
+- 随机（Random）
+
+将请求分配给随机一台服务器。指令是 random。
+
+
+
+参考：
+
+https://nginx.org/en/docs/http/load_balancing.html
+
+https://nginx.org/en/docs/http/ngx_http_upstream_module.html
+
+[libketama: Consistent Hashing library for memcached clients | Richard Jones (metabrew.com)](https://www.metabrew.com/article/libketama-consistent-hashing-algo-memcached-clients)
 
 ## 限流
 
@@ -389,7 +408,7 @@ Nginx 限流是通过 ngx_http_limit_req_module 模块来实现的，该模块�
 
 https://nginx.org/en/docs/http/ngx_http_limit_req_module.html
 
-https://www.cnblogs.com/biglittleant/p/8979966.html
+[死磕nginx系列--nginx 目录 - biglittleant - 博客园 (cnblogs.com)](https://www.cnblogs.com/biglittleant/p/8979966.html)
 
 ## WebSocket 代理
 
