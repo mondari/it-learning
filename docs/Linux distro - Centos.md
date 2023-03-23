@@ -3123,6 +3123,29 @@ networks:
 
 https://hub.docker.com/r/fametec/glpi
 
+## CUPS
+
+CUPS(Common UNIX Printing System，通用Unix打印系统) 是个打印服务，本地无需安装打印机驱动，可通过它进行在线打印。
+
+```bash
+# Using olbat/cupsd image which install OpenPrinting CUPS 2.4.2
+# Default credentials: print / print
+docker run -d --restart always --network host -v /var/run/dbus:/var/run/dbus --name cupsd olbat/cupsd
+
+# Using ydkn/cups image which install CUPS 2.2.10
+# Default credentials: admin / admin
+docker run -d --restart always --network host -v $(pwd)/cups:/etc/cups --name cups ydkn/cups:latest
+```
+
+访问 https://localhost:631/ ，然后添加打印机
+
+
+
+参考：
+
+https://hub.docker.com/r/olbat/cupsd
+https://hub.docker.com/r/ydkn/cups
+
 # 踩坑记录
 
 ### *查看系统硬件配置
