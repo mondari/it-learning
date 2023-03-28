@@ -8,6 +8,14 @@
 - 正向代理
 - 缓存服务
 
+## 示例配置文件
+
+参考：
+
+https://github.com/nginx/nginx/blob/master/conf/nginx.conf
+https://github.com/alibaba/tengine/blob/master/conf/nginx.conf
+https://github.com/openresty/docker-openresty/blob/master/nginx.conf
+
 ## 架构
 
 ![img](面试题 - Nginx.assets/architecture.png)
@@ -336,6 +344,29 @@ https://nginx.org/en/docs/http/ngx_http_proxy_module.html
 
 https://nginx.org/en/docs/http/ngx_http_upstream_module.html
 
+### HTTPS 反向代理
+
+```nginx
+http {
+    #...
+    
+    # 开启SNI
+    proxy_ssl_server_name on;
+
+    server {
+        listen 80;
+        location / {
+            # http 改成 https即可
+            proxy_pass https://backend;
+        }
+    }
+}
+```
+
+参考：
+
+https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_ssl_server_name
+
 ### TCP、UDP反向代理和负载均衡
 
 Nginx 自 1.9.0 版本起支持 TCP 反向代理和负载均衡，自 1.9.13 版本起支持 UDP 反向代理和负载均衡。
@@ -428,48 +459,41 @@ location /chat/ {
 ```nginx
 server {
     listen              80;
-    #必须定义一个ssl监听端口
+    #定义一个ssl监听端口
     listen              443 ssl;
     server_name         localhost;
-    #必须指定ssl证书位置
+    #指定ssl证书位置
     ssl_certificate     cert.pem;
-    #必须指定ssl证书私钥
+    #指定ssl证书私钥
     ssl_certificate_key cert.key;
     ....
 }
 ```
 
-
-
 参考：https://nginx.org/en/docs/http/configuring_https_servers.html
 
-## 80端口重定向到443端口
+## HTTP重定向到HTTPS
 
-80 端口重定向到 443 端口，也就是 http 访问自动跳转到 https。
+80 端口301重定向到 443 端口。
 
 ```nginx
-#以下为核心配置
 server {
     listen 80;
     server_name www.example.com;
-    rewrite ^(.*)$ https://${server_name}$1 permanent; 
-}
-#以上为核心配置
-
-server {
-    listen 443;
-    server_name www.example.com;
-    root /home/wwwroot;
-    ssl on;
-    ssl_certificate /etc/nginx/certs/server.crt;
-    ssl_certificate_key /etc/nginx/certs/server.key;
-    ....
+    # 使用 return 指令
+    return 301 https://$host$request_uri;
+    # 使用 rewrite 指令
+    # rewrite ^(.*)$ https://${server_name}$1 permanent; 
 }
 ```
 
 
 
-参考：https://blog.csdn.net/m0_37886429/article/details/72271983
+参考：
+
+《NGINX Cookbook Second Edition》- Chapter 7. Security Controls - 7.10 HTTPS Redirects
+
+https://blog.csdn.net/m0_37886429/article/details/72271983
 
 ## 日志格式
 
@@ -632,6 +656,77 @@ rtmp {
 
 参考：https://github.com/arut/nginx-rtmp-module
 
-# *OpenResty
+## 限制文件上传大小
 
-# *Kong
+```nginx
+http {
+    #...
+    # 限制文件上传大小为1G，超过则返回413 (Request Entity Too Large)错误
+    client_max_body_size 1g;
+    #...
+}
+```
+
+参考：
+
+https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size
+
+## 隐藏Nginx版本号
+
+默认 Nginx 会在响应头上返回版本号，如：`Server: nginx/1.20.1` ，这会给攻击者根据 Nginx 特定版本漏洞对服务器发起攻击带来便利。所以我们一般要关闭它：
+
+```nginx
+http {
+    #...
+    server_tokens off;
+    #...
+}
+```
+
+参考：
+
+https://nginx.org/en/docs/http/ngx_http_core_module.html#server_tokens
+
+## 添加Dubbo协议支持
+
+Nginx 默认不支持 Dubbo 协议，需要编译时添加 ngx_http_dubbo_module 模块，或使用 Tengine。
+
+参考：
+
+https://github.com/alibaba/tengine/blob/master/docs/modules/ngx_http_dubbo_module_cn.md
+
+## 直接返回响应
+
+```nginx
+location /hello {
+	# 以JSON格式返回（默认以 text/plain 文本格式返回）
+	default_type application/json;
+	return 200 '{"message":null,"data":"hi","code":200}';
+}
+```
+
+参考：
+
+https://nginx.org/en/docs/http/ngx_http_rewrite_module.html#return
+
+## named location
+
+named location 主要是用作内部重定向。如下面的示例：
+
+```nginx
+location / {
+    error_page 404 = @fallback;
+}
+
+location @fallback {
+    proxy_pass http://backend;
+}
+```
+
+这里定义了个名字叫 fallback 的 location。如果默认 location 出现 404，则会匹配到 fallback 这个 location。
+
+参考：
+
+https://nginx.org/en/docs/http/ngx_http_core_module.html#location
+
+https://nginx.org/en/docs/http/ngx_http_core_module.html#error_page
