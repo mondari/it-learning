@@ -272,7 +272,7 @@ server {
 
 ```
 
-如果想要 HTTPS 正向代理，需要添加 [ngx_http_proxy_connect_module](https://github.com/chobits/ngx_http_proxy_connect_module) 模块（需要编译）。
+如果想要 HTTPS 正向代理，需要添加 [ngx_http_proxy_connect_module](https://github.com/chobits/ngx_http_proxy_connect_module) 模块（需要编译），或者直接使用 [Tengine](https://tengine.taobao.org/)。
 
 ```nginx
 server {
@@ -304,7 +304,7 @@ server {
 
 https://zhuanlan.zhihu.com/p/70459013
 
-http://tengine.taobao.org/document/proxy_connect.html
+https://tengine.taobao.org/document/proxy_connect.html
 
 ## 反向代理与负载均衡
 
@@ -730,3 +730,72 @@ location @fallback {
 https://nginx.org/en/docs/http/ngx_http_core_module.html#location
 
 https://nginx.org/en/docs/http/ngx_http_core_module.html#error_page
+
+## 正则表达式匹配结果引用
+
+```nginx
+location ~ ^/oss/(.*) {
+	set $target elementary.oss-cn-shenzhen.aliyuncs.com;
+	proxy_pass http://$target/$1;
+}
+```
+
+proxy_pass 指令中的 “$1” 表示的是 location 正则表达式匹配的第一个字符串。比如有 /oss/hd.mp4 这个请求，则 “$1” 的值是 “hd.mp4”。
+
+## root 与 alias 指令
+
+```nginx
+location /i/ {
+    root /data/w3;
+}
+location /i/ {
+    alias /data/w3/images/;
+}
+```
+
+当有个 `/i/top.gif` 请求过来时，root 指令会返回 `/data/w3/i/top.gif` 文件，而 alias 指令会返回 `/data/w3/images/top.gif` 文件。
+
+## 域名解析变更问题
+
+先看个简单的配置
+
+```nginx
+location / {
+	proxy_pass http://elementary.oss-cn-shenzhen.aliyuncs.com;
+}
+```
+
+如果上面的域名解析变了，会出现什么情况？
+
+Nginx 在启动或重新加载配置时会进行一次域名解析，然后缓存域名解析的IP地址。如果域名解析的IP地址变更了，Nginx 在运行时是不会重新解析和缓存的，请求仍然会发送到旧的IP地址，从而导致生产问题。
+
+解决方法是
+
+```bash
+location / {
+	resolver 114.114.114.114 valid=30s ipv6=off;
+	set $target http://elementary.oss-cn-shenzhen.aliyuncs.com;
+	proxy_pass $target/$request_uri;
+}
+```
+
+
+
+如果是 proxy_pass 指令后面有反斜杠的话，则要酱紫
+
+```nginx
+location /hello/ {
+	resolver 114.114.114.114 valid=30s ipv6=off;
+	set $target http://elementary.oss-cn-shenzhen.aliyuncs.com;
+	rewrite ^/hello/(.*) /$1 break;
+	proxy_pass $target/$request_uri;
+}
+```
+
+这样 /hello/world 请求才会转发到 $target/world 上。
+
+
+
+参考：
+
+[Nginx resolver explained - The Matrix has you... (distinctplace.com)](https://distinctplace.com/2017/04/19/nginx-resolver-explained/)
