@@ -802,3 +802,30 @@ location /hello/ {
 [Nginx resolver explained - The Matrix has you... (distinctplace.com)](https://distinctplace.com/2017/04/19/nginx-resolver-explained/)
 
 https://nginx.org/en/docs/http/ngx_http_core_module.html#resolver
+
+## 请求文件不存在则转发到上游
+
+```nginx
+location ^~ /group {
+	root fastdfs;
+	try_files $uri @fastdfs;
+}
+location @fastdfs {
+	proxy_pass upstream_endpoint;
+}
+```
+
+当有个请求 `/group/image.jpeg` 过来时，会先检查 `fastdfs/group/image.jpeg` 文件是否存在，不存在则匹配到 `@fastdfs` named location，转发到 upstream_endpoint 服务去处理。
+
+也可以这样：
+
+```nginx
+location ^~ /group {
+	root fastdfs;
+	if ( !-e $request_filename ) {
+		proxy_pass upstream_endpoint;
+	}
+}
+```
+
+参考：https://nginx.org/en/docs/http/ngx_http_core_module.html#try_files
