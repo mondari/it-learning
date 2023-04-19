@@ -735,8 +735,7 @@ https://nginx.org/en/docs/http/ngx_http_core_module.html#error_page
 
 ```nginx
 location ~ ^/oss/(.*) {
-	set $target elementary.oss-cn-shenzhen.aliyuncs.com;
-	proxy_pass http://$target/$1;
+	proxy_pass http://backend/$1;
 }
 ```
 
@@ -761,7 +760,7 @@ location /i/ {
 
 ```nginx
 location / {
-	proxy_pass http://elementary.oss-cn-shenzhen.aliyuncs.com;
+	proxy_pass http://random.oss-cn-shenzhen.aliyuncs.com;
 }
 ```
 
@@ -774,10 +773,12 @@ Nginx 在启动或重新加载配置时会进行一次域名解析，然后缓�
 ```bash
 location / {
 	resolver 114.114.114.114 valid=30s ipv6=off;
-	set $target http://elementary.oss-cn-shenzhen.aliyuncs.com;
+	set $target http://random.oss-cn-shenzhen.aliyuncs.com;
 	proxy_pass $target/$request_uri;
 }
 ```
+
+当 proxy_pass 指令后面使用的是变量时，它会使用 resolver 指令定义的DNS来解析其中的域名。resolver 指令解析的域名默认会根据 DNS 响应中的 TTL 来缓存一定时间，也可以通过 valid 指定缓存时间。
 
 
 
@@ -786,7 +787,7 @@ location / {
 ```nginx
 location /hello/ {
 	resolver 114.114.114.114 valid=30s ipv6=off;
-	set $target http://elementary.oss-cn-shenzhen.aliyuncs.com;
+	set $target http://random.oss-cn-shenzhen.aliyuncs.com;
 	rewrite ^/hello/(.*) /$1 break;
 	proxy_pass $target/$request_uri;
 }
@@ -799,3 +800,32 @@ location /hello/ {
 参考：
 
 [Nginx resolver explained - The Matrix has you... (distinctplace.com)](https://distinctplace.com/2017/04/19/nginx-resolver-explained/)
+
+https://nginx.org/en/docs/http/ngx_http_core_module.html#resolver
+
+## 请求文件不存在则转发到上游
+
+```nginx
+location ^~ /group {
+	root fastdfs;
+	try_files $uri @fastdfs;
+}
+location @fastdfs {
+	proxy_pass upstream_endpoint;
+}
+```
+
+当有个请求 `/group/image.jpeg` 过来时，会先检查 `fastdfs/group/image.jpeg` 文件是否存在，不存在则匹配到 `@fastdfs` named location，转发到 upstream_endpoint 服务去处理。
+
+也可以这样：
+
+```nginx
+location ^~ /group {
+	root fastdfs;
+	if ( !-e $request_filename ) {
+		proxy_pass upstream_endpoint;
+	}
+}
+```
+
+参考：https://nginx.org/en/docs/http/ngx_http_core_module.html#try_files
