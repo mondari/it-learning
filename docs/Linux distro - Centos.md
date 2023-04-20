@@ -3147,6 +3147,62 @@ docker run -d --restart always --network host -v $(pwd)/cups:/etc/cups --name cu
 https://hub.docker.com/r/olbat/cupsd
 https://hub.docker.com/r/ydkn/cups
 
+## Bind9
+
+```bash
+# bind9 + webmin
+docker run -d --name bind9 \
+-p 53:53/tcp -p 53:53/udp \
+-p 10000:10000/tcp \
+-v bind9-data:/data \
+--env ROOT_PASSWORD=password \
+sameersbn/bind:9.16.1-20200524
+```
+
+启动后访问Webmin界面：https://localhost:10000，用户名密码：root/password
+
+参考：
+
+[Linux版本之docker容器bind9搭建DNS服务器和配置域名使用_binggoling的博客-CSDN博客](https://blog.csdn.net/qq_30442207/article/details/114971723)
+
+https://hub.docker.com/r/sameersbn/bind
+
+## dnsmasq
+
+```bash
+mkdir -p ~/dnsmasq && cat > ~/dnsmasq/dnsmasq.conf <<EOF
+#dnsmasq config, for a complete example, see:
+#  http://oss.segetech.com/intra/srv/dnsmasq.conf
+#log all dns queries
+log-queries
+#dont use hosts nameservers
+no-resolv
+#use aliyun as default nameservers, prefer 1^4
+server=223.5.5.5
+server=114.114.114.114
+strict-order
+#serve all .company queries using a specific nameserver
+server=/company/10.0.0.1
+#explicitly define host-ip mappings
+address=/nginx.localdomain/192.168.204.100
+EOF
+
+docker run -d\
+    --name dnsmasq \
+    --restart always \
+    -p 53:53/udp \
+    -p 8080:8080 \
+    -v ~/dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf \
+    --log-opt "max-size=100m" \
+    -e "HTTP_USER=admin" \
+    -e "HTTP_PASS=password" \
+    jpillora/dnsmasq
+```
+
+浏览器访问 http://localhost:8080
+
+参考：https://hub.docker.com/r/jpillora/dnsmasq
+
 # 踩坑记录
 
 ### *查看系统硬件配置
