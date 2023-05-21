@@ -988,13 +988,13 @@ volumes:
 ### 通过 docker 安装
 
 ```bash
-// 创建存储卷
+# 创建存储卷
 docker volume create mysql-data
-// 使用 mysql 镜像（Docker 官方镜像，基于 slim 版本的 Debian 构建，好处是无需配置防火墙端口）
+# 使用 mysql 镜像（Docker 官方镜像，基于 slim 版本的 Debian 构建，好处是无需配置防火墙端口，但没有 mysqlbinlog 工具）
 docker run --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=toor -v mysql-data:/var/lib/mysql -d mysql:8.0 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-// 使用 mysql-server 镜像（该镜像由 MySQL 官方维护，基于 slim 版本的 OracleLinux 构建，镜像最小，但没有 mysqlbinlog 工具）
+# 使用 mysql-server 镜像（该镜像由 MySQL 官方维护，基于 slim 版本的 OracleLinux 构建，镜像最小，但没有 mysqlbinlog 工具）
 docker run -d --name=mysql-server -p 3306:3306 -e MYSQL_ROOT_HOST=% -e MYSQL_ROOT_PASSWORD=toor -v mysql-data:/var/lib/mysql mysql/mysql-server --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-// 使用 mysql-80-centos7 镜像（基于 Centos 7 构建，能配置的环境变量更多，内置文本编辑器）
+# 使用 mysql-80-centos7 镜像（基于 Centos 7 构建，能配置的环境变量更多，内置文本编辑器）
 docker run -d --name mysql_database -e MYSQL_ROOT_PASSWORD=toor -e MYSQL_CHARSET=utf8mb4 -e MYSQL_COLLATION=utf8mb4_unicode_ci -v mysql-data:/var/lib/mysql -p 3306:3306 centos/mysql-80-centos7
 ```
 
