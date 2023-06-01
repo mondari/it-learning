@@ -88,13 +88,13 @@ echo "source <(sealos completion bash)" >> ~/.bashrc
      --masters 192.168.17.131 \
      --nodes 192.168.17.132 -p toor
 # 安装集群（cri-docker 容器运行时）
-sealos run labring/kubernetes-docker:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 labring/openebs:v3.3.0 \
+sealos run labring/kubernetes-docker:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 labring/openebs:v3.3.0 labring/ingress-nginx:4.1.0 \
      --masters 192.168.17.131 \
      --nodes 192.168.17.132 -p toor
 # 安装其它
-sealos run labring/ingress-nginx:4.1.0 labring/metrics-server:v0.6.1
+# sealos run labring/metrics-server:v0.6.1
 # 卸载 metrics-server
-kubectl delete -f /var/lib/sealos/data/default/rootfs/manifests/metrics-server.yaml
+# kubectl delete -f /var/lib/sealos/data/default/rootfs/manifests/metrics-server.yaml
 
 # 增加 node 节点
 # sealos add --nodes 192.168.17.133
@@ -121,7 +121,7 @@ tar zxvf sealer-v0.8.6-linux-amd64.tar.gz && mv sealer /usr/bin
 echo "source <(sealer completion bash)" >> ~/.bashrc
 # 查看可用的kubernetes镜像
 sealer search kubernetes
-# 安装kubernetes集群
+# 安装kubernetes集群(cri-docker 容器运行时)
 sealer pull kubernetes:v1.23.8
 sealer run kubernetes:v1.23.8 --masters 192.168.17.133 --nodes 192.168.17.134 --passwd toor
 
