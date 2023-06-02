@@ -121,12 +121,13 @@ tar zxvf sealer-v0.8.6-linux-amd64.tar.gz && mv sealer /usr/bin
 echo "source <(sealer completion bash)" >> ~/.bashrc
 # 查看可用的kubernetes镜像
 sealer search kubernetes
-# 安装kubernetes集群(cri-docker 容器运行时)
+# 安装kubernetes集群(cri-docker, calico)
 sealer pull kubernetes:v1.23.8
 sealer run kubernetes:v1.23.8 --masters 192.168.17.133 --nodes 192.168.17.134 --passwd toor
 
 # 增加master节点
 # sealer join --masters 192.168.0.2
+
 # 增加node节点
 # sealer join --nodes 192.168.0.3
 # 删除master节点
@@ -544,17 +545,17 @@ https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/
 Helm 是 K8s 的包管理工具。
 
 ```bash
-export HELM_VERSION=v3.10.2
+HELM_VERSION=v3.10.2
 # 二进制方式安装
 curl -O https://repo.huaweicloud.com/helm/${HELM_VERSION}/helm-${HELM_VERSION}-linux-amd64.tar.gz
-tar -zxvf helm-${HELM_VERSION}-linux-amd64.tar.gz 
+tar -zxvf helm-${HELM_VERSION}-linux-amd64.tar.gz
 sudo install linux-amd64/helm /usr/local/bin/helm
 # 添加命令补全
 echo "source <(helm completion bash)" >> ~/.bashrc
 # 添加仓库
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm repo add azure http://mirror.azure.cn/kubernetes/charts
-helm repo update
+#helm repo add bitnami https://charts.bitnami.com/bitnami
+#helm repo add azure http://mirror.azure.cn/kubernetes/charts
+#helm repo update
 ```
 
 参考：
@@ -701,9 +702,11 @@ OpenEBS is Kubernetes native Container Attached Storage solution
 **通过 Helm 安装**
 
 ```bash
-helm repo add openebs https://openebs.github.io/charts
-helm pull openebs/openebs --untar
-helm install --namespace openebs openebs ./openebs --create-namespace
+#helm repo add openebs https://openebs.github.io/charts
+#helm pull openebs/openebs --version 3.7.0 --untar
+#上面下载得有点慢，通过镜像来加快下载
+curl -O https://ghproxy.com//https://github.com/openebs/charts/releases/download/openebs-3.7.0/openebs-3.7.0.tgz
+helm install --namespace openebs openebs ./openebs-3.7.0.tgz --create-namespace
 ```
 
 **通过 kubectl 安装**
@@ -733,6 +736,26 @@ https://kubernetes.io/zh-cn/docs/tasks/administer-cluster/change-default-storage
 ## NGINX Ingress Controller
 
 > Nginx 社区维护的 Ingress Controller
+
+**Installation with Helm**
+
+```bash
+helm repo add nginx-stable https://helm.nginx.com/stable
+helm pull nginx-stable/nginx-ingress --version 0.15.1 --untar
+# helm install nginx-release ./nginx-ingress --set controller.service.create=false,controller.kind=daemonset,controller.setAsDefaultIngress=true
+helm install nginx-release ./nginx-ingress --set controller.service.type=LoadBalancer,controller.kind=deployment,controller.setAsDefaultIngress=true
+
+# Testing Service
+kubectl create deployment demo --image=httpd --port=80
+kubectl expose deployment demo
+kubectl create ingress demo-localhost --class=nginx \
+  --rule="demo.localdev.me/*=demo:80"
+
+# 部署了 ingress controller 的 pod 的 node ip
+IC_IP=192.168.17.131
+IC_HTTP_PORT=`kubectl get svc nginx-release-nginx-ingress -o jsonpath="{.spec.ports[0].nodePort}"`
+curl --resolve demo.localdev.me:$IC_HTTP_PORT:$IC_IP http://demo.localdev.me:$IC_HTTP_PORT/
+```
 
 **Installation with Manifests**
 
@@ -782,34 +805,11 @@ kubectl delete clusterrolebinding nginx-ingress
 kubectl delete -f common/crds/
 ```
 
-
-
-**Installation with Helm**
-
-```bash
-helm repo add nginx-stable https://helm.nginx.com/stable
-helm pull nginx-stable/nginx-ingress --version 0.15.1 --untar
-# helm install nginx-release ./nginx-ingress --set controller.service.create=false,controller.kind=daemonset,controller.setAsDefaultIngress=true
-helm install nginx-release ./nginx-ingress --set controller.service.type=LoadBalancer,controller.kind=deployment,controller.setAsDefaultIngress=true
-
-# Testing Service
-kubectl create deployment demo --image=httpd --port=80
-kubectl expose deployment demo
-kubectl create ingress demo-localhost --class=nginx \
-  --rule="demo.localdev.me/*=demo:80"
-
-IC_IP=192.168.17.131
-IC_HTTP_PORT=`kubectl get svc nginx-release-nginx-ingress -o jsonpath="{.spec.ports[0].nodePort}"`
-curl --resolve demo.localdev.me:$IC_HTTP_PORT:$IC_IP http://demo.localdev.me:$IC_HTTP_PORT/
-```
-
-
-
 参考：
 
-https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests/
-
 https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-helm/
+
+https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests/
 
 https://github.com/nginxinc/kubernetes-ingress/tree/main/examples/ingress-resources/complete-example
 
@@ -1337,3 +1337,216 @@ helm uninstall mysql-release
 https://github.com/bitnami/charts/tree/main/bitnami/redis
 
 https://github.com/bitnami/charts/tree/main/bitnami/redis-cluster
+
+# Nacos
+
+mysql-openebs.yaml
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    name: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: mysql
+  template:
+    metadata:
+      labels:
+        name: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: nacos/nacos-mysql:5.7
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "root"
+        - name: MYSQL_DATABASE
+          value: "nacos"
+        - name: MYSQL_USER
+          value: "nacos"
+        - name: MYSQL_PASSWORD
+          value: "nacos"
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+          subPath: mysql
+          readOnly: false
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-dynamic-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels:
+    name: mysql
+spec:
+  ports:
+  - port: 3306
+    targetPort: 3306
+  selector:
+    name: mysql
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-dynamic-pvc
+spec:
+  storageClassName: openebs-hostpath
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+```
+
+nacos-quick-start.yaml
+
+```yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nacos-headless
+  labels:
+    app: nacos-headless
+spec:
+  type: ClusterIP
+  # clusterIP: None
+  ports:
+    - port: 8848
+      name: server
+      targetPort: 8848
+    - port: 9848
+      name: client-rpc
+      targetPort: 9848
+    - port: 9849
+      name: raft-rpc
+      targetPort: 9849
+    ## 兼容1.4.x版本的选举端口
+    - port: 7848
+      name: old-raft-rpc
+      targetPort: 7848
+  selector:
+    app: nacos
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nacos-cm
+data:
+  mysql.host: "mysql"
+  mysql.db.name: "nacos"
+  mysql.port: "3306"
+  mysql.user: "nacos"
+  mysql.password: "nacos"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nacos
+spec:
+  serviceName: nacos-headless
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: nacos
+      annotations:
+        pod.alpha.kubernetes.io/initialized: "true"
+    spec:
+      # 限制一个节点只能部署一个 nacos
+      # affinity:
+      #   podAntiAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       - labelSelector:
+      #           matchExpressions:
+      #             - key: "app"
+      #               operator: In
+      #               values:
+      #                 - nacos
+      #         topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: nacos
+          imagePullPolicy: Always
+          image: nacos/nacos-server:latest
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8848
+              name: client
+            - containerPort: 9848
+              name: client-rpc
+            - containerPort: 9849
+              name: raft-rpc
+            - containerPort: 7848
+              name: old-raft-rpc
+          env:
+            - name: NACOS_REPLICAS
+              value: "3"
+            - name: MYSQL_SERVICE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: nacos-cm
+                  key: mysql.host
+            - name: MYSQL_SERVICE_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: nacos-cm
+                  key: mysql.db.name
+            - name: MYSQL_SERVICE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: nacos-cm
+                  key: mysql.port
+            - name: MYSQL_SERVICE_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: nacos-cm
+                  key: mysql.user
+            - name: MYSQL_SERVICE_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: nacos-cm
+                  key: mysql.password
+            - name: SPRING_DATASOURCE_PLATFORM
+              value: "mysql"
+            - name: NACOS_SERVER_PORT
+              value: "8848"
+            - name: NACOS_APPLICATION_PORT
+              value: "8848"
+            - name: PREFER_HOST_MODE
+              value: "hostname"
+            - name: NACOS_SERVERS
+              value: "nacos-0.nacos-headless.default.svc.cluster.local:8848 nacos-1.nacos-headless.default.svc.cluster.local:8848 nacos-2.nacos-headless.default.svc.cluster.local:8848"
+  selector:
+    matchLabels:
+      app: nacos
+```
+
+测试
+
+```bash
+# Testing
+NACOS_IP=`kubectl get svc nacos-headless -o jsonpath="{.spec.clusterIP}"`
+
+curl -X POST "http://$NACOS_IP:8848/nacos/v1/ns/instance?serviceName=nacos.naming.serviceName&ip=20.18.7.10&port=8080"
+curl -X GET "http://$NACOS_IP:8848/nacos/v1/ns/instance/list?serviceName=nacos.naming.serviceName"
+curl -X POST "http://$NACOS_IP:8848/nacos/v1/cs/configs?dataId=nacos.cfg.dataId&group=test&content=helloWorld"
+curl -X GET "http://$NACOS_IP:8848/nacos/v1/cs/configs?dataId=nacos.cfg.dataId&group=test"
+```
+
+参考：
+
+https://nacos.io/zh-cn/docs/use-nacos-with-kubernetes.html
