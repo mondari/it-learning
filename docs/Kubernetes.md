@@ -935,6 +935,78 @@ https://github.com/kubernetes/ingress-nginx/
 
 # Istio
 
+## Install and Deploy sample application
+
+```bash
+# Download Istio
+curl -O https://ghproxy.com/https://github.com/istio/istio/releases/download/1.17.2/istio-1.17.2-linux-amd64.tar.gz
+tar xzf istio-1.17.2-linux-amd64.tar.gz
+sudo install ./istio-1.17.2/bin/istioctl /usr/local/bin/
+
+# Install Istio
+istioctl install --set profile=demo -y
+kubectl label namespace default istio-injection=enabled
+
+# Deploy the sample application
+cd istio-1.17.2
+kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
+
+# Verify
+kubectl exec "$(kubectl get pod -l app=ratings -o jsonpath='{.items[0].metadata.name}')" -c ratings -- curl -sS productpage:9080/productpage | grep -o "<title>.*</title>"
+```
+
+## Open the application to outside traffic
+
+```bash
+# Associate this application with the Istio gateway:
+kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
+# Ensure that there are no issues with the configuration:
+istioctl analyze
+# Check the Kubernetes Service
+kubectl get svc istio-ingressgateway -n istio-system
+
+# 这里取实际的节点IP
+INGRESS_HOST=192.168.123.137
+INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
+SECURE_INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
+GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
+
+# 浏览器打开下面链接
+echo "http://$GATEWAY_URL/productpage"
+```
+
+## View the dashboard
+
+```bash
+kubectl apply -f samples/addons
+kubectl rollout status deployment/kiali -n istio-system
+
+# 新建一个终端执行
+# 这里取实际的节点IP
+istioctl dashboard kiali --address 192.168.123.137
+
+# 新建一个终端执行
+# 循环访问 API，这样才能再 Dashboard 中看到流量图
+for i in $(seq 1 100); do curl -s -o /dev/null "http://$GATEWAY_URL/productpage"; done
+```
+
+## Uninstall
+
+```bash
+# cleanup sample application
+samples/bookinfo/platform/kube/cleanup.sh
+
+# uninstall istio
+kubectl delete -f samples/addons
+istioctl uninstall -y --purge
+
+kubectl delete namespace istio-system
+
+kubectl label namespace default istio-injection-
+```
+
+
+
 参考：https://istio.io/latest/docs/setup/getting-started/
 
 # Envoy
