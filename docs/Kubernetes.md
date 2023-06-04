@@ -2,6 +2,8 @@
 
 ## 前提条件
 
+**配置要求**
+
 - 每台机器内存 2 GB 及以上。
 - 每台机器 CPU 2 核心及以上。
 - 集群中的节点不允许有重复的主机名、MAC 地址、product_uuid。
@@ -83,14 +85,18 @@ curl -O https://ghproxy.com/https://github.com/labring/sealos/releases/download/
 tar zxvf sealos_4.1.3_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
 # 添加命令补全
 echo "source <(sealos completion bash)" >> ~/.bashrc
+# 加载已有镜像
+#sealos load -i kubernetes-docker-v1.25.0.tar
+#sealos load -i helm-v3.8.2.tar
+#sealos load -i calico-v3.24.1.tar
+#sealos load -i openebs-v3.3.0.tar
+#sealos load -i ingress-nginx-4.1.0.tar
+
+# 先安装helm，后面的calico安装依赖于helm
 # 安装集群（containerd 容器运行时）
-# sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 labring/openebs:v3.3.0 \
-     --masters 192.168.17.131 \
-     --nodes 192.168.17.132 -p toor
+# sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 labring/openebs:v3.3.0 labring/ingress-nginx:4.1.0 --masters 192.168.17.131 --nodes 192.168.17.132 -p toor
 # 安装集群（cri-docker 容器运行时）
-sealos run labring/kubernetes-docker:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 labring/openebs:v3.3.0 labring/ingress-nginx:4.1.0 \
-     --masters 192.168.17.131 \
-     --nodes 192.168.17.132 -p toor
+sealos run labring/kubernetes-docker:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 labring/openebs:v3.3.0 labring/ingress-nginx:4.1.0 --masters 192.168.17.131 --nodes 192.168.17.132 -p toor
 # 安装其它
 # sealos run labring/metrics-server:v0.6.1
 # 卸载 metrics-server
@@ -109,7 +115,8 @@ sealos run labring/kubernetes-docker:v1.25.0 labring/helm:v3.8.2 labring/calico:
 ```
 
 参考：
-https://www.sealos.io/zh-Hans/docs/getting-started/installation
+
+https://sealos.io/docs/lifecycle-management/quick-start/
 
 ## 通过 Sealer 安装
 
@@ -119,9 +126,11 @@ curl -O https://ghproxy.com/https://github.com/sealerio/sealer/releases/download
 tar zxvf sealer-v0.8.6-linux-amd64.tar.gz && mv sealer /usr/bin
 # 添加命令补全
 echo "source <(sealer completion bash)" >> ~/.bashrc
-# 查看可用的kubernetes镜像
-sealer search kubernetes
-# 安装kubernetes集群(cri-docker, calico)
+# 查看可用的Kubernetes镜像
+# sealer search kubernetes
+# 加载已有的Kubernetes镜像
+# sealer load -i kubernetes-v1.23.8.tar
+# 安装Kubernetes集群(cri-docker, calico)
 sealer pull kubernetes:v1.23.8
 sealer run kubernetes:v1.23.8 --masters 192.168.17.133 --nodes 192.168.17.134 --passwd toor
 
@@ -146,18 +155,56 @@ sealer run kubernetes:v1.23.8 --masters 192.168.17.133 --nodes 192.168.17.134 --
 
 https://github.com/sealerio/sealer
 
+## 通过 KubeKey 安装
+
+KubeKey 是 KubeSphere 提供的工具，非常方便安装 Kubernetes 和 KubeSphere。
+
+安装前
+
+```bash
+# 各节点都要安装以下工具
+yum install -y socat conntrack-tools ipvsadm
+
+# 各节点需要关闭 firewalld 防火墙
+```
+
+安装（包含 cri-dockerd，helm，calico）
+
+```bash
+# 设置环境变量
+export KKZONE=cn
+
+# 一键下载和解压
+# curl -sfL https://get-kk.kubesphere.io | VERSION=v3.0.7 sh -
+# 或直接下载和解压
+curl -O https://kubernetes.pek3b.qingstor.com/kubekey/releases/download/v3.0.7/kubekey-v3.0.7-linux-amd64.tar.gz
+tar xzvf kubekey-v3.0.7-linux-amd64.tar.gz
+
+chmod +x kk
+./kk create config --with-kubernetes 1.23.10
+./kk create cluster -f config-sample.yaml
+```
+
+参考：
+
+https://www.kubesphere.io/docs/v3.3/installing-on-linux/introduction/multioverview
+
+https://github.com/kubesphere/kubekey/blob/release-2.2/docs/config-example.md
+
 ## 安装容器运行时
+
+### 前提条件
 
 集群的所有节点都要安装容器运行时。主要步骤如下：
 
 1. 处理好前提条件
-2. 安装支持 CNI 的容器运行时，如 containerd、cri-o、cri-dockerd（需要先安装 docker）
+2. 安装支持 CRI 的容器运行时，如 containerd、cri-o、cri-dockerd（需要先安装 docker）
 3. 配置 systemd 取代 cgroupfs 为 cgroup driver
 4. 配置 pause 镜像，不然下载不了 `registry.k8s.io/pause` 镜像
 
 参考：https://kubernetes.io/docs/setup/production-environment/container-runtimes
 
-### 前提条件
+
 
 **转发 IPv4 并让 iptables 看到桥接流量**
 
@@ -220,7 +267,11 @@ systemctl enable --now cri-docker.socket
 
 
 
-参考：https://github.com/Mirantis/cri-dockerd
+参考：
+
+https://github.com/Mirantis/cri-dockerd
+
+[Container Runtimes | Kubernetes](https://kubernetes.io/docs/setup/production-environment/container-runtimes/)
 
 ## 安装三件套
 
@@ -257,7 +308,7 @@ echo "source <(kubeadm completion bash)" >> ~/.bashrc
 
 参考：https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#installing-kubeadm-kubelet-and-kubectl
 
-## 初始化控制平面节点
+## 初始化集群
 
 集群中所有节点都要添加集群域名解析，否则连不上集群：
 
@@ -312,6 +363,12 @@ kubeadm init --config kubeadm-config.yaml --dry-run
 
 若初始化过程中出现问题，则到[集群清理](##集群清理)这步进行重置和清理
 
+参考：
+
+[Creating a cluster with kubeadm | Kubernetes](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/)
+
+[Customizing components with the kubeadm API | Kubernetes](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/control-plane-flags/)
+
 ## 配置 kubectl
 
 ```bash
@@ -340,14 +397,30 @@ https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-clu
 
 ### Calico
 
+前提条件
+
 ```bash
 # 配置NetworkManager，集群中所有节点都要配置
 cat > /etc/NetworkManager/conf.d/calico.conf <<EOF
 [keyfile]
 unmanaged-devices=interface-name:cali*;interface-name:tunl*;interface-name:vxlan.calico;interface-name:vxlan-v6.calico;interface-name:wireguard.cali;interface-name:wg-v6.cali
 EOF
+```
 
+使用 Helm 安装
+
+```bash
+helm repo add projectcalico https://docs.tigera.io/calico/charts
+curl -O https://ghproxy.com/https://github.com/projectcalico/calico/releases/download/v3.26.0/tigera-operator-v3.26.0.tgz
+helm install calico ./tigera-operator-v3.26.0.tgz --namespace tigera-operator --create-namespace
+```
+
+使用 Manifests 安装
+
+```bash
 # 注意POD_NETWORK要和上面的保持一致，否则 CoreDNS 不正常
+# 如果忘记了，通过以下命令可以查询
+# kubectl cluster-info dump | grep cluster-cidr
 POD_NETWORK=10.244.0.0/16
 curl -O https://ghproxy.com/https://raw.githubusercontent.com/projectcalico/calico/v3.24.5/manifests/tigera-operator.yaml
 kubectl create -f tigera-operator.yaml
@@ -364,10 +437,14 @@ watch kubectl get pods -n calico-system
 
 https://projectcalico.docs.tigera.io/getting-started/kubernetes/quickstart
 
+https://docs.tigera.io/calico/latest/getting-started/kubernetes/helm
+
 ### Flannel
 
 ```bash
 # 注意POD_NETWORK要和上面的保持一致，否则 CoreDNS 不正常
+# 如果忘记了，通过以下命令可以查询
+# kubectl cluster-info dump | grep cluster-cidr
 POD_NETWORK=10.244.0.0/16
 
 curl -O kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/v0.20.2/Documentation/kube-flannel.yml
@@ -412,6 +489,16 @@ kubectl -n kube-system rollout restart deployment coredns
 参考：
 
 https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#join-nodes
+
+## etcd 高可用
+
+默认 etcd 在每个控制层节点上创建和运行，如果控制层节点只有一个，则会存在单点问题，建议生产使用三个以上控制层节点，或者使用外部 etcd 集群。
+
+参考：
+
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#resilience
+
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/setup-ha-etcd-with-kubeadm/
 
 ## 问题排查
 
@@ -471,7 +558,7 @@ docker pull registry.aliyuncs.com/google_containers/pause:3.6
 docker tag registry.aliyuncs.com/google_containers/pause:3.6 registry.k8s.io/pause:3.6
 ```
 
-或者配置容器运行时的 pause 镜像，具体参考：[Container Runtimes | Kubernetes](https://v1-25.docs.kubernetes.io/docs/setup/production-environment/container-runtimes/)
+或者配置容器运行时的 pause 镜像，具体参考：[Container Runtimes | Kubernetes](https://kubernetes.io/docs/setup/production-environment/container-runtimes/)
 
 ## 集群清理
 
