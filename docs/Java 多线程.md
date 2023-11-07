@@ -2,7 +2,7 @@
 
 参考 
 
-[Java 并发](https://cyc2018.github.io/CS-Notes/#/notes/Java%20%E5%B9%B6%E5%8F%91)
+[Thread.State (Java Platform SE 8 ) (oracle.com)](https://docs.oracle.com/javase/8/docs/api/java/lang/Thread.State.html)
 
 https://blog.csdn.net/pange1991/article/details/53860651
 
@@ -185,16 +185,12 @@ public ScheduledThreadPoolExecutor(int corePoolSize) {
 
 另外当线程池中的线程数量大于 corePoolSize时，如果某线程空闲时间超过 keepAliveTime，线程将被终止。这样，线程池可以动态的调整池中的线程数。
 
-
-
 ## ThreadPoolExecutor 提供了四种拒绝策略
 
 - ThreadPoolExecutor.AbortPolicy：默认策略，直接抛出 RejectedExecutionException 拒绝执行异常，简单粗暴。
 - ThreadPoolExecutor.CallerRunsPolicy：直接调用任务的 run 方法去运行，简单粗暴，不过会阻塞主线程。
 - ThreadPoolExecutor.DiscardPolicy：啥都不干，简单粗暴
 - ThreadPoolExecutor.DiscardOldestPolicy：抛弃任务队列中最旧的任务也就是最先加入队列的任务，再把这个新任务添加进去。
-
-
 
 ## 线程相关的方法
 

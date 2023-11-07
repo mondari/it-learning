@@ -193,7 +193,7 @@ Deployment：部署控制器，可以确保任意时间都有指定数量的 Pod
 
 ### Service
 
-Service：在 Pod 基础上**抽象**出来的概念，由一个 IP 地址（叫做 Cluster IP）和一组 Pod 组成，其通过标签来选择一组 Pod 来提供负载均衡功能。Service 默认只能在集群内访问，通过 Service 的 NodePort 方式也可以供集群外部应用访问。
+Service：对外暴露集群中一组 Pod，提供负载均衡功能。由一个 IP 地址（叫做 Cluster IP）和一组 Pod 组成，其通过标签来选择一组 Pod 来提供负载均衡功能。Service 默认只能在集群内访问，通过 Service 的 NodePort 方式也可以供集群外部应用访问。
 
  ![img](面试题%20-%20Docker.assets/module_04_services.svg)
 
@@ -227,6 +227,24 @@ Pod 要想使用某个 PV，首先要先定义一个 PersistentVolumeClaim（PVC
 
 滚动更新：https://kubernetes.io/docs/tutorials/kubernetes-basics/update/update-intro/ 
 
+### Ingress
+
+负责管理外部对集群内部 Service 资源对象的访问
+
+参考：https://kubernetes.io/docs/concepts/services-networking/ingress/
+
+### Gateway API
+
+下一代的 Ingress，解决 Ingress 的 CRD、Annotation 碎片化问题，提供服务网格能力。
+
+参考：
+
+https://gateway-api.sigs.k8s.io/
+
+https://kubernetes.io/blog/2022/07/13/gateway-api-graduates-to-beta/
+
+https://kubernetes.io/blog/2021/04/22/evolving-kubernetes-networking-with-the-gateway-api/
+
 ## Kubernetes 相关组件
 
 **主节点上的组件**
@@ -247,7 +265,7 @@ kubelet：运行在每个 **Node** 上的代理程序，负责向 API Server 注
 
 **其它组件**
 
-coredns：提供 DNS 和服务发现功能
+corens：提供 DNS 和服务发现功能
 
 
 

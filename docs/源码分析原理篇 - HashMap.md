@@ -133,7 +133,7 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
     // 能走到这里的，都是增加新元素，所以这里要+1
     ++modCount;
     if (++size > threshold)
-        // 添加元素后，容量超过阈值，则扩容
+        // 添加元素后，大小超过阈值，则扩容
         resize();
     
     // Callbacks to allow LinkedHashMap post-actions
